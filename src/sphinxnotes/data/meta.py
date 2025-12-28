@@ -8,16 +8,12 @@
 from __future__ import annotations
 from importlib import metadata
 
-from sphinx.application import Sphinx
-from sphinx.util.typing import ExtensionMetadata
-
-
-__project__ = 'sphinxnotes-data'
+__project__ = 'sphinxnotes-dataview'
 __author__ = 'Shengyu Zhang'
-__desc__ = 'Use reStructuredText/markdown to define, constrain, render, and analyze data in Sphinx documentations'
+__desc__ = 'Create and view data in Sphinx documentation'
 
 try:
-    __version__ = metadata.version('sphinxnotes-data')
+    __version__ = metadata.version('sphinxnotes-dataview')
 except metadata.PackageNotFoundError:
     __version__ = 'unknown'
 
@@ -27,11 +23,11 @@ except metadata.PackageNotFoundError:
 ################################################################################
 
 
-def pre_setup(app: Sphinx) -> None:
+def pre_setup(app):
     app.require_sphinx('7.0')
 
 
-def post_setup(app: Sphinx) -> ExtensionMetadata:
+def post_setup(app):
     return {
         'version': __version__,
         'parallel_read_safe': True,
