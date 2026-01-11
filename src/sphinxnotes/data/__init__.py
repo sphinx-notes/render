@@ -36,6 +36,7 @@ from .render import (
     BaseDataDefineDirective,
     StrictDataDefineDirective,
 )
+from .config import Config
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
@@ -65,6 +66,7 @@ __all__ = [
     'BaseDataDefineDirective',
     'BaseDataDefineDirective',
     'StrictDataDefineDirective',
+    'Config',
 ]
 
 logger = logging.getLogger(__name__)
