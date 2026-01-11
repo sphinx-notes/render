@@ -13,16 +13,27 @@ from sphinx.util import logging
 
 from . import meta
 from .data import (
-    Registry, Form, BoolFlag, OperFlag, 
-    Value, ValueWrapper,
-    RawData, Data,
-    Field, Schema,
+    Registry,
+    Form,
+    BoolFlag,
+    OperFlag,
+    Value,
+    ValueWrapper,
+    RawData,
+    Data,
+    Field,
+    Schema,
 )
 from .template import Phase, Template
 from .render import (
     Caller,
-    pending_node, RenderedNode, rendered_node, rendered_inline_node,
-    BaseDataDefiner, BaseDataDefineRole, BaseDataDefineDirective,
+    pending_node,
+    RenderedNode,
+    rendered_node,
+    rendered_inline_node,
+    BaseDataDefiner,
+    BaseDataDefineRole,
+    BaseDataDefineDirective,
     StrictDataDefineDirective,
 )
 
@@ -32,29 +43,41 @@ if TYPE_CHECKING:
 
 """Python API for other Sphinx extesions."""
 __all__ = [
-    'Registry', 'Form', 'BoolFlag', 'OperFlag',
-    'Value', 'ValueWrapper',
-    'RawData', 'Data',
-    'Field', 'Schema',
-
-    'Phase', 'Template',
-
+    'Registry',
+    'Form',
+    'BoolFlag',
+    'OperFlag',
+    'Value',
+    'ValueWrapper',
+    'RawData',
+    'Data',
+    'Field',
+    'Schema',
+    'Phase',
+    'Template',
     'Caller',
-    'pending_node', 'RenderedNode', 'rendered_node', 'rendered_inline_node',
-    'BaseDataDefiner', 'BaseDataDefineRole', 'BaseDataDefineDirective',
-    'BaseDataDefineDirective', 'StrictDataDefineDirective',
+    'pending_node',
+    'RenderedNode',
+    'rendered_node',
+    'rendered_inline_node',
+    'BaseDataDefiner',
+    'BaseDataDefineRole',
+    'BaseDataDefineDirective',
+    'BaseDataDefineDirective',
+    'StrictDataDefineDirective',
 ]
 
 logger = logging.getLogger(__name__)
 
 
+
+
 def setup(app: Sphinx):
     meta.pre_setup(app)
 
-    from . import template
-    from . import render
-    from . import adhoc
+    from . import config, template, render, adhoc
 
+    config.setup(app)
     template.setup(app)
     render.setup(app)
     adhoc.setup(app)
