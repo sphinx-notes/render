@@ -12,11 +12,41 @@ from typing import TYPE_CHECKING
 from sphinx.util import logging
 
 from . import meta
+from .data import (
+    Registry, Form, BoolFlag, OperFlag, 
+    Value, ValueWrapper,
+    RawData, Data,
+    Field, Schema,
+)
+from .template import Phase, Template
+from .render import (
+    Caller,
+    pending_node, RenderedNode, rendered_node, rendered_inline_node,
+    BaseDataDefiner, BaseDataDefineRole, BaseDataDefineDirective,
+    StrictDataDefineDirective,
+)
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
+
+"""Python API for other Sphinx extesions."""
+__all__ = [
+    'Registry', 'Form', 'BoolFlag', 'OperFlag',
+    'Value', 'ValueWrapper',
+    'RawData', 'Data',
+    'Field', 'Schema',
+
+    'Phase', 'Template',
+
+    'Caller',
+    'pending_node', 'RenderedNode', 'rendered_node', 'rendered_inline_node',
+    'BaseDataDefiner', 'BaseDataDefineRole', 'BaseDataDefineDirective',
+    'BaseDataDefineDirective', 'StrictDataDefineDirective',
+]
+
 logger = logging.getLogger(__name__)
+
 
 def setup(app: Sphinx):
     meta.pre_setup(app)

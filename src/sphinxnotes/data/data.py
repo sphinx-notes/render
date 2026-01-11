@@ -171,6 +171,7 @@ class Data:
     def title(self) -> str | None:
         return ValueWrapper(self.name).as_str()
 
+
 @dataclass
 class Field:
     #: Type of element.
@@ -414,7 +415,9 @@ class Schema(object):
 
         return Data(name, attrs, content)
 
-    def fields(self, pred: Callable[[Field], bool] | None = None) -> Generator[tuple[str, Field]]:
+    def fields(
+        self, pred: Callable[[Field], bool] | None = None
+    ) -> Generator[tuple[str, Field]]:
         def ok(f: Field) -> bool:
             return not pred or pred(f)
 
@@ -427,7 +430,6 @@ class Schema(object):
 
         if self.content and ok(self.content):
             yield 'content', self.content
-
 
     def items(
         self, data: Data, pred: Callable[[Field], bool] | None = None
