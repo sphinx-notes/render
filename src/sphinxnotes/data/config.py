@@ -6,11 +6,9 @@ sphinxnotes.data.config
 :license: BSD, see LICENSE for details.
 """
 
-from typing import TYPE_CHECKING
+from sphinx.application import Sphinx
+from sphinx.config import Config as SphinxConfig
 
-if TYPE_CHECKING:
-    from sphinx.application import Sphinx
-    from sphinx.config import Config as SphinxConfig
 
 class Config:
     """Global config of extesion."""
@@ -22,7 +20,7 @@ class Config:
     datetime_fmt: str
 
 
-def _config_inited(_: Sphinx, config: SphinxConfig) -> None:
+def _config_inited(app: Sphinx, config: SphinxConfig) -> None:
     Config.template_debug = config.data_template_debug
 
     Config.date_fmt = config.data_date_fmt

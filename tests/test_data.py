@@ -1,22 +1,23 @@
 import os
 import sys
 import unittest
-from textwrap import dedent
+from datetime import date, time, datetime
 
 sys.path.insert(0, os.path.abspath('./src/sphinxnotes'))
 
 from data.data import Field, Registry, BoolFlag, OperFlag
+from data.config import Config
 
 class TestFieldParser(unittest.TestCase):
 
     # ==========================
     # Basic Types
     # ==========================
-    
+
     def test_basic_scalar(self):
         f = Field.from_dsl('int')
         self.assertEqual(f.parse('123'), 123)
-        
+
         f = Field.from_dsl('bool')
         self.assertTrue(f.parse('true'))
         self.assertTrue(f.parse('y'))
@@ -89,7 +90,7 @@ class TestFieldParser(unittest.TestCase):
         self.assertTrue(f.uniq)
         f = Field.from_dsl(r'int')
         self.assertFalse(f.uniq)
-        
+
         # Test default value.
         Registry.flags['ref'] = BoolFlag('ref', default=True)
         f = Field.from_dsl(r'int, ref')
@@ -103,7 +104,7 @@ class TestFieldParser(unittest.TestCase):
         self.assertEqual(f.group, 'foo')
         f = Field.from_dsl(r'int')
         self.assertEqual(f.group, None)
-        
+
         # Test append
         Registry.byflags['index'] = OperFlag('index', etype=str, store='append')
         f = Field.from_dsl(r'int, index by year')
@@ -111,6 +112,23 @@ class TestFieldParser(unittest.TestCase):
         f = Field.from_dsl(r'int, index by year, index by month')
         self.assertEqual(f.index, ['year', 'month'])
 
+    def test_datetime(self):
+        # FIXME: side effects
+        Config.date_fmt = '%Y-%m-%d'
+        Config.time_fmt = '%H:%M:%S'
+        Config.datetime_fmt = '%Y-%m-%d %H:%M:%S'
+
+        val = Field.from_dsl('date').parse('2023-10-01')
+        self.assertIsInstance(val, date)
+        self.assertEqual(val, date(2023, 10, 1))
+
+        val = Field.from_dsl('time').parse('14:30:00')
+        self.assertIsInstance(val, time)
+        self.assertEqual(val, time(14, 30, 0))
+
+        val = Field.from_dsl('datetime').parse('2023-10-01 14:30:00')
+        self.assertIsInstance(val, datetime)
+        self.assertEqual(val, datetime(2023, 10, 1, 14, 30, 0))
 
     # ==========================
     # Errors
@@ -119,9 +137,23 @@ class TestFieldParser(unittest.TestCase):
     def test_unsupported_modifier(self):
         with self.assertRaisesRegex(ValueError, 'unsupported type'):
             Field.from_dsl('list of unknown')
-            
+
         with self.assertRaisesRegex(ValueError, 'unknown modifier'):
             Field.from_dsl('int, random_mod')
+
+
+    def test_invalid_formats(self):
+        # FIXME: side effects
+        Config.date_fmt = '%Y-%m-%d'
+        Config.time_fmt = '%H:%M:%S'
+        Config.datetime_fmt = '%Y-%m-%d %H:%M:%S'
+
+        with self.assertRaisesRegex(ValueError, 'failed to parse'):
+            Field.from_dsl('date').parse('not-a-date')
+
+        with self.assertRaisesRegex(ValueError, 'failed to parse'):
+            Field.from_dsl('datetime').parse('2023/13/45')
+
 
 if __name__ == '__main__':
     unittest.main()

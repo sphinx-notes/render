@@ -70,8 +70,6 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 
-
-
 def setup(app: Sphinx):
     meta.pre_setup(app)
 

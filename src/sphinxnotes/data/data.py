@@ -3,16 +3,18 @@ from typing import TYPE_CHECKING
 import re
 from dataclasses import dataclass, asdict, field as dataclass_field
 from ast import literal_eval
+from datetime import date, time, datetime
+
+from .config import Config
 
 if TYPE_CHECKING:
     from typing import Any, Callable, Generator, Self, Literal
 
+# =====================================
+# Basic classes: Value, Form, Flag, ...
+# =====================================
 
-#########################################
-# Basic classes: Value, Form, Flag, ... #
-#########################################
-
-type PlainValue = bool | int | float | str
+type PlainValue = bool | int | float | str | date | time | datetime
 type Value = None | PlainValue | list[PlainValue]
 
 
@@ -24,13 +26,8 @@ class ValueWrapper:
         if self.v is None:
             return None
         if isinstance(self.v, list):
-            if len(self.v) == 0:
-                return None
-            return self.v[0]
+            return self.v[0] if len(self.v) else None
         return self.v
-
-    def as_str(self) -> str | None:
-        return str(self.as_plain())
 
     def as_list(self) -> list[PlainValue]:
         if self.v is None:
@@ -40,13 +37,22 @@ class ValueWrapper:
         else:
             return [self.v]
 
+    def as_str(self) -> str | None:
+        v = self.as_plain()
+        return self._strify(v) if v is not None else None
+
     def as_str_list(self) -> list[str]:
-        if self.v is None:
-            return []
-        elif isinstance(self.v, list):
-            return [str(x) for x in self.v]
-        else:
-            return [str(self.v)]
+        return [self._strify(x) for x in self.as_list()]
+
+    @staticmethod
+    def _strify(v: PlainValue) -> str:
+        if isinstance(v, datetime):
+            return v.strftime(Config.datetime_fmt)
+        elif isinstance(v, date):
+            return v.strftime(Config.date_fmt)
+        elif isinstance(v, time):
+            return v.strftime(Config.time_fmt)
+        return str(v)
 
 
 @dataclass(frozen=True)
@@ -77,9 +83,44 @@ class OperFlag(Flag):
     store: FlagStore = 'assign'
 
 
-############
-# Registry #
-############
+# ========
+# Registry
+# ========
+
+
+def _bool_conv(v: str | None) -> bool:
+    v = v.lower().strip() if v is not None else None
+    if v in ('true', 'yes', '1', 'on', 'y', ''):
+        return True
+    if v in ('false', 'no', '0', 'off', 'n', None):
+        return False
+    # Same to :meth:`directives.flag`.
+    raise ValueError(f'no argument is allowed; "{v}" supplied')
+
+
+def _str_conv(v: str) -> str:
+    try:
+        vv = literal_eval(v)
+    except (ValueError, SyntaxError):
+        return v
+    return vv if isinstance(vv, str) else v
+
+
+def _date_conv(v: str) -> date:
+    return datetime.strptime(v, Config.date_fmt).date()
+
+
+def _time_conv(v: str) -> time:
+    return datetime.strptime(v, Config.time_fmt).time()
+
+
+def _datetime_conv(v: str) -> datetime:
+    return datetime.strptime(v, Config.datetime_fmt)
+
+
+_required_flag = BoolFlag('required')
+
+_sep_flag = OperFlag('sep', etype=str)
 
 
 class Registry:
@@ -95,33 +136,19 @@ class Registry:
         'num': float,
         'str': str,
         'string': str,
+        'date': date,
+        'time': time,
+        'datetime': datetime,
     }
-
-    """Internal type converters."""
-
-    @staticmethod
-    def _bool_conv(v: str | None) -> bool:
-        v = v.lower().strip() if v is not None else None
-        if v in ('true', 'yes', '1', 'on', 'y', ''):
-            return True
-        if v in ('false', 'no', '0', 'off', 'n', None):
-            return False
-        # Same to :meth:`directives.flag`.
-        raise ValueError(f'no argument is allowed; "{v}" supplied')
-
-    @staticmethod
-    def _str_conv(v: str) -> str:
-        try:
-            vv = literal_eval(v)
-        except (ValueError, SyntaxError):
-            return v
-        return vv if isinstance(vv, str) else v
 
     convs: dict[type, Callable[[str], Any]] = {
         bool: _bool_conv,
         int: int,
         float: float,
         str: _str_conv,
+        date: _date_conv,
+        time: _time_conv,
+        datetime: _datetime_conv,
     }
 
     forms: dict[str, Form] = {
@@ -131,9 +158,6 @@ class Registry:
     }
 
     """Builtin flags."""
-
-    _required_flag = BoolFlag('required')
-    _sep_flag = OperFlag('sep', etype=str)
 
     flags: dict[str, BoolFlag] = {
         'required': _required_flag,
@@ -147,9 +171,9 @@ class Registry:
     }
 
 
-##########################
-# Data, Field and Schema #
-##########################
+# ======================
+# Data, Field and Schema
+# ======================
 
 
 @dataclass
@@ -216,7 +240,7 @@ class Field:
             if self.etype is bool:
                 # Special case: A single bool field is valid even when
                 # value is not supplied.
-                return Registry._bool_conv(rawval)
+                return _bool_conv(rawval)
             return None
 
         # Strip whitespace. TODO: supported unchanged?
@@ -305,7 +329,7 @@ class DSLParser:
 
             self.field.etype = Registry.etypes[etype]
             self.field.ctype = Registry.forms[form].ctype
-            self.field.flags[Registry._sep_flag.name] = Registry.forms[form].sep
+            self.field.flags[_sep_flag.name] = Registry.forms[form].sep
             return
 
         # Match: Type only (e.g., "int")
@@ -341,7 +365,7 @@ class DSLParser:
                 )
 
             # Deal with builtin flags.
-            if flag == Registry._sep_flag:
+            if flag == _sep_flag:
                 # ctype default to list if 'sep by' is used without a 'xxx of xxx'.
                 if self.field.ctype is None:
                     self.field.ctype = list
