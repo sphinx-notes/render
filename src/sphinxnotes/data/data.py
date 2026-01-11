@@ -5,7 +5,7 @@ from dataclasses import dataclass, asdict, field as dataclass_field
 from ast import literal_eval
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Generator, Self, Literal as Lit
+    from typing import Any, Callable, Generator, Self, Literal
 
 
 #########################################
@@ -67,7 +67,7 @@ class BoolFlag(Flag):
     default: bool = False
 
 
-type FlagStore = Lit['assign'] | Lit['append']
+type FlagStore = Literal['assign', 'append']
 
 
 @dataclass(frozen=True)

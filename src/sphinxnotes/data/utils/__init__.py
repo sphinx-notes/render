@@ -1,4 +1,4 @@
-from typing import TypeVar, cast, Literal as Lit
+from typing import TypeVar, cast, Literal
 
 from docutils import nodes
 from docutils.frontend import get_default_settings
@@ -81,7 +81,7 @@ class Reporter(nodes.system_message):
     def __init__(
         self,
         title: str,
-        level: Lit['DEBUG'] | Lit['INFO'] | Lit['WARNING'] | Lit['ERROR'] = 'DEBUG',
+        level: Literal['DEBUG', 'INFO', 'WARNING', 'ERROR'] = 'DEBUG',
     ) -> None:
         super().__init__(title + ':', type=level, level=2, source='')
         # logger.warning(f'creating a new report: {title}')
