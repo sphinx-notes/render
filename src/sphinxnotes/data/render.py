@@ -315,8 +315,8 @@ class StrictDataDefineDirective(BaseDataDefineDirective):
 
         # Generate directive class
         return type(
-            '%sStrictDataDirective' % name.title(),
-            (StrictDataDefineDirective,),
+            '%sStrictDataDefineDirective' % name.title(),
+            (cls,),
             {
                 'schema': schema,
                 'template': tmpl,
