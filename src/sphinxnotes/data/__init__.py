@@ -14,6 +14,7 @@ from sphinx.util import logging
 from . import meta
 from .data import (
     Registry,
+    PlainValue,
     Value,
     ValueWrapper,
     RawData,
@@ -43,6 +44,7 @@ if TYPE_CHECKING:
 __all__ = [
     'Config',
     'Registry',
+    'PlainValue',
     'Value',
     'ValueWrapper',
     'RawData',
