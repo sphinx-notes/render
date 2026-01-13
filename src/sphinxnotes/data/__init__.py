@@ -14,9 +14,6 @@ from sphinx.util import logging
 from . import meta
 from .data import (
     Registry,
-    Form,
-    BoolFlag,
-    OperFlag,
     Value,
     ValueWrapper,
     RawData,
@@ -36,6 +33,7 @@ from .render import (
     BaseDataDefineDirective,
     StrictDataDefineDirective,
 )
+from .config import Config
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
@@ -43,10 +41,8 @@ if TYPE_CHECKING:
 
 """Python API for other Sphinx extesions."""
 __all__ = [
+    'Config',
     'Registry',
-    'Form',
-    'BoolFlag',
-    'OperFlag',
     'Value',
     'ValueWrapper',
     'RawData',
@@ -68,8 +64,6 @@ __all__ = [
 ]
 
 logger = logging.getLogger(__name__)
-
-
 
 
 def setup(app: Sphinx):
