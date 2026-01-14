@@ -9,6 +9,7 @@ Module for rendering data to doctree nodes.
 """
 
 from __future__ import annotations
+from os import wait
 from typing import TYPE_CHECKING, override, final
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
@@ -20,12 +21,13 @@ from sphinx.util.docutils import SphinxDirective, SphinxRole
 from sphinx.transforms import SphinxTransform
 from sphinx.transforms.post_transforms import ReferencesResolver
 
-from .data import Field, Schema, RawData, Data
-from .template import Template, Phase
-from . import extra_contexts
+from .data import Field, Schema, RawData, Data, PendingData
+from .template import Template, Phase, Context
+from . import extractx
 from . import utils
 
 if TYPE_CHECKING:
+    from typing import Any
     from sphinx.application import Sphinx
     from sphinx.environment import BuildEnvironment
     from .template import MarkupParser
@@ -34,7 +36,6 @@ logger = logging.getLogger(__name__)
 
 
 # Possible caller of :meth:`pending_node.render`.
-# TODO: support Any?
 type Caller = SphinxDirective | SphinxRole | SphinxTransform
 
 
@@ -97,7 +98,7 @@ class BaseNode(nodes.Element): ...
 
 
 class RenderedNode(BaseNode):
-    data: Data
+    data: Data # FIXME
     external_name: nodes.Node | None
     external_content: list[nodes.Node]
 
@@ -108,56 +109,52 @@ class rendered_node(RenderedNode, nodes.container): ...
 class rendered_inline_node(RenderedNode, nodes.inline): ...
 
 
-class pending_node(BaseNode, nodes.Invisible, nodes.Element):
-    data: RawData
+class pending_node(BaseNode, nodes.Invisible):
+    #: The context.
+    ctx: Context
+    #: Template for rendering the context.
     template: Template
-    schema: Schema
+    #: Extra context, as a supplement to data.
+    extra: list[dict[str, Any]]
 
     inline: bool = False
     need_external_name: bool = False
     need_external_content: bool = False
+
+    # extra ctx: markup(before paring) relation(just after ReferencesResolver)
+    # all: env config doctree
+
+    def __init__(self, data: Context, tmpl: Template, rawsource='', *children, **attributes):
+        super().__init__(rawsource, *children, **attributes)
+        self.ctx = data
+        self.template = tmpl
+        self.extra = []
+
 
     def render(self, caller: Caller, replace: bool = False) -> RenderedNode:
         rendered = rendered_inline_node() if self.inline else rendered_node()
         rendered.update_all_atts(self)
 
         _caller = _Caller(caller)
-        # Resolve external name and content.
-        if not self.data.name and self.need_external_name:
-            if ns := self._resolve_external_name(_caller.parent_node):
-                self.data.name = ns.astext()
-                rendered.external_name = ns
-        if not self.data.content and self.need_external_content:
-            if ns := self._resolve_external_content():
-                self.data.content = '\n\n'.join([x.astext() for x in ns])
-                rendered.external_content = ns
 
-        try:
-            data = self.schema.parse(self.data)
-        except ValueError as e:
-            if isinstance(caller, SphinxDirective):
-                raise caller.error(str(e))
-            else:
-                raise e
-            # raise self._caller_exception_hanlder(caller, e)
-        else:
-            rendered.data = data
+        if isinstance(self.ctx, PendingData):
+            self._resolve_external(self.ctx.raw, _caller)
 
-        rendered += self.template.render(
-            _caller.markup_parser,
-            data,
-            {
-                **extra_contexts.sphinx(caller),
-                **extra_contexts.doctree(self),
-                **extra_contexts.markup(self),
-            },
-        )
+        rendered += self.template.render(_caller.markup_parser, self.ctx)
         # TODO: check tmpl schema line no
 
         if replace:
             self.replace_self(rendered)
 
         return rendered
+
+    def _resolve_external(self, data: RawData, caller: _Caller) -> None:
+        if not data.name and self.need_external_name:
+            if ns := self._resolve_external_name(caller.parent_node):
+                data.name = ns.astext()
+        if not data.content and self.need_external_content:
+            if ns := self._resolve_external_content():
+                data.content = '\n\n'.join([x.astext() for x in ns])
 
     def _resolve_external_name(
         self, caller_parent: nodes.Element | None
@@ -217,8 +214,7 @@ class BaseDataDefiner(ABC):
 
         self.process_raw_data(data)
 
-        pending = pending_node()
-        pending.data, pending.template, pending.schema = data, tmpl, schema
+        pending = pending_node(PendingData(data, schema), tmpl)
         self.process_pending_node(pending)
 
         return pending
@@ -368,7 +364,7 @@ def _insert_parsed_hook(app, docname, content):
 
 class _ResolvingHook(SphinxTransform):
     # After resolving pending_xref.
-    default_priority = (ReferencesResolver.default_priority or 10) + 1
+    default_priority = (ReferencesResolver.default_priority or 10) + 5
 
     def apply(self, **kwargs):
         logger.warning(f'running resolving hook for doc {self.env.docname}...')

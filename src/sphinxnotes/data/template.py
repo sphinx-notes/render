@@ -9,10 +9,10 @@ from docutils.parsers.rst import directives
 from sphinx.util import logging
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
-
 from jinja2.sandbox import SandboxedEnvironment
+from jinja2 import StrictUndefined, DebugUndefined
 
-from .data import Data
+from .data import Data, PendingData
 from .utils import Reporter
 
 logger = logging.getLogger(__name__)
@@ -34,6 +34,7 @@ class Phase(Enum):
         choice = directives.choice(arg, [x.value for x in cls])
         return cls[choice.title()]
 
+type Context = PendingData | Data | dict[str, Any]
 
 @dataclass
 class Template(object):
@@ -42,31 +43,74 @@ class Template(object):
     debug: bool
 
     def render(
-        self, parser: MarkupParser, data: Data, extractx: dict[str, Any]
+        self, parser: MarkupParser, ctx: Context, extractxs: list[Context] = []
     ) -> list[nodes.Node]:
-        ctx = data.ascontext()
-        ctx.update(**extractx)
-        text = self._render(ctx)
 
+        mainctx = self._resolve(ctx)
+        finalctx = mainctx.copy()
+
+        dropped_keys = set()
+        for extra in extractxs:
+            for k, v in self._resolve(extra):
+                if k in mainctx:
+                    dropped_keys.add(k)
+                    continue
+                finalctx[k] = v
+
+        text = self._render(mainctx)
         ns = parser(text)
 
         if self.debug:
             reporter = Reporter('Template debug report')
-            reporter.append_text('Data:')
-            reporter.append_code(pformat(data), lang='python')
-            reporter.append_text(
+
+            reporter.text('Data:')
+            reporter.code(pformat(ctx), lang='python')
+
+            reporter.text('Main context:')
+            reporter.code(pformat(mainctx), lang='python')
+
+            reporter.text('Extra context keys:')
+            reporter.list(set(finalctx.keys()) - set(mainctx.keys()))
+
+            reporter.text('Dropped extra conetxt keys:')
+            reporter.list(dropped_keys)
+
+            reporter.text(
                 f'Template (phase: {self.phase}, debug: {self.debug}):'
             )
-            reporter.append_code(self.text, lang='jinja')
-            reporter.append_text('Rendered ndoes:')
-            reporter.append_code('\n'.join(n.pformat() for n in ns), lang='xml')
+            reporter.code(self.text, lang='jinja')
+
+            reporter.text('Rendered ndoes:')
+            reporter.code('\n'.join(n.pformat() for n in ns), lang='xml')
 
             ns.append(reporter)
 
         return ns
 
+
+    def _resolve(self, ctx: Context) -> dict[str, Any]:
+        if isinstance(ctx, PendingData):
+            return ctx.parse().ascontext()
+        elif isinstance(ctx, Data):
+            return ctx.ascontext()
+        elif isinstance(ctx, dict):
+            return ctx
+
+
     def _render(self, ctx: dict[str, Any]) -> str:
-        return _JinjaEnv().from_string(self.text).render(ctx)
+        extensions=[
+            'jinja2.ext.loopcontrols',  # enable {% break %}, {% continue %}
+        ]
+        if self.debug:
+            extensions.append('jinja2.ext.debug')
+
+        env = _JinjaEnv(
+            undefined=DebugUndefined if self.debug else StrictUndefined,
+            extensions=extensions,
+        )
+        # TODO: cache jinja env
+
+        return env.from_string(self.text).render(ctx)
 
 
 class _JinjaEnv(SandboxedEnvironment):
@@ -103,13 +147,8 @@ class _JinjaEnv(SandboxedEnvironment):
             return False
         return super().is_safe_attribute(obj, attr, value)
 
-    def __init__(self):
-        super().__init__(
-            extensions=[
-                'jinja2.ext.loopcontrols',  # enable {% break %}, {% continue %}
-            ]
-        )
-        logger.warning
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         for name, factory in self._filter_factories.items():
             self.filters[name] = factory(self._builder.env)
 

@@ -215,6 +215,14 @@ class RawData:
     attrs: dict[str, str]
     content: str | None
 
+@dataclass(frozen=True)
+class PendingData:
+    raw: RawData
+    schema: Schema
+
+    def parse(self) -> Data:
+        return self.schema.parse(self.raw)
+
 
 @dataclass
 class Data:
@@ -222,7 +230,7 @@ class Data:
     attrs: dict[str, Value]
     content: Value
 
-    def ascontext(self, lift_attrs: bool = True) -> dict[str, Any]:
+    def ascontext(self) -> dict[str, Any]:
         """
         Convert Data to a dict for usage of Jinja2 context.
 
@@ -236,10 +244,9 @@ class Data:
             the variable name is taken by ``Data.name``.
             """
         ctx = asdict(self)
-        if lift_attrs:
-            for k, v in self.attrs:
-                if k not in ctx:
-                    ctx[k] = v
+        for k, v in self.attrs.items():
+            if k not in ctx:
+                ctx[k] = v
         return ctx
 
 
