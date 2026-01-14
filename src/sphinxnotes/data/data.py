@@ -222,8 +222,25 @@ class Data:
     attrs: dict[str, Value]
     content: Value
 
-    def ascontext(self) -> dict[str, Any]:
-        return asdict(self)
+    def ascontext(self, lift_attrs: bool = True) -> dict[str, Any]:
+        """
+        Convert Data to a dict for usage of Jinja2 context.
+
+        :param lift_attrs:
+            Whether life the attrs to top-level context when there is no key
+            conflicts. For example:
+
+            - You can access ``Data.attrs['color']`` by "{{ color }}"" instead 
+            of "{{ attrs.color }}".
+            - You can NOT access ``Data.attrs['name']`` by "{{ name }}" cause
+            the variable name is taken by ``Data.name``.
+            """
+        ctx = asdict(self)
+        if lift_attrs:
+            for k, v in self.attrs:
+                if k not in ctx:
+                    ctx[k] = v
+        return ctx
 
 
 @dataclass
