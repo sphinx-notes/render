@@ -13,12 +13,13 @@ from sphinx.util import logging
 
 from . import meta
 from .data import (
-    Registry,
+    Registry as DataRegistry,
+    REGISTRY as DATA_REGISTRY,
     PlainValue,
     Value,
     ValueWrapper,
     RawData,
-    Data,
+    ParsedData,
     Field,
     Schema,
 )
@@ -33,6 +34,8 @@ from .render import (
     BaseDataDefineRole,
     BaseDataDefineDirective,
     StrictDataDefineDirective,
+    ExtraContextRegistry,
+    EXTRACTX_REGISTRY,
 )
 from .config import Config
 
@@ -48,7 +51,7 @@ __all__ = [
     'Value',
     'ValueWrapper',
     'RawData',
-    'Data',
+    'ParsedData',
     'Field',
     'Schema',
     'Phase',
@@ -67,6 +70,17 @@ __all__ = [
 
 logger = logging.getLogger(__name__)
 
+class Registry:
+    """The global, all-in-one registry for user."""
+    @property
+    def data(self) -> DataRegistry:
+        return DATA_REGISTRY
+
+    @property
+    def extractx(cls) -> ExtraContextRegistry:
+        return EXTRACTX_REGISTRY
+
+REGISTRY = Registry()
 
 def setup(app: Sphinx):
     meta.pre_setup(app)

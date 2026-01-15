@@ -1,13 +1,19 @@
 from __future__ import annotations
-from typing import Any
+from typing import TYPE_CHECKING
 
 from docutils import nodes
-from sphinx.util.docutils import SphinxDirective, SphinxRole
-from sphinx.transforms import SphinxTransform
 
+from .template import Phase
 from .utils import find_current_document, find_current_section
 from .utils.context_proxy import proxy
 
+if TYPE_CHECKING:
+    from typing import Any, Callable
+    from sphinx.transforms import SphinxTransform
+    from sphinx.util.docutils import SphinxDirective, SphinxRole
+
+type ParseContextGenerator = Callable[[SphinxDirective | SphinxRole], dict[str, Any]]
+type TransformContextGenerator = Callable[[SphinxTransform], dict[str, Any]]
 
 def markup(v: SphinxDirective | SphinxRole | nodes.Element) -> dict[str, Any]:
     ctx = {}

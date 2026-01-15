@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, TypeVar, cast
+import pickle
 
 from docutils import nodes
 from docutils.frontend import get_default_settings
@@ -113,3 +114,8 @@ class Reporter(nodes.system_message):
             bullet_list += list_item
             
         self.report(bullet_list)
+
+class NotPicklable:
+    def __reduce_ex__(self, protocol):
+        # Prevent pickling explicitly
+        raise pickle.PicklingError('This object is not picklable')

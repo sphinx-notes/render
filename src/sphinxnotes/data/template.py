@@ -12,7 +12,7 @@ from sphinx.builders import Builder
 from jinja2.sandbox import SandboxedEnvironment
 from jinja2 import StrictUndefined, DebugUndefined
 
-from .data import Data, PendingData
+from .data import Data
 from .utils import Reporter
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,8 @@ type MarkupParser = Callable[[str], list[nodes.Node]]
 class Phase(Enum):
     Parsing = 'parsing'
     Parsed = 'parsed'
-    Resolving = 'resolving'
+    PostTranform = 'post-transform'
+    # TODO: transform?
 
     @classmethod
     def default(cls) -> Phase:
@@ -34,7 +35,7 @@ class Phase(Enum):
         choice = directives.choice(arg, [x.value for x in cls])
         return cls[choice.title()]
 
-type Context = PendingData | Data | dict[str, Any]
+type Context = Data | dict[str, Any]
 
 @dataclass
 class Template(object):
@@ -43,15 +44,15 @@ class Template(object):
     debug: bool
 
     def render(
-        self, parser: MarkupParser, ctx: Context, extractxs: list[Context] = []
+        self, parser: MarkupParser, ctx: Context, extra: list[Context] = []
     ) -> list[nodes.Node]:
 
         mainctx = self._resolve(ctx)
         finalctx = mainctx.copy()
 
         dropped_keys = set()
-        for extra in extractxs:
-            for k, v in self._resolve(extra):
+        for ectx in extra:
+            for k, v in self._resolve(ectx):
                 if k in mainctx:
                     dropped_keys.add(k)
                     continue
@@ -89,10 +90,8 @@ class Template(object):
 
 
     def _resolve(self, ctx: Context) -> dict[str, Any]:
-        if isinstance(ctx, PendingData):
-            return ctx.parse().ascontext()
-        elif isinstance(ctx, Data):
-            return ctx.ascontext()
+        if isinstance(ctx, Data):
+            return ctx.as_context()
         elif isinstance(ctx, dict):
             return ctx
 
