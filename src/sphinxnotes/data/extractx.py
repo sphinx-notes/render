@@ -1,12 +1,17 @@
 from __future__ import annotations
-from typing import Any
+from typing import TYPE_CHECKING
 
 from docutils import nodes
-from sphinx.util.docutils import SphinxDirective, SphinxRole
-from sphinx.transforms import SphinxTransform
 
 from .utils import find_current_document, find_current_section
 from .utils.context_proxy import proxy
+from .render import EXTRACTX_REGISTRY
+from .template import Phase
+
+if TYPE_CHECKING:
+    from typing import Any
+    from sphinx.transforms import SphinxTransform
+    from sphinx.util.docutils import SphinxDirective, SphinxRole
 
 
 def markup(v: SphinxDirective | SphinxRole | nodes.Element) -> dict[str, Any]:
@@ -43,3 +48,6 @@ def sphinx(v: SphinxDirective | SphinxRole | SphinxTransform) -> dict[str, Any]:
     ctx['_env'] = proxy(v.env)
     ctx['_config'] = proxy(v.config)
     return ctx
+
+EXTRACTX_REGISTRY.add_parse_generator(Phase.Parsing, markup)
+EXTRACTX_REGISTRY.add_parse_generator(Phase.Parsed, markup)

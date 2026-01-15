@@ -9,10 +9,11 @@ Core type definitions.
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 import re
 from dataclasses import dataclass, asdict, field as dataclass_field
 from ast import literal_eval
+from abc import ABC, abstractmethod
 
 if TYPE_CHECKING:
     from typing import Any, Callable, Generator, Self, Literal
@@ -55,7 +56,7 @@ class ValueWrapper:
 
     @staticmethod
     def _strify(v: PlainValue) -> str:
-        return Registry.strifys[type(v)](v)
+        return REGISTRY.strifys[type(v)](v)
 
 
 @dataclass(frozen=True)
@@ -109,64 +110,86 @@ def _str_conv(v: str) -> str:
 class Registry:
     """Stores supported element types and element forms (containers)."""
 
-    etypes: dict[str, type] = {}
-
+    etypes: dict[str, type]
     ctypes: set[type] = {list, tuple, set}
-
-    convs: dict[type, Callable[[str], PlainValue]] = {}
-
-    strifys: dict[type, Callable[[PlainValue], str]] = {}
-
-    forms: dict[str, Form] = {}
-
-    flags: dict[str, Flag] = {}
-
-    byopts: dict[str, ByOption] = {}
+    convs: dict[type, Callable[[str], PlainValue]]
+    strifys: dict[type, Callable[[PlainValue], str]]
+    forms: dict[str, Form]
+    flags: dict[str, Flag]
+    byopts: dict[str, ByOption]
 
     _sep_by_option: ByOption
 
-    @classmethod
+    def __init__(self) -> None:
+        self.etypes = {}
+        self.convs = {}
+        self.strifys = {}
+        self.forms = {}
+        self.flags = {}
+        self.byopts = {}
+
+        # Add builtin types.
+        self.add_type('bool', bool, _bool_conv, str, aliases=['flag'])
+        self.add_type('int', int, int, strify=str, aliases=['integer'])
+        self.add_type('float', float, float, str, aliases=['number', 'num'])
+        self.add_type('str', str, _str_conv, str, aliases=['string'])
+
+        # Add builtin forms.
+        self.add_form('list', list, ',')
+        self.add_form('lines', list, '\n')
+        self.add_form('words', list, ' ')
+        self.add_form('set', set, ' ')
+
+        # Add builtin flags.
+        self.add_flag('required', False, aliases=['require', 'req'])
+
+        # Add builtin by-option.
+        self.add_by_option('sep', str, aliases=['separate'])
+        # NOTE: the "sep" by-option is a special builtin flag, extract it for
+        # later usage.
+        self._sep_by_option = self.byopts['sep']
+
+        # from pprint import pprint
+        # pprint(cls.__dict__)
+
     def add_type(
-        cls,
+        self,
         name: str,
         etype: type,
         conv: Callable[[str], PlainValue],
         strify: Callable[[PlainValue], str],
         aliases: list[str] = [],
     ) -> None:
-        cls.etypes[name] = etype
-        cls.convs[etype] = conv
-        cls.strifys[etype] = strify
+        self.etypes[name] = etype
+        self.convs[etype] = conv
+        self.strifys[etype] = strify
 
         for alias in aliases:
-            cls.etypes[alias] = etype
+            self.etypes[alias] = etype
 
-    @classmethod
     def add_form(
-        cls, name: str, ctype: type, sep: str, aliases: list[str] = []
+        self, name: str, ctype: type, sep: str, aliases: list[str] = []
     ) -> None:
-        if ctype not in cls.ctypes:
-            raise ValueError(f'unsupported type: "{ctype}". available: {cls.ctypes}')
+        if ctype not in self.ctypes:
+            raise ValueError(f'unsupported type: "{ctype}". available: {self.ctypes}')
 
         form = Form(ctype, sep)
 
-        cls.forms[name] = form
+        self.forms[name] = form
         for alias in aliases:
-            cls.forms[alias] = form
+            self.forms[alias] = form
 
-    @classmethod
     def add_flag(
-        cls, name: str, default: bool = False, aliases: list[str] = []
+        self, name: str, default: bool = False, aliases: list[str] = []
     ) -> None:
         flag = Flag(name, default)
 
-        cls.flags[flag.name] = flag
+        self.flags[flag.name] = flag
         for alias in aliases:
-            cls.flags[alias] = flag
+            self.flags[alias] = flag
 
-    @classmethod
     def add_by_option(
-        cls,
+        self,
         name: str,
         etype: type,
         default: Value = None,
@@ -175,38 +198,21 @@ class Registry:
     ) -> None:
         opt = ByOption(name, etype, default, store)
 
-        cls.byopts[opt.name] = opt
+        self.byopts[opt.name] = opt
         for alias in aliases:
-            cls.byopts[alias] = opt
-
-    @classmethod
-    def setup(cls) -> None:
-        cls.add_type('bool', bool, conv=_bool_conv, strify=str, aliases=['flag'])
-        cls.add_type('int', int, conv=int, strify=str, aliases=['integer'])
-        cls.add_type('float', float, conv=float, strify=str, aliases=['number', 'num'])
-        cls.add_type('str', str, conv=_str_conv, strify=str, aliases=['string'])
-
-        cls.add_form('list', list, ',')
-        cls.add_form('lines', list, '\n')
-        cls.add_form('words', list, ' ')
-        cls.add_form('set', set, ' ')
-
-        cls.add_flag('required', False, aliases=['require', 'req'])
-
-        cls.add_by_option('sep', str, aliases=['separate'])
-        # NOTE: the "sep" by-option is a special builtin flag, extract it for
-        # later usage.
-        cls._sep_by_option = cls.byopts['sep']
-
-        # from pprint import pprint
-        # pprint(cls.__dict__)
+            self.byopts[alias] = opt
 
 
-Registry.setup()
+REGISTRY = Registry()
 
 # ======================
 # Data, Field and Schema
 # ======================
+
+
+class Data(ABC):
+    @abstractmethod
+    def as_context(self) -> dict[str, Any]: ...
 
 
 @dataclass
@@ -217,30 +223,45 @@ class RawData:
 
 
 @dataclass
-class Data:
+class ParsedData:
     name: Value
     attrs: dict[str, Value]
     content: Value
 
-    def ascontext(self, lift_attrs: bool = True) -> dict[str, Any]:
+    def as_context(self) -> dict[str, Any]:
         """
         Convert Data to a dict for usage of Jinja2 context.
 
-        :param lift_attrs:
-            Whether life the attrs to top-level context when there is no key
-            conflicts. For example:
+        ``self.attrs`` will be automaticlly lifted to top-level context when
+        there is no key conflicts. For example:
 
-            - You can access ``Data.attrs['color']`` by "{{ color }}"" instead 
-            of "{{ attrs.color }}".
-            - You can NOT access ``Data.attrs['name']`` by "{{ name }}" cause
-            the variable name is taken by ``Data.name``.
-            """
+        - You can access ``Data.attrs['color']`` by "{{ color }}"" instead
+        of "{{ attrs.color }}".
+        - You can NOT access ``Data.attrs['name']`` by "{{ name }}" cause
+        the variable name is taken by ``Data.name``.
+        """
         ctx = asdict(self)
-        if lift_attrs:
-            for k, v in self.attrs:
-                if k not in ctx:
-                    ctx[k] = v
+        for k, v in self.attrs.items():
+            if k not in ctx:
+                ctx[k] = v
         return ctx
+
+
+@dataclass
+class PendingData(Data):
+    raw: RawData
+    schema: Schema
+    _data: ParsedData | None = dataclass_field(init=False)
+
+    def parse(self) -> ParsedData:
+        if self._data:
+            return self._data
+        self._data = self.schema.parse(self.raw)
+        return self._data
+
+    @override
+    def as_context(self) -> dict[str, Any]:
+        return self.parse().as_context()
 
 
 @dataclass
@@ -265,10 +286,10 @@ class Field:
 
     def __post_init__(self) -> None:
         # Init flags and by flags.
-        for flag in Registry.flags.values():
+        for flag in REGISTRY.flags.values():
             if flag.name not in self.flags:
                 self.flags[flag.name] = flag.default
-        for opt in Registry.byopts.values():
+        for opt in REGISTRY.byopts.values():
             if opt.name in self.flags:
                 continue
             if opt.store == 'assign':
@@ -302,7 +323,7 @@ class Field:
         rawval = rawval.strip()
 
         try:
-            conv = Registry.convs[self.etype]
+            conv = REGISTRY.convs[self.etype]
 
             if self.ctype is None:
                 # Parse as scalar
@@ -371,40 +392,40 @@ class DSLParser:
         if match := re.match(r'^([a-zA-Z_]+)\s+of\s+([a-zA-Z_]+)$', lower_mod):
             form, etype = match.groups()
 
-            if etype not in Registry.etypes:
+            if etype not in REGISTRY.etypes:
                 raise ValueError(
                     f'unsupported type: "{etype}". '
-                    f'available: {list(Registry.etypes.keys())}'
+                    f'available: {list(REGISTRY.etypes.keys())}'
                 )
-            if form not in Registry.forms:
+            if form not in REGISTRY.forms:
                 raise ValueError(
                     f'unsupported form: "{form}". '
-                    f'available: {list(Registry.forms.keys())}'
+                    f'available: {list(REGISTRY.forms.keys())}'
                 )
 
-            self.field.etype = Registry.etypes[etype]
-            self.field.ctype = Registry.forms[form].ctype
-            self.field.flags[Registry._sep_by_option.name] = Registry.forms[form].sep
+            self.field.etype = REGISTRY.etypes[etype]
+            self.field.ctype = REGISTRY.forms[form].ctype
+            self.field.flags[REGISTRY._sep_by_option.name] = REGISTRY.forms[form].sep
             return
 
         # Match: Type only (e.g., "int")
-        if lower_mod in Registry.etypes:
-            self.field.etype = Registry.etypes[lower_mod]
+        if lower_mod in REGISTRY.etypes:
+            self.field.etype = REGISTRY.etypes[lower_mod]
             return
 
         # Match: by-option, "XXX by XXX" (e.g., "sep by '|'")
         if match := re.match(r'^([a-zA-Z_]+)\s+by\s+(.+)$', clean_mod, re.IGNORECASE):
             optname, rawval = match.groups()
 
-            if optname not in Registry.byopts:
+            if optname not in REGISTRY.byopts:
                 raise ValueError(
                     f'unsupported by-option: "{optname}" by. '
-                    f'available: {list(Registry.byopts.keys())}'
+                    f'available: {list(REGISTRY.byopts.keys())}'
                 )
 
             flags = self.field.flags
-            opt = Registry.byopts[optname]
-            val = Registry.convs[opt.etype](rawval)
+            opt = REGISTRY.byopts[optname]
+            val = REGISTRY.convs[opt.etype](rawval)
 
             if opt.store == 'assign':
                 flags[opt.name] = val
@@ -416,7 +437,7 @@ class DSLParser:
                 raise self.by_option_store_value_error(opt)
 
             # Deal with special by option.
-            if opt == Registry._sep_by_option:
+            if opt == REGISTRY._sep_by_option:
                 # ctype default to list if 'sep by' is used without a 'xxx of xxx'.
                 if self.field.ctype is None:
                     self.field.ctype = list
@@ -424,8 +445,8 @@ class DSLParser:
             return
 
         # Match: flags.
-        if lower_mod in Registry.flags:
-            opt = Registry.flags[lower_mod]
+        if lower_mod in REGISTRY.flags:
+            opt = REGISTRY.flags[lower_mod]
             self.field.flags[opt.name] = not opt.default
             return
 
@@ -472,7 +493,7 @@ class Schema(object):
         except Exception as e:
             raise ValueError(f'parsing {field[0]}: {e}')
 
-    def parse(self, data: RawData) -> Data:
+    def parse(self, data: RawData) -> ParsedData:
         if data.name:
             name = self._parse_single(('name', self.name), data.name)
         else:
@@ -495,7 +516,7 @@ class Schema(object):
         else:
             content = None
 
-        return Data(name, attrs, content)
+        return ParsedData(name, attrs, content)
 
     def fields(self) -> Generator[tuple[str, Field]]:
         if self.name:
@@ -510,7 +531,7 @@ class Schema(object):
         if self.content:
             yield 'content', self.content
 
-    def items(self, data: Data) -> Generator[tuple[str, Field, Value]]:
+    def items(self, data: ParsedData) -> Generator[tuple[str, Field, Value]]:
         if self.name:
             yield 'name', self.name, data.name
 
