@@ -4,7 +4,7 @@ import unittest
 
 sys.path.insert(0, os.path.abspath('./src/sphinxnotes'))
 
-from data.data import Field, Registry
+from data.data import Field, REGISTRY
 
 class TestFieldParser(unittest.TestCase):
 
@@ -83,28 +83,28 @@ class TestFieldParser(unittest.TestCase):
         self.assertEqual(f.parse('a\nb'), ['a', 'b'])
 
     def test_custom_flags(self):
-        Registry.add_flag('uniq')
+        REGISTRY.add_flag('uniq')
         f = Field.from_dsl(r'int, uniq')
         self.assertTrue(f.uniq)
         f = Field.from_dsl(r'int')
         self.assertFalse(f.uniq)
 
         # Test default value.
-        Registry.add_flag('ref', default=True)
+        REGISTRY.add_flag('ref', default=True)
         f = Field.from_dsl(r'int, ref')
         self.assertFalse(f.ref)
         f = Field.from_dsl(r'int')
         self.assertTrue(f.ref)
 
     def test_custom_by_option(self):
-        Registry.add_by_option('group', str)
+        REGISTRY.add_by_option('group', str)
         f = Field.from_dsl(r'int, group by foo')
         self.assertEqual(f.group, 'foo')
         f = Field.from_dsl(r'int')
         self.assertEqual(f.group, None)
 
         # Test append
-        Registry.add_by_option('index', str, store='append')
+        REGISTRY.add_by_option('index', str, store='append')
         f = Field.from_dsl(r'int, index by year')
         self.assertEqual(f.index, ['year'])
         f = Field.from_dsl(r'int, index by year, index by month')
