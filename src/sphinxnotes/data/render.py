@@ -9,33 +9,42 @@ Module for rendering data to doctree nodes.
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, override, final
+from typing import TYPE_CHECKING, override, final, cast, Callable
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
+import traceback
 
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective, SphinxRole
 from sphinx.transforms import SphinxTransform
-from sphinx.transforms.post_transforms import ReferencesResolver
+from sphinx.transforms.post_transforms import SphinxPostTransform, ReferencesResolver
 
-from .data import Field, Schema, RawData, Data
-from .template import Template, Phase
-from . import extra_contexts
+from .data import Field, Schema, RawData, ParsedData, PendingData
+from .template import Template, Phase, Context
 from . import utils
 
 if TYPE_CHECKING:
+    from typing import Literal, Any
     from sphinx.application import Sphinx
     from sphinx.environment import BuildEnvironment
+    from sphinx.config import Config
     from .template import MarkupParser
 
 logger = logging.getLogger(__name__)
 
+# ========================
+# Who is caller of render?
+# ========================
 
+# Possible caller of :meth:`pending_node.render` on source parse phase
+# (parsing, parsed).
+type ParseCaller = SphinxDirective | SphinxRole
+# Possible caller of :meth:`pending_node.render` on transform phase.
+type TransformCaller = SphinxTransform | SphinxPostTransform
 # Possible caller of :meth:`pending_node.render`.
-# TODO: support Any?
-type Caller = SphinxDirective | SphinxRole | SphinxTransform
+type Caller = ParseCaller | TransformCaller
 
 
 @dataclass
@@ -45,6 +54,10 @@ class _Caller:
     @property
     def env(self) -> BuildEnvironment:
         return self.v.env
+
+    @property
+    def config(self) -> Config:
+        return self.v.config
 
     @property
     def doctree(self) -> nodes.document:
@@ -90,14 +103,11 @@ class _Caller:
 
 # ================
 # Nodes definitons
-# ===============
+# ================
 
 
-class BaseNode(nodes.Element): ...
-
-
-class RenderedNode(BaseNode):
-    data: Data
+class RenderedNode(nodes.Element):
+    data: ParsedData  # FIXME
     external_name: nodes.Node | None
     external_content: list[nodes.Node]
 
@@ -108,56 +118,62 @@ class rendered_node(RenderedNode, nodes.container): ...
 class rendered_inline_node(RenderedNode, nodes.inline): ...
 
 
-class pending_node(BaseNode, nodes.Invisible, nodes.Element):
-    data: RawData
+class pending_node(nodes.Element, nodes.Invisible, utils.NotPicklable):
+    #: The context.
+    ctx: Context
+    #: Template for rendering the context.
     template: Template
-    schema: Schema
+    #: Extra contexts, as a supplement to the context.
+    extra: dict[str, Context]
 
     inline: bool = False
     need_external_name: bool = False
     need_external_content: bool = False
 
+    # extra ctx: markup(before parsing) relation(just after ReferencesResolver)
+    # all: env config doctree
+
+    def __init__(
+        self, data: Context, tmpl: Template, rawsource='', *children, **attributes
+    ):
+        super().__init__(rawsource, *children, **attributes)
+        self.ctx = data
+        self.template = tmpl
+        self.extra = {}
+
     def render(self, caller: Caller, replace: bool = False) -> RenderedNode:
+        # Generate and save full extra context for later use.
+        _ExtraContextGenerator.full(caller, self)
+
         rendered = rendered_inline_node() if self.inline else rendered_node()
         rendered.update_all_atts(self)
+        rendered.source, rendered.line = self.source, self.line
 
         _caller = _Caller(caller)
-        # Resolve external name and content.
-        if not self.data.name and self.need_external_name:
-            if ns := self._resolve_external_name(_caller.parent_node):
-                self.data.name = ns.astext()
-                rendered.external_name = ns
-        if not self.data.content and self.need_external_content:
-            if ns := self._resolve_external_content():
-                self.data.content = '\n\n'.join([x.astext() for x in ns])
-                rendered.external_content = ns
 
-        try:
-            data = self.schema.parse(self.data)
-        except ValueError as e:
-            if isinstance(caller, SphinxDirective):
-                raise caller.error(str(e))
-            else:
-                raise e
-            # raise self._caller_exception_hanlder(caller, e)
-        else:
-            rendered.data = data
+        if isinstance(self.ctx, PendingData):
+            self._resolve_external(self.ctx.raw, _caller)
 
         rendered += self.template.render(
-            _caller.markup_parser,
-            data,
-            {
-                **extra_contexts.sphinx(caller),
-                **extra_contexts.doctree(self),
-                **extra_contexts.markup(self),
-            },
+            _caller.markup_parser, self.ctx, extra=self.extra
         )
-        # TODO: check tmpl schema line no
+
+        # Adopt the children (which may be system_messages) to the rendered.
+        rendered += self.children
+        self.clear()
 
         if replace:
             self.replace_self(rendered)
 
         return rendered
+
+    def _resolve_external(self, data: RawData, caller: _Caller) -> None:
+        if not data.name and self.need_external_name:
+            if ns := self._resolve_external_name(caller.parent_node):
+                data.name = ns.astext()
+        if not data.content and self.need_external_content:
+            if ns := self._resolve_external_content():
+                data.content = '\n\n'.join([x.astext() for x in ns])
 
     def _resolve_external_name(
         self, caller_parent: nodes.Element | None
@@ -177,6 +193,120 @@ class pending_node(BaseNode, nodes.Invisible, nodes.Element):
         return contnodes
 
 
+# ======================================
+# Extra context register and management.
+# ======================================
+
+class ContextGenerator(ABC): ...
+
+class FullPhaseContextGenerator(ContextGenerator):
+    @abstractmethod
+    def generate(self, caller: Caller, n: pending_node) -> Context: ...
+
+class ParsePhaseContextGenerator(ContextGenerator):
+    @abstractmethod
+    def generate(self, caller: ParseCaller, n: pending_node) -> Context: ...
+
+class TransformPhaseContextGenerator(ContextGenerator):
+    @abstractmethod
+    def generate(self, caller: TransformCaller, n: pending_node) -> Context: ...
+
+class ExtraContextRegistry:
+    names: set[str]
+    full: dict[str, FullPhaseContextGenerator]
+    parsing: dict[str, ParsePhaseContextGenerator]
+    parsed: dict[str, ParsePhaseContextGenerator]
+    post_transform: dict[str, TransformPhaseContextGenerator]
+
+    def __init__(self) -> None:
+        self.names = set()
+        self.full = {}
+        self.parsing= {}
+        self.parsed = {}
+        self.post_transform = {}
+
+    def _name_dedup(self, name: str) -> None:
+        if name in self.names:
+            raise ValueError(f'Context generator {name} already exists')
+        self.names.add(name)
+
+    def add_full_phase_context(self, name: str, ctxgen: FullPhaseContextGenerator):
+        self._name_dedup(name)
+        self.full['_'+name] = ctxgen
+        
+    def add_parsing_phase_context(self, name: str, ctxgen: ParsePhaseContextGenerator) -> None:
+        self._name_dedup(name)
+        self.parsing['_'+name] = ctxgen
+
+    def add_parsed(self, name: str, ctxgen: ParsePhaseContextGenerator) -> None:
+        self._name_dedup(name)
+        self.parsed['_'+name] = ctxgen
+
+    def add_transform_generator(self, name: str, ctxgen: TransformPhaseContextGenerator) -> None:
+        self._name_dedup(name)
+        self.post_transform['_'+name] = ctxgen
+
+
+EXTRACTX_REGISTRY = ExtraContextRegistry()
+
+class _ExtraContextGenerator:
+
+    @classmethod
+    def safe_generate(cls, name: str, gen: Callable[[], None], node: pending_node):
+        try:
+            # ctxgen.generate can be user-defined code, exception of any kind are possible.
+            gen()
+        except Exception:
+            reporter = utils.Reporter(f'Failed to generate extra context {name}:', '')
+            reporter.code(traceback.format_exc())
+            node += reporter
+
+    @classmethod
+    def full(cls, caller: Caller, n: pending_node) -> None:
+        for name, ctxgen in EXTRACTX_REGISTRY.full.items():
+            def gen():
+                n.extra[name] = ctxgen.generate(caller, n)
+            cls.safe_generate(name, gen, n)
+
+    @classmethod
+    def on_parsing(cls, caller: ParseCaller, n: pending_node) -> None:
+        for name, ctxgen in EXTRACTX_REGISTRY.parsing.items():
+            def gen():
+                n.extra[name] = ctxgen.generate(caller, n)
+            cls.safe_generate(name, gen, n)
+
+    @classmethod
+    def on_parsed(cls, caller: ParseCaller, n: pending_node) -> None:
+        for name, ctxgen in EXTRACTX_REGISTRY.parsed.items():
+            def gen():
+                n.extra[name] = ctxgen.generate(caller, n)
+            cls.safe_generate(name, gen, n)
+
+    @classmethod
+    def on_post_transform(cls, caller: TransformCaller, n: pending_node) -> None:
+        for name, ctxgen in EXTRACTX_REGISTRY.post_transform.items():
+            def gen():
+                n.extra[name] = ctxgen.generate(caller, n)
+            cls.safe_generate(name, gen, n)
+
+# ===============
+# Render workflow
+# ===============
+#
+# 1. Define data: BaseDataDefiner generates a pending_node, which contains:
+#
+#    - Context(Data), Extra contexts
+#    - Schema (for verifing Data)
+#    - Template
+#
+# 2. Render data: Some one (Caller) calls pending_node.render during the
+#
+#    1. On Phase.Parsing: Called by BaseDataDefineDirective and
+#       BaseDataDefineRole
+#    2. On Phase.Parsed: Called by _ParsedHook.
+#    3. On Phase.Resolving: Called by _ResolvingHook.
+
+
 class BaseDataDefiner(ABC):
     """
     A abstract class that owns :cls:`RawData` and support
@@ -189,19 +319,19 @@ class BaseDataDefiner(ABC):
     """Methods to be implemented."""
 
     @abstractmethod
+    def current_raw_data(self) -> RawData: ...
+
+    @abstractmethod
     def current_template(self) -> Template: ...
 
     @abstractmethod
     def current_schema(self) -> Schema: ...
 
-    @abstractmethod
-    def current_raw_data(self) -> RawData: ...
-
     """Methods to be overrided."""
 
     def process_raw_data(self, data: RawData) -> None: ...
 
-    def process_paresd_data(self, data: Data) -> None: ...
+    def process_paresd_data(self, data: ParsedData) -> None: ...
 
     def process_pending_node(self, n: pending_node) -> None: ...
 
@@ -210,33 +340,52 @@ class BaseDataDefiner(ABC):
     """Methods used internal."""
 
     @final
-    def build_pending_node(self) -> pending_node:
-        tmpl = self.current_template()
-        schema = self.current_schema()
-        data = self.current_raw_data()
+    def build_pending_node(self, ctx: Context, tmpl: Template) -> pending_node:
+        if isinstance(ctx, PendingData):
+            self.process_raw_data(ctx.raw)
 
-        self.process_raw_data(data)
+        pending = pending_node(ctx, tmpl)
 
-        pending = pending_node()
-        pending.data, pending.template, pending.schema = data, tmpl, schema
+        # Generate and save parsing extra context for later use.
+        _ExtraContextGenerator.on_parsing(cast(ParseCaller, self), pending)
+
         self.process_pending_node(pending)
-
         return pending
 
     @final
     def render_pending_node(self, pending: pending_node) -> RenderedNode:
-        rendered = pending.render(self)  # FIXME: type hint
+        caller = cast(Caller, self)
+        rendered = pending.render(caller)
         self.process_paresd_data(rendered.data)
         self.process_rendered_node(rendered)
 
         return rendered
+
+    @final
+    def render(self) -> list[nodes.Node]:
+        data = self.current_raw_data()
+        schema = self.current_schema()
+        tmpl = self.current_template()
+
+        pendings = []
+        ctx = PendingData(data, schema)
+        pendings.append(self.build_pending_node(ctx, tmpl))
+
+        ns = []
+        for n in pendings:
+            if n.template.phase != Phase.Parsing:
+                ns.append(n)
+            else:
+                ns.append(self.render_pending_node(n))
+
+        return ns
 
 
 class BaseDataDefineDirective(BaseDataDefiner, SphinxDirective):
     @override
     def current_raw_data(self) -> RawData:
         return RawData(
-            self.arguments[0] if self.arguments else None,
+            ' '.join(self.arguments) if self.arguments else None,
             self.options.copy(),
             '\n'.join(self.content) if self.has_content else None,
         )
@@ -248,11 +397,7 @@ class BaseDataDefineDirective(BaseDataDefiner, SphinxDirective):
 
     @override
     def run(self) -> list[nodes.Node]:
-        pending = self.build_pending_node()
-        if pending.template.phase != Phase.Parsing:
-            return [pending]
-        rendered = self.render_pending_node(pending)
-        return [rendered]
+        return self.render()
 
 
 class BaseDataDefineRole(BaseDataDefiner, SphinxRole):
@@ -267,11 +412,7 @@ class BaseDataDefineRole(BaseDataDefiner, SphinxRole):
 
     @override
     def run(self) -> tuple[list[nodes.Node], list[nodes.system_message]]:
-        pending = self.build_pending_node()
-        if pending.template.phase != Phase.Parsing:
-            return [pending], []
-        rendered = self.render_pending_node(pending)
-        return [rendered], []
+        return self.render(), []
 
 
 class StrictDataDefineDirective(BaseDataDefineDirective):
@@ -336,6 +477,9 @@ class _ParsedHook(SphinxDirective):
         orig_sysmsg = self.state_machine.reporter.system_message
 
         for pending in self.state.document.findall(pending_node):
+            # Generate and save parsed extra context for later use.
+            _ExtraContextGenerator.on_parsed(self, pending)
+
             if pending.template.phase != Phase.Parsed:
                 continue
 
@@ -344,7 +488,6 @@ class _ParsedHook(SphinxDirective):
             def fix_lineno(level, message, *children, **kwargs):
                 kwargs['line'] = pending.line
                 return orig_sysmsg(level, message, *children, **kwargs)
-
             self.state_machine.reporter.system_message = fix_lineno
 
             pending.render(self, replace=True)
@@ -368,13 +511,16 @@ def _insert_parsed_hook(app, docname, content):
 
 class _ResolvingHook(SphinxTransform):
     # After resolving pending_xref.
-    default_priority = (ReferencesResolver.default_priority or 10) + 1
+    default_priority = (ReferencesResolver.default_priority or 10) + 5
 
     def apply(self, **kwargs):
         logger.warning(f'running resolving hook for doc {self.env.docname}...')
 
         for pending in self.document.findall(pending_node):
-            if pending.template.phase != Phase.Resolving:
+            # Generate and save parsed extra context for later use.
+            _ExtraContextGenerator.on_post_transform(self, pending)
+
+            if pending.template.phase != Phase.PostTranform:
                 # TODO: deal with ValueError
                 continue
 

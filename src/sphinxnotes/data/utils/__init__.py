@@ -1,4 +1,6 @@
-from typing import TypeVar, cast, Literal
+from __future__ import annotations
+from typing import TYPE_CHECKING, TypeVar, cast
+import pickle
 
 from docutils import nodes
 from docutils.frontend import get_default_settings
@@ -6,7 +8,10 @@ from docutils.parsers.rst import Parser
 from docutils.parsers.rst.states import Struct
 from docutils.utils import new_document
 from sphinx.util import logging
-from sphinx.util.docutils import SphinxRole
+
+if TYPE_CHECKING:
+    from typing import Literal, Iterable
+    from sphinx.util.docutils import SphinxRole
 
 logger = logging.getLogger(__name__)
 
@@ -78,21 +83,49 @@ def find_titular_node_upward(node: nodes.Element | None) -> nodes.Element | None
 
 
 class Reporter(nodes.system_message):
+    level: str
+
     def __init__(
         self,
         title: str,
         level: Literal['DEBUG', 'INFO', 'WARNING', 'ERROR'] = 'DEBUG',
     ) -> None:
         super().__init__(title + ':', type=level, level=2, source='')
-        # logger.warning(f'creating a new report: {title}')
+        self.log(title)
 
-    def append_text(self, text: str) -> None:
-        self += nodes.paragraph(text, text)
-        # logger.warning(f'report append text: {text}')
+    def report(self, node: nodes.Node) -> None:
+        self += node
+        self.log(f'report: {node.astext()}')
 
-    def append_code(self, code: str, lang: str | None = None) -> None:
+    def log(self, msg: str) -> None:
+        if self['type'] in 'ERROR':
+            logger.error(msg)
+        elif self['type'] in 'WARNING':
+            logger.warning(msg)
+
+    def text(self, text: str) -> None:
+        self.report(nodes.paragraph(text, text))
+
+    def code(self, code: str, lang: str | None = None) -> None:
         blk = nodes.literal_block(code, code)
         if lang:
             blk['language'] = lang
-        self += blk
-        # logger.warning(f'report append code: {code}')
+        self.report(blk)
+
+    def list(self, lines: Iterable[str]) -> None:
+        bullet_list = nodes.bullet_list(bullet='*')
+
+        for line in lines:
+            list_item = nodes.list_item()
+            para = nodes.paragraph()
+            para += nodes.Text(line)
+            list_item += para
+            bullet_list += list_item
+
+        self.report(bullet_list)
+
+
+class NotPicklable:
+    def __reduce_ex__(self, protocol):
+        # Prevent pickling explicitly
+        raise pickle.PicklingError('This object is not picklable')

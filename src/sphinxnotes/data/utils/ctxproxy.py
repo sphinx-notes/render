@@ -145,5 +145,5 @@ SPECIFIC_TYPE_REGISTRY: dict[type, type[Proxy]] = {
 }
 
 
-def proxy(v: Any) -> Proxy | None:
-    return Proxy._wrap(v) if v is not None else None
+def proxy(v: Any) -> Proxy:
+    return Proxy._wrap(v)
