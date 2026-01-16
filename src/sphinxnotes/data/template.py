@@ -1,19 +1,25 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from pprint import pformat
-from typing import Any, Callable
+from typing import TYPE_CHECKING
 from enum import Enum
 
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.util import logging
-from sphinx.application import Sphinx
-from sphinx.builders import Builder
 from jinja2.sandbox import SandboxedEnvironment
 from jinja2 import StrictUndefined, DebugUndefined
 
 from .data import Data
 from .utils import Reporter
+from .utils.ctxproxy import Proxy
+
+if TYPE_CHECKING:
+    from typing import Any, Callable
+    from .utils.ctxproxy import Proxy
+    from sphinx.builders import Builder
+    from sphinx.application import Sphinx
+
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +42,7 @@ class Phase(Enum):
         return cls[choice.title()]
 
 
-type Context = Data | dict[str, Any]
+type Context = Data | dict[str, Any] | Proxy
 
 
 @dataclass
@@ -58,7 +64,7 @@ class Template(object):
                 continue
             finalctx[name] = self._resolve(ectx)
 
-        text = self._render(mainctx)
+        text = self._render(finalctx)
         ns = parser(text)
 
         if self.debug:
@@ -86,10 +92,12 @@ class Template(object):
 
         return ns
 
-    def _resolve(self, ctx: Context) -> dict[str, Any]:
+    def _resolve(self, ctx: Context) -> dict[str, Any] | Proxy:
         if isinstance(ctx, Data):
             return ctx.as_context()
         elif isinstance(ctx, dict):
+            return ctx
+        if isinstance(ctx, Proxy):
             return ctx
 
     def _render(self, ctx: dict[str, Any]) -> str:

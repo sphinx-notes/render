@@ -251,7 +251,7 @@ class ParsedData:
 class PendingData(Data):
     raw: RawData
     schema: Schema
-    _data: ParsedData | None = dataclass_field(init=False)
+    _data: ParsedData | None = dataclass_field(init=False, default=None)
 
     def parse(self) -> ParsedData:
         if self._data:

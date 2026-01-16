@@ -83,16 +83,25 @@ def find_titular_node_upward(node: nodes.Element | None) -> nodes.Element | None
 
 
 class Reporter(nodes.system_message):
+    level: str
+
     def __init__(
         self,
         title: str,
         level: Literal['DEBUG', 'INFO', 'WARNING', 'ERROR'] = 'DEBUG',
     ) -> None:
         super().__init__(title + ':', type=level, level=2, source='')
+        self.log(title)
 
     def report(self, node: nodes.Node) -> None:
         self += node
-        # TODO: print log here
+        self.log(f'report: {node.astext()}')
+
+    def log(self, msg: str) -> None:
+        if self['type'] in 'ERROR':
+            logger.error(msg)
+        elif self['type'] in 'WARNING':
+            logger.warning(msg)
 
     def text(self, text: str) -> None:
         self.report(nodes.paragraph(text, text))

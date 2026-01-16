@@ -36,6 +36,23 @@ Introduction
 
    __ https://sphinx.silverrainz.me/any/
 
+.. template::
+   :on: parsed
+   :debug:
+
+   I am {{ name }}. I have the following attributes:
+
+   {% for k, v in attrs.items() %}
+   :{{ k }}: {{ v }}
+   {%- endfor %}
+
+   This document "_doc.title" has {{ _doc.sections | length }} section(s).
+
+   {{ content }} 
+
+.. data:: Shengyu Zhang
+   :github: SilverRainZ
+   :homepage: https://silverrainz.me/
 
 .. INTRODUCTION END
 

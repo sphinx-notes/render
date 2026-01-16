@@ -197,46 +197,54 @@ class pending_node(nodes.Element, nodes.Invisible, utils.NotPicklable):
 # Extra context register and management.
 # ======================================
 
-class ContextGenerator(ABC):
-    name: str
+class ContextGenerator(ABC): ...
 
 class FullPhaseContextGenerator(ContextGenerator):
     @abstractmethod
-    def generate(self, caller: Caller, node: pending_node) -> dict[str, Any]: ...
+    def generate(self, caller: Caller, n: pending_node) -> Context: ...
 
 class ParsePhaseContextGenerator(ContextGenerator):
     @abstractmethod
-    def generate(self, caller: ParseCaller, node: pending_node) -> dict[str, Any]: ...
+    def generate(self, caller: ParseCaller, n: pending_node) -> Context: ...
 
 class TransformPhaseContextGenerator(ContextGenerator):
     @abstractmethod
-    def generate(self, caller: TransformCaller, node: pending_node) -> dict[str, Any]: ...
+    def generate(self, caller: TransformCaller, n: pending_node) -> Context: ...
 
 class ExtraContextRegistry:
+    names: set[str]
     full: dict[str, FullPhaseContextGenerator]
     parsing: dict[str, ParsePhaseContextGenerator]
     parsed: dict[str, ParsePhaseContextGenerator]
     post_transform: dict[str, TransformPhaseContextGenerator]
 
     def __init__(self) -> None:
+        self.names = set()
         self.full = {}
-        self.parsing_ctx = {}
+        self.parsing= {}
         self.parsed = {}
         self.post_transform = {}
 
-    def add_full_phase_context(self, ctxgen: FullPhaseContextGenerator):
-        self.full['_'+ctxgen.name] = ctxgen
-        
-    def add_parse_phase_context(
-        self, phase: Literal[Phase.Parsing, Phase.Parsed], ctxgen: ParsePhaseContextGenerator,
-    ) -> None:
-        if phase == Phase.Parsing:
-            self.parsing['_'+ctxgen.name] = ctxgen
-        else:
-            self.parsed['_'+ctxgen.name] = ctxgen
+    def _name_dedup(self, name: str) -> None:
+        if name in self.names:
+            raise ValueError(f'Context generator {name} already exists')
+        self.names.add(name)
 
-    def add_transform_generator(self, ctxgen: TransformPhaseContextGenerator) -> None:
-            self.post_transform['_'+ctxgen.name] = ctxgen
+    def add_full_phase_context(self, name: str, ctxgen: FullPhaseContextGenerator):
+        self._name_dedup(name)
+        self.full['_'+name] = ctxgen
+        
+    def add_parsing_phase_context(self, name: str, ctxgen: ParsePhaseContextGenerator) -> None:
+        self._name_dedup(name)
+        self.parsing['_'+name] = ctxgen
+
+    def add_parsed(self, name: str, ctxgen: ParsePhaseContextGenerator) -> None:
+        self._name_dedup(name)
+        self.parsed['_'+name] = ctxgen
+
+    def add_transform_generator(self, name: str, ctxgen: TransformPhaseContextGenerator) -> None:
+        self._name_dedup(name)
+        self.post_transform['_'+name] = ctxgen
 
 
 EXTRACTX_REGISTRY = ExtraContextRegistry()
@@ -246,49 +254,40 @@ class _ExtraContextGenerator:
     @classmethod
     def safe_generate(cls, name: str, gen: Callable[[], None], node: pending_node):
         try:
-            # ctxgen.generate can be user-defined code,
-            # exception of any kind are possible.
+            # ctxgen.generate can be user-defined code, exception of any kind are possible.
             gen()
         except Exception:
-            reporter = utils.Reporter(f'Failed to generate extra context {name}:')
+            reporter = utils.Reporter(f'Failed to generate extra context {name}:', '')
             reporter.code(traceback.format_exc())
             node += reporter
 
     @classmethod
     def full(cls, caller: Caller, n: pending_node) -> None:
-        ctx = {}
         for name, ctxgen in EXTRACTX_REGISTRY.full.items():
             def gen():
-                ctx[name] = ctxgen.generate(caller, n),
+                n.extra[name] = ctxgen.generate(caller, n)
             cls.safe_generate(name, gen, n)
-        n.extra.append(ctx)
 
     @classmethod
     def on_parsing(cls, caller: ParseCaller, n: pending_node) -> None:
-        ctx = {}
         for name, ctxgen in EXTRACTX_REGISTRY.parsing.items():
             def gen():
-                ctx[name] = ctxgen.generate(caller, n),
+                n.extra[name] = ctxgen.generate(caller, n)
             cls.safe_generate(name, gen, n)
-        n.extra.append(ctx)
 
     @classmethod
     def on_parsed(cls, caller: ParseCaller, n: pending_node) -> None:
-        ctx = {}
         for name, ctxgen in EXTRACTX_REGISTRY.parsed.items():
             def gen():
-                ctx[name] = ctxgen.generate(caller, n),
+                n.extra[name] = ctxgen.generate(caller, n)
             cls.safe_generate(name, gen, n)
-        n.extra.append(ctx)
 
     @classmethod
     def on_post_transform(cls, caller: TransformCaller, n: pending_node) -> None:
-        ctx = {}
         for name, ctxgen in EXTRACTX_REGISTRY.post_transform.items():
             def gen():
-                ctx[name] = ctxgen.generate(caller, n),
+                n.extra[name] = ctxgen.generate(caller, n)
             cls.safe_generate(name, gen, n)
-        n.extra.append(ctx)
 
 # ===============
 # Render workflow

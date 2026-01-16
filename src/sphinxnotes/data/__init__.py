@@ -38,6 +38,7 @@ from .render import (
     EXTRACTX_REGISTRY,
 )
 from .config import Config
+from . import extractx
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
@@ -84,7 +85,6 @@ class Registry:
 
 
 REGISTRY = Registry()
-
 
 def setup(app: Sphinx):
     meta.pre_setup(app)
