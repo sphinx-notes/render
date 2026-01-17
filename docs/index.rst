@@ -46,7 +46,7 @@ Introduction
    :{{ k }}: {{ v }}
    {%- endfor %}
 
-   This document "_doc.title" has {{ _doc.sections | length }} section(s).
+   This document "{{ _doc.title }}" has {{ _doc.sections | length }} section(s).
 
    {{ content }} 
 

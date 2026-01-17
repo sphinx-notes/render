@@ -33,10 +33,10 @@ from .render import (
     BaseDataDefiner,
     BaseDataDefineRole,
     BaseDataDefineDirective,
-    StrictDataDefineDirective,
     ExtraContextRegistry,
     EXTRACTX_REGISTRY,
 )
+from .derive import StrictDataDefineDirective
 from .config import Config
 from . import extractx
 

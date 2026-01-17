@@ -93,6 +93,9 @@ class Reporter(nodes.system_message):
         super().__init__(title + ':', type=level, level=2, source='')
         self.log(title)
 
+    def empty(self) -> bool:
+        return len(self.children) > 0
+
     def report(self, node: nodes.Node) -> None:
         self += node
         self.log(f'report: {node.astext()}')

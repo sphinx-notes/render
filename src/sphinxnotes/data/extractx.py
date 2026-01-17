@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import override
+from typing import TYPE_CHECKING, override
 
 from sphinx.util.docutils import SphinxDirective, SphinxRole
 from sphinx.transforms import SphinxTransform
@@ -9,17 +9,17 @@ from .utils.ctxproxy import proxy
 from .render import (
     EXTRACTX_REGISTRY,
     ParsePhaseContextGenerator,
-    FullPhaseContextGenerator,
+    RenderPhaseContextGenerator,
     ParseCaller,
     Caller,
-    pending_node,
 )
-from .template import Context
 
+if TYPE_CHECKING:
+    from typing import Any
 
 class MarkupContextGenerator(ParsePhaseContextGenerator):
     @override
-    def generate(self, caller: ParseCaller, n: pending_node) -> Context:
+    def generate(self, caller: ParseCaller) -> Any:
         isdir = isinstance(caller, SphinxDirective)
         return {
             'type': 'directive' if isdir else 'role',
@@ -29,9 +29,9 @@ class MarkupContextGenerator(ParsePhaseContextGenerator):
         }
 
 
-class DocContextGenerator(FullPhaseContextGenerator):
+class DocContextGenerator(RenderPhaseContextGenerator):
     @override
-    def generate(self, caller: Caller, n: pending_node) -> Context:
+    def generate(self, caller: Caller) -> Any:
         if isinstance(caller, SphinxDirective):
             return proxy(caller.state.document)
         elif isinstance(caller, SphinxRole):
@@ -42,12 +42,10 @@ class DocContextGenerator(FullPhaseContextGenerator):
             assert False
 
 
-class SectionContextGenerator(FullPhaseContextGenerator):
+class SectionContextGenerator(ParsePhaseContextGenerator):
     @override
-    def generate(self, caller: Caller, n: pending_node) -> Context:
-        if n.parent:
-            return proxy(find_current_section(n.parent))
-        elif isinstance(caller, SphinxDirective):
+    def generate(self, caller: ParseCaller) -> Any:
+        if isinstance(caller, SphinxDirective):
             return proxy(find_current_section(caller.state.parent))
         elif isinstance(caller, SphinxRole):
             return proxy(caller.inliner.parent)
@@ -55,20 +53,20 @@ class SectionContextGenerator(FullPhaseContextGenerator):
             assert False
 
 
-class SphinxEnvContextGenerator(FullPhaseContextGenerator):
+class SphinxEnvContextGenerator(RenderPhaseContextGenerator):
     @override
-    def generate(self, caller: Caller, n: pending_node) -> Context:
+    def generate(self, caller: Caller) -> Any:
         return proxy(caller.env)
 
 
-class SphinxConfigContextGenerator(FullPhaseContextGenerator):
+class SphinxConfigContextGenerator(RenderPhaseContextGenerator):
     @override
-    def generate(self, caller: Caller, n: pending_node) -> Context:
+    def generate(self, caller: Caller) -> Any:
         return proxy(caller.config)
 
 
-EXTRACTX_REGISTRY.add_parsing_phase_context('markup', MarkupContextGenerator())
-EXTRACTX_REGISTRY.add_full_phase_context('doc', DocContextGenerator())
-EXTRACTX_REGISTRY.add_full_phase_context('section', SectionContextGenerator())
-EXTRACTX_REGISTRY.add_full_phase_context('env', SphinxEnvContextGenerator())
-EXTRACTX_REGISTRY.add_full_phase_context('config', SphinxConfigContextGenerator())
+EXTRACTX_REGISTRY.add_parsing('markup', MarkupContextGenerator())
+EXTRACTX_REGISTRY.add_parsing('section', SectionContextGenerator())
+EXTRACTX_REGISTRY.add_render('doc', DocContextGenerator())
+EXTRACTX_REGISTRY.add_render('env', SphinxEnvContextGenerator())
+EXTRACTX_REGISTRY.add_render('config', SphinxConfigContextGenerator())

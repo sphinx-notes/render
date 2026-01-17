@@ -1,6 +1,5 @@
 from __future__ import annotations
-from dataclasses import dataclass, field as dataclass_field
-from os import wait
+from dataclasses import dataclass
 from pprint import pformat
 from typing import TYPE_CHECKING
 from enum import Enum
@@ -11,7 +10,7 @@ from sphinx.util import logging
 from jinja2.sandbox import SandboxedEnvironment
 from jinja2 import StrictUndefined, DebugUndefined
 
-from .data import Data
+from .data import ParsedData
 from .utils import Reporter
 
 if TYPE_CHECKING:
@@ -40,30 +39,46 @@ class Phase(Enum):
         return cls[choice.title()]
 
 
-type Context = Data | dict[str, Any]
-type ExtraContext = dict[str, Any]
-
-
 @dataclass
-class Template(object):
+class Template:
     text: str
     phase: Phase
     debug: bool
 
-    def render(self, parser: MarkupParser, ctx: dict[str, Any],
+    def render(self, parser: MarkupParser,
+               data: ParsedData | dict[str, Any],
                extra: dict[str, Any] = {}) -> list[nodes.Node]:
-        finalctx = self._merge_ctx(ctx)
-        text = self._render(finalctx)
+
+        # Main context to dic.
+        if isinstance(data, ParsedData):
+            ctx = data.asdict()
+        elif isinstance(data, dict):
+            ctx = data.copy()
+        else:
+            assert False
+
+        # Merge extra context and main context.
+        conflicts = set()
+        for name, e in extra.items():
+            if name not in ctx: 
+                ctx[name] = e
+            else:
+                conflicts.add(name)
+
+        text = self._render(ctx)
         ns = parser(text)
 
         if self.debug:
             reporter = Reporter('Template debug report')
 
-            reporter.text('Main context:')
-            reporter.code(pformat(ctx.main), lang='python')
+            reporter.text('Data:')
+            reporter.code(pformat(data), lang='python')
 
-            reporter.text('Extra context keys:')
-            reporter.code(pformat(ctx.extra.keys()), lang='python')
+            reporter.text('Extra (just key):')
+            reporter.code(pformat(list(extra.keys())), lang='python')
+
+            reporter.text('Conflict keys:')
+            reporter.code(pformat(list(conflicts)), lang='python')
 
             reporter.text(f'Template (phase: {self.phase}, debug: {self.debug}):')
             reporter.code(self.text, lang='jinja')
@@ -74,22 +89,6 @@ class Template(object):
             ns.append(reporter)
 
         return ns
-
-
-    def _merge_ctx(self, ctx: dict[str, Any], extra: dict[str, Any]) -> dict[str, Any]:
-        if isinstance(ctx.main, Data):
-            finalctx = ctx.main.asdict()
-        elif isinstance(ctx, dict):
-            finalctx = ctx.main.copy()
-        else:
-            assert False
-
-        for name, ectx in ctx.extra.items():
-            if name in finalctx:
-                continue
-            finalctx[name] = ectx
-
-        return finalctx
 
 
     def _render(self, ctx: dict[str, Any]) -> str:

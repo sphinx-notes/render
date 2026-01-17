@@ -13,7 +13,8 @@ from typing import TYPE_CHECKING, override
 import re
 from dataclasses import dataclass, asdict, field as dataclass_field
 from ast import literal_eval
-from abc import ABC, abstractmethod
+
+from .utils import Unpicklable
 
 if TYPE_CHECKING:
     from typing import Any, Callable, Generator, Self, Literal
@@ -209,18 +210,19 @@ REGISTRY = Registry()
 # Data, Field and Schema
 # ======================
 
-
-class Data(ABC):
-    @abstractmethod
-    def asdict(self) -> dict[str, Any]: ...
-
-
 @dataclass
 class RawData:
     name: str | None
     attrs: dict[str, str]
     content: str | None
 
+@dataclass
+class PendingData(Unpicklable):
+    raw: RawData
+    schema: Schema
+
+    def parse(self) -> ParsedData:
+        return self.schema.parse(self.raw)
 
 @dataclass
 class ParsedData:
@@ -245,19 +247,6 @@ class ParsedData:
             if k not in ctx:
                 ctx[k] = v
         return ctx
-
-
-@dataclass
-class PendingData(Data):
-    raw: RawData
-    schema: Schema
-
-    def parse(self) -> ParsedData:
-        return self.schema.parse(self.raw)
-
-    @override
-    def asdict(self) -> dict[str, Any]:
-        return self.parse().asdict()
 
 
 @dataclass
