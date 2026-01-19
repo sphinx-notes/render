@@ -138,6 +138,9 @@ class Report(nodes.system_message):
     def is_error(self) -> bool:
         return self.level == 'ERROR'
 
+    def problematic(self, doc: nodes.document, parent: nodes.Element) -> nodes.problematic:
+        return problematic(doc, parent, self)
+
 
 class Unpicklable:
     """
@@ -148,3 +151,11 @@ class Unpicklable:
     def __reduce_ex__(self, protocol):
         # Prevent pickling explicitly
         raise pickle.PicklingError('This object is unpicklable')
+
+def problematic(doc: nodes.document, parent: nodes.Element, msg: nodes.system_message) -> nodes.problematic:
+    """See also :meth:`docutils.parsers.rst.Inliner.problematic`"""
+    msgid = doc.set_id(msg, parent)
+    problematic = nodes.problematic('rawsource', 'text', refid=msgid)
+    prbid = doc.set_id(problematic)
+    msg.add_backref(prbid)
+    return problematic

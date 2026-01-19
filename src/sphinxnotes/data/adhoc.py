@@ -22,7 +22,7 @@ from docutils.parsers.rst import directives
 from sphinx.util.docutils import SphinxDirective
 
 from .data import Field, Schema
-from .template import Template, Phase
+from .render.template import Template
 from .render import BaseDataDefineDirective
 from .utils.freestyle import FreeStyleDirective, FreeStyleOptionSpec
 from . import preset
@@ -35,9 +35,14 @@ TEMPLATE_KEY = 'sphinxnotes-data:template'
 SCHEMA_KEY = 'sphinxnotes-data:schema'
 
 
+def phase_option_spec(arg):
+    choice = directives.choice(arg, [x.value for x in Phase])
+    return Phase[choice.title()]
+
+
 class TemplateDefineDirective(SphinxDirective):
     option_spec = {
-        'on': Phase.option_spec,
+        'on': phase_option_spec,
         'debug': directives.flag,
     }
     has_content = True

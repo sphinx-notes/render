@@ -26,17 +26,15 @@ from .data import (
 from .template import Phase, Template
 from .render import (
     Host,
-    pending_node,
-    rendered_node,
-    BaseDataDefiner,
+    pending_data,
+    rendered_data,
     BaseDataDefineRole,
     BaseDataDefineDirective,
     StrictDataDefineDirective,
     ExtraContextRegistry,
-    EXTRACTX_REGISTRY,
+    ExtraContextGenerator,
 )
 from .config import Config
-from . import extractx
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
@@ -56,12 +54,10 @@ __all__ = [
     'Phase',
     'Template',
     'Host',
-    'pending_node',
-    'rendered_node',
-    'rendered_node',
-    'BaseDataDefiner',
+    'pending_data',
+    'rendered_data',
+    'rendered_data',
     'BaseDataDefineRole',
-    'BaseDataDefineDirective',
     'BaseDataDefineDirective',
     'StrictDataDefineDirective',
 ]
@@ -77,8 +73,8 @@ class Registry:
         return DATA_REGISTRY
 
     @property
-    def extractx(cls) -> ExtraContextRegistry:
-        return EXTRACTX_REGISTRY
+    def extra_context(cls) -> ExtraContextRegistry:
+        return ExtraContextGenerator.registry
 
 
 REGISTRY = Registry()

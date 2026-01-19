@@ -18,6 +18,7 @@ from .render import (
 if TYPE_CHECKING:
     from typing import Any
 
+
 @dataclass
 class _Host:
     v: Host
