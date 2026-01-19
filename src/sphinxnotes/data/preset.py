@@ -9,7 +9,7 @@ Preset templates and schemas.
 """
 
 from .data import Schema, Field
-from .template import Template, Phase
+from .render.template import Template
 from .config import Config
 
 
@@ -20,10 +20,7 @@ class Directive:
 
     @staticmethod
     def template() -> Template:
-        return Template(
-            debug=Config.template_debug,
-            phase=Phase.Parsing,
-            text=""".. note::
+        return Template(""".. note::
 
    This is a default template for rendering the data your deinfed.
    Please create your own template using the :rst:dir:`data:tmpl` directive.
@@ -36,7 +33,7 @@ class Directive:
     ::
 
         {{ content or 'None' }}""",
-        )
+                        )
 
 
 class Role:
@@ -46,10 +43,6 @@ class Role:
 
     @staticmethod
     def template() -> Template:
-        return Template(
-            debug=Config.template_debug,
-            phase=Phase.Parsing,
-            text="""``{{ content or 'None' }}``
+        return Template("""``{{ content or 'None' }}``
 :abbr:`ⁱⁿᶠᵒ (This is a default template for rendering the data your deinfed
-Please create your own template using the data.tmpl directive.)`""",
-        )
+Please create your own template using the data.tmpl directive.)`""")
