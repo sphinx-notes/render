@@ -104,7 +104,6 @@ class Report(nodes.system_message):
         self, title: str, level: Level = 'DEBUG', *children, **attributes
     ) -> None:
         super().__init__(title + ':', type=level, level=2, *children, **attributes)
-        self.log(title)
 
     def empty(self) -> bool:
         # title is the only children
@@ -142,8 +141,8 @@ class Report(nodes.system_message):
         self.node(bullet_list)
 
     def excption(self) -> None:
-        self.text('Exception:')
-        self.code(traceback.format_exc())
+        # https://pygments.org/docs/lexers/#pygments.lexers.python.PythonTracebackLexer
+        self.code(traceback.format_exc(), lang='pytb')
 
     def is_error(self) -> bool:
         return self.level == 'ERROR'

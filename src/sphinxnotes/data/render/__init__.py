@@ -42,6 +42,8 @@ def render(host: Host, pending: pending_data) -> rendered_data:
     rendered.update_all_atts(pending)
     # Copy source and line (which are not included in update_all_atts).
     rendered.source, rendered.line = pending.source, pending.line
+    # Copy the pending's children to the rendered.
+    rendered[:0] = pending.children  # TODO: do not modify?
 
     report = Report(
         'Render Debug Report', 'DEBUG', source=pending.source, line=pending.line
@@ -120,13 +122,6 @@ def replace(host: Host, pending: pending_data, rendered: rendered_data) -> None:
     """Replace the pending data node with rendered data node."""
 
     assert pending.parent
-
-    # Clear all empty reports.
-    Reporter(pending).clear_empty()
-    # Adopt the pending's children to the rendered.
-    rendered[:0] = pending.children
-    # Clear all children.
-    pending.clear()
 
     if pending.inline:
         doc = HostWrapper(host).doctree
@@ -222,7 +217,7 @@ class BaseDataDefiner(ABC):
         host = cast(Host, self)
 
         # Generate and save parsing phase extra context for later use.
-        ExtraContextGenerator(pending).on_rendering(host)
+        ExtraContextGenerator(pending).on_anytime()
 
         rendered = render(host, pending)
 
@@ -318,10 +313,10 @@ class _ParsedHook(SphinxDirective):
             self.state_machine.reporter.system_message = fix_lineno
 
             # Generate and save render phase extra contexts for later use.
-            ExtraContextGenerator(pending).on_rendering(self)
+            ExtraContextGenerator(pending).on_anytime()
 
             rendered = render(self, pending)
-            replace(pending, rendered)
+            replace(self, pending, rendered)
 
         # Restore system_message method.
         self.state_machine.reporter.system_message = orig_sysmsg
@@ -409,7 +404,7 @@ class _ResolvingHook(SphinxPostTransform):
                 continue
 
             # Generate and save render phase extra contexts for later use.
-            ExtraContextGenerator(pending).on_rendering(self)
+            ExtraContextGenerator(pending).on_anytime()
 
             rendered = render(self, pending)
             replace(self, pending, rendered)
@@ -422,3 +417,7 @@ def setup(app: Sphinx) -> None:
 
     # Hook for Phase.Resolving.
     app.add_post_transform(_ResolvingHook)
+
+    from . import extractx
+
+    extractx.setup(app)

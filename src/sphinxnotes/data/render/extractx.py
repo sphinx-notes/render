@@ -6,10 +6,11 @@ from sphinx.util.docutils import SphinxDirective
 
 from ..utils import find_current_section
 from ..utils.ctxproxy import proxy
-from .renderer import Host, ParseHost
 
 if TYPE_CHECKING:
     from typing import Any, Callable, ClassVar
+    from sphinx.application import Sphinx
+    from .renderer import ParseHost
 
 
 from ..utils import Report
@@ -18,23 +19,17 @@ from .renderer import TransformHost, HostWrapper
 from .reporter import Reporter
 
 
-class ExtraContxt(ABC):
-    """Base class for extra context generator in different render phase."""
-
-    ...
-
-
-class RenderPhaseExtraContext(ExtraContxt):
+class GlobalExtraContxt(ABC):
     @abstractmethod
-    def generate(self, host: Host) -> Any: ...
+    def generate(self) -> Any: ...
 
 
-class ParsePhaseExtraContext(ExtraContxt):
+class ParsePhaseExtraContext(ABC):
     @abstractmethod
     def generate(self, host: ParseHost) -> Any: ...
 
 
-class TransformPhaseExtraContext(ExtraContxt):
+class TransformPhaseExtraContext(ABC):
     @abstractmethod
     def generate(self, host: TransformHost) -> Any: ...
 
@@ -49,20 +44,19 @@ class ExtraContextRegistry:
     parsing: dict[str, ParsePhaseExtraContext]
     parsed: dict[str, ParsePhaseExtraContext]
     post_transform: dict[str, TransformPhaseExtraContext]
-    render: dict[str, RenderPhaseExtraContext]
+    global_: dict[str, GlobalExtraContxt]
 
     def __init__(self) -> None:
         self.names = set()
         self.parsing = {}
         self.parsed = {}
         self.post_transform = {}
-        self.render = {}
+        self.global_ = {}
 
-        self.add_parsing_phase_extra_context('markup', _MarkupExtraContext())
-        self.add_parsing_phase_extra_context('section', _SectionExtraContext())
-        self.add_render_phase_extra_context('doc', _DocExtraContext())
-        self.add_render_phase_extra_context('env', _SphinxEnvExtraContext())
-        self.add_render_phase_extra_context('config', _SphinxConfigExtraContext())
+        self.add_global_context('sphinx', _SphinxExtraContext())
+        self.add_parsing_phase_context('markup', _MarkupExtraContext())
+        self.add_parsing_phase_context('section', _SectionExtraContext())
+        self.add_parsing_phase_context('doc', _DocExtraContext())
 
     def _name_dedup(self, name: str) -> None:
         # TODO: allow dup
@@ -70,29 +64,27 @@ class ExtraContextRegistry:
             raise ValueError(f'Context generator {name} already exists')
         self.names.add(name)
 
-    def add_parsing_phase_extra_context(
+    def add_parsing_phase_context(
         self, name: str, ctxgen: ParsePhaseExtraContext
     ) -> None:
         self._name_dedup(name)
         self.parsing['_' + name] = ctxgen
 
-    def add_parsed_phase_extra_context(
+    def add_parsed_phase_context(
         self, name: str, ctxgen: ParsePhaseExtraContext
     ) -> None:
         self._name_dedup(name)
         self.parsed['_' + name] = ctxgen
 
-    def add_post_transform_phase_extra_context(
+    def add_post_transform_phase_context(
         self, name: str, ctxgen: TransformPhaseExtraContext
     ) -> None:
         self._name_dedup(name)
         self.post_transform['_' + name] = ctxgen
 
-    def add_render_phase_extra_context(
-        self, name: str, ctxgen: RenderPhaseExtraContext
-    ):
+    def add_global_context(self, name: str, ctxgen: GlobalExtraContxt):
         self._name_dedup(name)
-        self.render['_' + name] = ctxgen
+        self.global_['_' + name] = ctxgen
 
 
 # ===================================
@@ -112,9 +104,9 @@ class _MarkupExtraContext(ParsePhaseExtraContext):
         }
 
 
-class _DocExtraContext(RenderPhaseExtraContext):
+class _DocExtraContext(ParsePhaseExtraContext):
     @override
-    def generate(self, host: Host) -> Any:
+    def generate(self, host: ParseHost) -> Any:
         return proxy(HostWrapper(host).doctree)
 
 
@@ -125,16 +117,12 @@ class _SectionExtraContext(ParsePhaseExtraContext):
         return proxy(find_current_section(parent))
 
 
-class _SphinxEnvExtraContext(RenderPhaseExtraContext):
-    @override
-    def generate(self, host: Host) -> Any:
-        return proxy(host.env)
+class _SphinxExtraContext(GlobalExtraContxt):
+    app: ClassVar[Sphinx]
 
-
-class _SphinxConfigExtraContext(RenderPhaseExtraContext):
     @override
-    def generate(self, host: Host) -> Any:
-        return proxy(host.config)
+    def generate(self) -> Any:
+        return proxy(self.app)
 
 
 # ========================
@@ -150,12 +138,17 @@ class ExtraContextGenerator:
 
     def __init__(self, node: pending_data) -> None:
         self.node = node
-        self.report = Report('Extra Context Generation Report', 'ERROR')
+        self.report = Report(
+            'Extra Context Generation Report',
+            'ERROR',
+            source=node.source,
+            line=node.line,
+        )
         Reporter(node).append(self.report)
 
-    def on_rendering(self, host: Host) -> None:
-        for name, ctxgen in self.registry.render.items():
-            self._safegen(name, lambda: ctxgen.generate(host))
+    def on_anytime(self) -> None:
+        for name, ctxgen in self.registry.global_.items():
+            self._safegen(name, lambda: ctxgen.generate())
 
     def on_parsing(self, host: ParseHost) -> None:
         for name, ctxgen in self.registry.parsing.items():
@@ -174,5 +167,9 @@ class ExtraContextGenerator:
             # ctxgen.generate can be user-defined code, exception of any kind are possible.
             self.node.extra[name] = gen()
         except Exception:
-            self.report.text(f'Failed to generate extra context {name}:')
+            self.report.text(f'Failed to generate extra context "{name}":')
             self.report.excption()
+
+
+def setup(app: Sphinx):
+    _SphinxExtraContext.app = app

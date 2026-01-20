@@ -2,7 +2,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
-from docutils.nodes import system_message
 
 from ..utils import Report
 from .nodes import pending_data, rendered_data
@@ -33,7 +32,3 @@ class Reporter:
 
     def clear_empty(self) -> None:
         self.clear(lambda x: x.empty())
-
-    @staticmethod
-    def reports_to_system_messages(reports: list[Report]) -> list[system_message]:
-        return [x for x in reports]

@@ -17,14 +17,14 @@ if TYPE_CHECKING:
 class Config:
     """Global config of extension."""
 
-    template_debug: bool
+    render_debug: bool
 
 
 def _config_inited(app: Sphinx, config: SphinxConfig) -> None:
-    Config.template_debug = config.data_template_debug
+    Config.render_debug = config.data_render_debug
 
 
 def setup(app: Sphinx):
-    app.add_config_value('data_template_debug', False, '', bool)
+    app.add_config_value('data_render_debug', False, '', bool)
 
     app.connect('config-inited', _config_inited)
