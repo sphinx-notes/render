@@ -100,11 +100,13 @@ class Report(nodes.system_message):
     type Level = Literal['DEBUG', 'INFO', 'WARNING', 'ERROR']
 
     level: Level
+    title: str
 
     def __init__(
         self, title: str, level: Level = 'DEBUG', *children, **attributes
     ) -> None:
         super().__init__(title + ':', type=level, level=2, *children, **attributes)
+        self.title = title
 
     def empty(self) -> bool:
         # title is the only children
@@ -161,10 +163,9 @@ class Report(nodes.system_message):
             prb = nodes.problematic('', '', refid=msgid)
             prbid = inliner[0].set_id(prb)
             self.add_backref(prbid)
-            return prb
 
         prb += nodes.Text(' ')
-        prb += nodes.superscript(self['type'], self['type'])
+        prb += nodes.superscript(self.title, self.title)
 
         return prb
 
