@@ -6,7 +6,6 @@ from .datanodes import pending_data, rendered_data
 from .pipeline import (
     BaseDataDefineRole,
     BaseDataDefineDirective,
-    StrictDataDefineDirective,
 )
 from .extractx import ExtraContextRegistry, ExtraContextGenerator
 
@@ -23,7 +22,6 @@ __all__ = [
     'rendered_data',
     'BaseDataDefineRole',
     'BaseDataDefineDirective',
-    'StrictDataDefineDirective',
     'ExtraContextRegistry',
     'ExtraContextGenerator',
 ]

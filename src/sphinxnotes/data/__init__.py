@@ -31,10 +31,10 @@ from .render import (
     rendered_data,
     BaseDataDefineRole,
     BaseDataDefineDirective,
-    StrictDataDefineDirective,
     ExtraContextRegistry,
     ExtraContextGenerator,
 )
+from .examples.strict import StrictDataDefineDirective
 from .config import Config
 
 if TYPE_CHECKING:
