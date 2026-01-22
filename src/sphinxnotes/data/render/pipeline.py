@@ -46,7 +46,6 @@ from typing import TYPE_CHECKING, override, final, cast
 from abc import abstractmethod, ABC
 
 from docutils import nodes
-from docutils.parsers.rst import directives
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective, SphinxRole
 from sphinx.transforms.post_transforms import SphinxPostTransform, ReferencesResolver
@@ -54,7 +53,7 @@ from sphinx.transforms.post_transforms import SphinxPostTransform, ReferencesRes
 from .render import Phase, Template, Host, ParseHost, TransformHost
 from .datanodes import pending_data, rendered_data
 from .extractx import ExtraContextGenerator
-from ..data import RawData, PendingData, ParsedData, Field, Schema
+from ..data import RawData, PendingData, ParsedData, Schema
 
 if TYPE_CHECKING:
     from typing import Any
@@ -159,6 +158,9 @@ class BaseDataDefiner(Pipeline):
     """Methods to be implemented."""
 
     @abstractmethod
+    def current_data(self) -> RawData: ...
+
+    @abstractmethod
     def current_schema(self) -> Schema: ...
 
     @abstractmethod
@@ -180,20 +182,27 @@ class BaseDataDefiner(Pipeline):
 
 class BaseDataDefineDirective(BaseDataDefiner, SphinxDirective):
     @override
-    def run(self) -> list[nodes.Node]:
-        data = RawData(
+    def current_data(self) -> RawData:
+        return RawData(
             ' '.join(self.arguments) if self.arguments else None,
             self.options.copy(),
             '\n'.join(self.content) if self.has_content else None,
         )
-        schema = self.current_schema()
-        tmpl = self.current_template()
-        self.queue_raw_data(data, schema, tmpl)
+
+    @override
+    def run(self) -> list[nodes.Node]:
+        self.queue_raw_data(
+            self.current_data(), self.current_schema(), self.current_template()
+        )
 
         return [x for x in self.render_queue()]
 
 
 class BaseDataDefineRole(BaseDataDefiner, SphinxRole):
+    @override
+    def current_data(self) -> RawData:
+        return RawData(None, {}, self.text)
+
     @override
     def process_pending_node(self, n: pending_data) -> bool:
         n.inline = True
@@ -201,10 +210,9 @@ class BaseDataDefineRole(BaseDataDefiner, SphinxRole):
 
     @override
     def run(self) -> tuple[list[nodes.Node], list[nodes.system_message]]:
-        data = RawData(None, {}, self.text)
-        schema = self.current_schema()
-        tmpl = self.current_template()
-        self.queue_raw_data(data, schema, tmpl)
+        self.queue_raw_data(
+            self.current_data(), self.current_schema(), self.current_template()
+        )
 
         ns, msgs = [], []
         for n in self.render_queue():

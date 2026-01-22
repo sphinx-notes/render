@@ -6,6 +6,7 @@ from docutils.parsers.rst import directives
 from ..data import Field, Schema
 from ..render import Template, BaseDataDefineDirective
 
+
 class StrictDataDefineDirective(BaseDataDefineDirective):
     final_argument_whitespace = True
 

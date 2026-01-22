@@ -36,9 +36,8 @@ Introduction
 
    __ https://sphinx.silverrainz.me/any/
 
-.. template::
+.. data:template::
    :on: parsed
-   :debug:
 
    I am {{ name }}. I have the following attributes:
 
@@ -50,15 +49,18 @@ Introduction
 
    {{ content }} 
 
-.. data:: Shengyu Zhang
+.. data:def:: Shengyu Zhang
    :github: SilverRainZ
    :homepage: https://silverrainz.me/
 
-.. template::
+---
 
-   Cur builder: {{ _sphinx.builder.nam }}
+.. data:template::
+   :debug:
 
-:data:`foo`
+   builder: {{ _sphinx.builder.name }}
+
+:data:def+foo:`bar`
 
 .. INTRODUCTION END
 
