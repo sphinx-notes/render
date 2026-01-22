@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 class Base(nodes.Element): ...
 
 
-class pending_data(Base, Unpicklable):
+class pending_node(Base, Unpicklable):
     # The data to be rendered by Jinja template.
     data: PendingData | ParsedData | dict[str, Any]
     # The extra context for Jina template.
@@ -56,7 +56,7 @@ class pending_data(Base, Unpicklable):
         self._markup_text_hooks = []
         self._rendered_nodes_hooks = []
 
-    def render(self, host: Host) -> rendered_data:
+    def render(self, host: Host) -> rendered_node:
         """
         The core function for rendering data to docutils nodes.
 
@@ -65,7 +65,7 @@ class pending_data(Base, Unpicklable):
         3. MarkupRenderer.render(Markup Text) -> doctree Nodes (list[nodes.Node])
         """
         # 0. Create container for rendered nodes.
-        rendered = rendered_data()
+        rendered = rendered_node()
         # Copy attributes from pending_node.
         rendered.update_all_atts(self)
         # Copy source and line (which are not included in update_all_atts).
@@ -145,8 +145,8 @@ class pending_data(Base, Unpicklable):
 
         return rendered
 
-    def replace_self_inline(self, rendered: rendered_data) -> None:
-        # Split inline nodes and system_message noeds from rendered_data node.
+    def replace_self_inline(self, rendered: rendered_node) -> None:
+        # Split inline nodes and system_message noeds from rendered_node node.
         ns, msgs = rendered.inline(parent=self.parent)
 
         # Insert reports to nearst block elements (usually nodes.paragraph).
@@ -161,11 +161,11 @@ class pending_data(Base, Unpicklable):
 
     """Hooks for procssing render intermediate products. """
 
-    type RawDataHook = Callable[[pending_data, RawData], None]
-    type ParsedDataHook = Callable[[pending_data, RawData], None]
-    type MarkupTextHook = Callable[[pending_data, str], None]
+    type RawDataHook = Callable[[pending_node, RawData], None]
+    type ParsedDataHook = Callable[[pending_node, RawData], None]
+    type MarkupTextHook = Callable[[pending_node, str], None]
     type RenderedNodesHook = Callable[
-        [pending_data, list[nodes.Node], list[nodes.system_message]], None
+        [pending_node, list[nodes.Node], list[nodes.system_message]], None
     ]
 
     _raw_data_hooks: list[RawDataHook]
@@ -186,7 +186,7 @@ class pending_data(Base, Unpicklable):
         self._rendered_nodes_hooks.append(hook)
 
 
-class rendered_data(Base, nodes.container):
+class rendered_node(Base, nodes.container):
     # The data used when rendering this node.
     data: ParsedData | dict[str, Any] | None
 

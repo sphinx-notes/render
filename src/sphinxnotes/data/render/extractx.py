@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from sphinx.util.docutils import SphinxDirective
 
 from .render import HostWrapper
-from .datanodes import pending_data
+from .datanodes import pending_node
 from ..utils import find_current_section, Report, Reporter
 from ..utils.ctxproxy import proxy
 
@@ -127,12 +127,12 @@ class _SphinxExtraContext(GlobalExtraContxt):
 
 
 class ExtraContextGenerator:
-    node: pending_data
+    node: pending_node
     report: Report
 
     registry: ClassVar[ExtraContextRegistry] = ExtraContextRegistry()
 
-    def __init__(self, node: pending_data) -> None:
+    def __init__(self, node: pending_node) -> None:
         self.node = node
         self.report = Report(
             'Extra Context Generation Report',

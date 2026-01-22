@@ -10,13 +10,13 @@ This modeule defines pipeline for rendering data to nodes.
 The Pipline
 ===========
 
-1. Define data: BaseDataDefiner generates a :cls:`pending_data`, which contains:
+1. Define data: BaseDataDefiner generates a :cls:`pending_node`, which contains:
 
    - Data and possible extra contexts
    - Schema for validating Data
    - Template for rendering data to markup text
 
-2. Render data: the ``pending_data`` nodes will be rendered
+2. Render data: the ``pending_node`` nodes will be rendered
    (by calling :meth:`pending_node.render`) at some point, depending on :cls:`Phase`.
 
    The one who calls ``pending_node.render`` is called ``Host``.
@@ -37,7 +37,7 @@ The Pipline
 How :cls:`RawData` be rendered ``list[nodes.Node]``
 ===================================================
 
-.. seealso:: :meth:`.datanodes.pending_data.render`.
+.. seealso:: :meth:`.datanodes.pending_node.render`.
 
 """
 
@@ -51,7 +51,7 @@ from sphinx.util.docutils import SphinxDirective, SphinxRole
 from sphinx.transforms.post_transforms import SphinxPostTransform, ReferencesResolver
 
 from .render import Phase, Template, Host, ParseHost, TransformHost
-from .datanodes import pending_data, rendered_data
+from .datanodes import pending_node, rendered_node
 from .extractx import ExtraContextGenerator
 from ..data import RawData, PendingData, ParsedData, Schema
 
@@ -64,11 +64,11 @@ logger = logging.getLogger(__name__)
 
 class Pipeline(ABC):
     #: Queue of pending node to be rendered.
-    _q: list[pending_data] | None = None
+    _q: list[pending_node] | None = None
 
     """Methods to be overrided."""
 
-    def process_pending_node(self, n: pending_data) -> bool:
+    def process_pending_node(self, n: pending_node) -> bool:
         """
         You can add hooks to pending node here.
 
@@ -78,12 +78,12 @@ class Pipeline(ABC):
         """
         ...
 
-    def process_rendered_node(self, n: rendered_data) -> None: ...
+    def process_rendered_node(self, n: rendered_node) -> None: ...
 
     """Helper method for subclasses."""
 
     @final
-    def queue(self, n: pending_data) -> None:
+    def queue(self, n: pending_node) -> None:
         if not self._q:
             self._q = []
         self._q.append(n)
@@ -91,30 +91,30 @@ class Pipeline(ABC):
     @final
     def queue_raw_data(
         self, data: RawData, schema: Schema, tmpl: Template
-    ) -> pending_data:
-        pending = pending_data(PendingData(data, schema), tmpl)
+    ) -> pending_node:
+        pending = pending_node(PendingData(data, schema), tmpl)
         self.queue(pending)
         return pending
 
     @final
-    def queue_parsed_data(self, data: ParsedData, tmpl: Template) -> pending_data:
-        pending = pending_data(data, tmpl)
+    def queue_parsed_data(self, data: ParsedData, tmpl: Template) -> pending_node:
+        pending = pending_node(data, tmpl)
         self.queue(pending)
         return pending
 
     @final
-    def queue_any_data(self, data: Any, tmpl: Template) -> pending_data:
-        pending = pending_data(data, tmpl)
+    def queue_any_data(self, data: Any, tmpl: Template) -> pending_node:
+        pending = pending_node(data, tmpl)
         self.queue(pending)
         return pending
 
     @final
-    def render_queue(self) -> list[pending_data | rendered_data]:
+    def render_queue(self) -> list[pending_node | rendered_node]:
         """
         Try rendering all pending nodes in queue.
 
-        If the timing(Phase) is ok, :cls:`pending_data` will be rendered to a
-        :cls:`rendered_data`; otherwise, the pending node is unchanged.
+        If the timing(Phase) is ok, :cls:`pending_node` will be rendered to a
+        :cls:`rendered_node`; otherwise, the pending node is unchanged.
 
         If the pending node is already inserted to document, it will not be return.
         And the corrsponding rendered node will replace it too.
@@ -169,7 +169,7 @@ class BaseDataDefiner(Pipeline):
     """Methods override from parent."""
 
     @override
-    def process_pending_node(self, n: pending_data) -> bool:
+    def process_pending_node(self, n: pending_node) -> bool:
         host = cast(ParseHost, self)
 
         # Set source and line.
@@ -204,7 +204,7 @@ class BaseDataDefineRole(BaseDataDefiner, SphinxRole):
         return RawData(None, {}, self.text)
 
     @override
-    def process_pending_node(self, n: pending_data) -> bool:
+    def process_pending_node(self, n: pending_node) -> bool:
         n.inline = True
         return super().process_pending_node(n)
 
@@ -216,7 +216,7 @@ class BaseDataDefineRole(BaseDataDefiner, SphinxRole):
 
         ns, msgs = [], []
         for n in self.render_queue():
-            if not isinstance(n, rendered_data):
+            if not isinstance(n, rendered_node):
                 ns.append(n)
                 continue
             n, msg = n.inline(parent=self.inliner.parent)
@@ -228,7 +228,7 @@ class BaseDataDefineRole(BaseDataDefiner, SphinxRole):
 
 class _ParsedHook(SphinxDirective, Pipeline):
     @override
-    def process_pending_node(self, n: pending_data) -> bool:
+    def process_pending_node(self, n: pending_node) -> bool:
         self.state.document.note_source(n.source, n.line)  # type: ignore[arg-type]
 
         # Generate and save parsed extra context for later use.
@@ -240,7 +240,7 @@ class _ParsedHook(SphinxDirective, Pipeline):
     def run(self) -> list[nodes.Node]:
         logger.warning(f'running parsed hook for doc {self.env.docname}...')
 
-        for pending in self.state.document.findall(pending_data):
+        for pending in self.state.document.findall(pending_node):
             self.queue(pending)
             # Hook system_message method to let it report the
             # correct line number.
@@ -273,7 +273,7 @@ class _ResolvingHook(SphinxPostTransform, Pipeline):
     default_priority = (ReferencesResolver.default_priority or 10) + 5
 
     @override
-    def process_pending_node(self, n: pending_data) -> bool:
+    def process_pending_node(self, n: pending_node) -> bool:
         # Generate and save post transform extra context for later use.
         ExtraContextGenerator(n).on_post_transform(cast(TransformHost, self))
 
@@ -283,7 +283,7 @@ class _ResolvingHook(SphinxPostTransform, Pipeline):
     def apply(self, **kwargs):
         logger.warning(f'running resolving hook for doc {self.env.docname}...')
 
-        for pending in self.document.findall(pending_data):
+        for pending in self.document.findall(pending_node):
             self.queue(pending)
 
         ns = self.render_queue()
