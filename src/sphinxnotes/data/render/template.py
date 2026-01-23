@@ -55,6 +55,7 @@ class TemplateRenderer:
     def _render(self, ctx: dict[str, Any], debug: bool = False) -> str:
         extensions = [
             'jinja2.ext.loopcontrols',  # enable {% break %}, {% continue %}
+            'jinja2.ext.do', # enable {% do ... %}
         ]
         if debug:
             extensions.append('jinja2.ext.debug')
@@ -104,8 +105,6 @@ class _JinjaEnv(SandboxedEnvironment):
 
         .. seealso:: :cls:`..utils.ctxproxy.Proxy`
         """
-        if attr.startswith('_'):
-            return False
         return super().is_safe_attribute(obj, attr, value)
 
 
