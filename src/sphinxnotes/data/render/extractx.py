@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING, override
 from abc import ABC, abstractmethod
 
 from sphinx.util.docutils import SphinxDirective
+from docutils.parsers.rst.directives import _directives
+from docutils.parsers.rst.roles import _roles
 
 from .render import HostWrapper
 from .datanodes import pending_node
@@ -50,6 +52,7 @@ class ExtraContextRegistry:
         self.global_ = {}
 
         self.add_global_context('sphinx', _SphinxExtraContext())
+        self.add_global_context('docutils', _DocutilsExtraContext())
         self.add_parsing_phase_context('markup', _MarkupExtraContext())
         self.add_parsing_phase_context('section', _SectionExtraContext())
         self.add_parsing_phase_context('doc', _DocExtraContext())
@@ -120,6 +123,14 @@ class _SphinxExtraContext(GlobalExtraContxt):
     def generate(self) -> Any:
         return proxy(self.app)
 
+class _DocutilsExtraContext(GlobalExtraContxt):
+    @override
+    def generate(self) -> Any:
+        # FIXME: use unexported api
+        return {
+            'directives': _directives,
+            'roles': _roles,
+        }
 
 # ========================
 # Extra Context Management
