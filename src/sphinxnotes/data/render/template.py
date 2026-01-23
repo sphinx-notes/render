@@ -55,7 +55,7 @@ class TemplateRenderer:
     def _render(self, ctx: dict[str, Any], debug: bool = False) -> str:
         extensions = [
             'jinja2.ext.loopcontrols',  # enable {% break %}, {% continue %}
-            'jinja2.ext.do', # enable {% do ... %}
+            'jinja2.ext.do',  # enable {% do ... %}
         ]
         if debug:
             extensions.append('jinja2.ext.debug')
@@ -113,6 +113,7 @@ def _roles_filter(env: BuildEnvironment):
     Fetch artwork picture by ID and install theme to Sphinx's source directory,
     return the relative URI of current doc root.
     """
+
     def _filter(value: Iterable[str], role: str) -> Iterable[str]:
         """
         A heplfer filter for converting list of string to list of role.
@@ -124,6 +125,7 @@ def _roles_filter(env: BuildEnvironment):
         Produces ``[":doc:`foo`", ":doc:`bar`"]``.
         """
         return map(lambda x: ':%s:`%s`' % (role, x), value)
+
     return _filter
 
 

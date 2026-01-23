@@ -110,12 +110,16 @@ class FreeDataDefineDirective(BaseDataDefineDirective, FreeStyleDirective):
 
     @override
     def current_schema(self) -> Schema:
-        schema = self.env.temp_data.get(SCHEMA_KEY, SchemaDefineDirective.directive_preset())
+        schema = self.env.temp_data.get(
+            SCHEMA_KEY, SchemaDefineDirective.directive_preset()
+        )
         return cast(Schema, schema)
 
     @override
     def current_template(self) -> Template:
-        tmpl = self.env.temp_data.get(TEMPLATE_KEY, TemplateDefineDirective.directive_preset())
+        tmpl = self.env.temp_data.get(
+            TEMPLATE_KEY, TemplateDefineDirective.directive_preset()
+        )
         return cast(Template, tmpl)
 
 
@@ -135,7 +139,9 @@ class FreeDataDefineRole(BaseDataDefineRole):
 
     @override
     def current_template(self) -> Template:
-        tmpl = self.env.temp_data.get(TEMPLATE_KEY, TemplateDefineDirective.role_preset())
+        tmpl = self.env.temp_data.get(
+            TEMPLATE_KEY, TemplateDefineDirective.role_preset()
+        )
         return cast(Template, tmpl)
 
 
