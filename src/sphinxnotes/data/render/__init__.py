@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from .render import Phase, Template, Host
-from .datanodes import pending_node, rendered_node
+from .datanodes import pending_node
 from .pipeline import (
     BaseDataDefineRole,
     BaseDataDefineDirective,
@@ -18,8 +18,6 @@ __all__ = [
     'Template',
     'Host',
     'pending_node',
-    'rendered_node',
-    'rendered_node',
     'BaseDataDefineRole',
     'BaseDataDefineDirective',
     'ExtraContextRegistry',

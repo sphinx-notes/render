@@ -123,6 +123,7 @@ class _SphinxExtraContext(GlobalExtraContxt):
     def generate(self) -> Any:
         return proxy(self.app)
 
+
 class _DocutilsExtraContext(GlobalExtraContxt):
     @override
     def generate(self) -> Any:
@@ -131,6 +132,7 @@ class _DocutilsExtraContext(GlobalExtraContxt):
             'directives': _directives,
             'roles': _roles,
         }
+
 
 # ========================
 # Extra Context Management
