@@ -51,7 +51,7 @@ from sphinx.util.docutils import SphinxDirective, SphinxRole
 from sphinx.transforms.post_transforms import SphinxPostTransform, ReferencesResolver
 
 from .render import HostWrapper, Phase, Template, Host, ParseHost, TransformHost
-from .datanodes import pending_node, rendered_node
+from .datanodes import pending_node
 from .extractx import ExtraContextGenerator
 from ..data import RawData, PendingData, ParsedData, Schema
 
@@ -107,12 +107,12 @@ class Pipeline(ABC):
         return pending
 
     @final
-    def render_queue(self) -> list[pending_node | rendered_node]:
+    def render_queue(self) -> list[pending_node]:
         """
         Try rendering all pending nodes in queue.
 
-        If the timing(Phase) is ok, :cls:`pending_node` will be rendered to a
-        :cls:`rendered_node`; otherwise, the pending node is unchanged.
+        If the timing(Phase) is ok, :cls:`pending_node` will be rendered
+        (pending.rendered = True); otherwise, the pending node is unchanged.
 
         If the pending node is already inserted to document, it will not be return.
         And the corrsponding rendered node will replace it too.
@@ -130,18 +130,17 @@ class Pipeline(ABC):
             ExtraContextGenerator(pending).on_anytime()
 
             host = cast(Host, self)
-            rendered = pending.render(host)
+            pending.render(host)
 
             if pending.parent is None:
-                ns.append(rendered)
+                ns.append(pending)
                 continue
 
             if pending.inline:
-                pending.replace_self_inline(
-                    rendered, (HostWrapper(host).doctree, pending.parent)
-                )
+                host_ = HostWrapper(host)
+                pending.unwrap_and_replace_self_inline((host_.doctree, pending.parent))
             else:
-                pending.replace_self(rendered)
+                pending.unwrap_and_replace_self()
 
         return ns
 
@@ -195,7 +194,14 @@ class BaseDataDefineDirective(BaseDataDefiner, SphinxDirective):
             self.current_data(), self.current_schema(), self.current_template()
         )
 
-        return [x for x in self.render_queue()]
+        ns = []
+        for x in self.render_queue():
+            if not x.rendered:
+                ns.append(x)
+                continue
+            ns += x.unwrap()
+
+        return ns
 
 
 class BaseDataDefineRole(BaseDataDefiner, SphinxRole):
@@ -216,12 +222,12 @@ class BaseDataDefineRole(BaseDataDefiner, SphinxRole):
 
         ns, msgs = [], []
         for n in self.render_queue():
-            if not isinstance(n, rendered_node):
+            if not n.rendered:
                 ns.append(n)
                 continue
-            n, msg = n.inline(self.inliner)
-            ns += n
-            msgs += msg
+            ns_, msgs_ = n.unwrap_inline(self.inliner)
+            ns += ns_
+            msgs += msgs_
 
         return ns, msgs
 
@@ -238,8 +244,6 @@ class _ParsedHook(SphinxDirective, Pipeline):
 
     @override
     def run(self) -> list[nodes.Node]:
-        logger.warning(f'running parsed hook for doc {self.env.docname}...')
-
         for pending in self.state.document.findall(pending_node):
             self.queue_pending_node(pending)
             # Hook system_message method to let it report the
@@ -281,8 +285,6 @@ class _ResolvingHook(SphinxPostTransform, Pipeline):
 
     @override
     def apply(self, **kwargs):
-        logger.warning(f'running resolving hook for doc {self.env.docname}...')
-
         for pending in self.document.findall(pending_node):
             self.queue_pending_node(pending)
 

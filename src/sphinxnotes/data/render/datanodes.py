@@ -13,7 +13,6 @@ from ..utils import (
     Unpicklable,
     Report,
     Reporter,
-    find_current_document,
     find_nearest_block_element,
 )
 from ..config import Config
@@ -35,6 +34,8 @@ class pending_node(Base, Unpicklable):
     template: Template
     #: Whether rendering to inline nodes.
     inline: bool
+    #: Whether the rendering pipeline is finished (failed is also finished).
+    rendered: bool
 
     def __init__(
         self,
@@ -50,14 +51,15 @@ class pending_node(Base, Unpicklable):
         self.extra = {}
         self.template = tmpl
         self.inline = inline
+        self.rendered = False
 
         # Init hook lists.
         self._raw_data_hooks = []
         self._parsed_data_hooks = []
         self._markup_text_hooks = []
-        self._rendered_node_hooks = []
+        self._rendered_nodes_hooks = []
 
-    def render(self, host: Host) -> rendered_node:
+    def render(self, host: Host) -> None:
         """
         The core function for rendering data to docutils nodes.
 
@@ -65,16 +67,10 @@ class pending_node(Base, Unpicklable):
         2. TemplateRenderer.render(ParsedData) -> Markup Text (``str``)
         3. MarkupRenderer.render(Markup Text) -> doctree Nodes (list[nodes.Node])
         """
-        # 0. Create container for rendered nodes.
-        rendered = rendered_node()
-        # Copy attributes from pending_node.
-        rendered.update_all_atts(self)
-        # Copy source and line (which are not included in update_all_atts).
-        rendered.source, rendered.line = self.source, self.line
-        # Copy the pending's children to the rendered.
-        rendered[:0] = [x.deepcopy() for x in self.children]
-        # Clear all empty reports.
-        Reporter(rendered).clear_empty()
+
+        # Make sure the function is called once.
+        assert not self.rendered
+        self.rendered = True
 
         report = Report(
             'Render Debug Report', 'DEBUG', source=self.source, line=self.line
@@ -91,35 +87,33 @@ class pending_node(Base, Unpicklable):
                 hook(self, self.data.raw)
 
             try:
-                data = self.data.parse()
+                data = self.data = self.data.parse()
             except ValueError:
                 report.text('Failed to parse raw data:')
                 report.excption()
-                rendered += report
-                return rendered
+                self += report
+                return
         else:
             data = self.data
 
         for hook in self._parsed_data_hooks:
             hook(self, data)
 
-        rendered.data = data
-
-        report.text('Parsed data:')
+        report.text(f'Parsed data (type: {type(data)}):')
         report.code(pformat(data), lang='python')
-        report.text('Extra context (just key):')
+        report.text('Extra context (only keys):')
         report.code(pformat(list(self.extra.keys())), lang='python')
-        report.text('Template:')
+        report.text(f'Template (phase: {self.template.phase}):')
         report.code(self.template.text, lang='jinja')
 
         # 2. Render the template and data to markup text.
         try:
             markup = TemplateRenderer(self.template.text).render(data, extra=self.extra)
-        except Exception:  # TODO: what excetpion?
+        except Exception:
             report.text('Failed to render Jinja template:')
             report.excption()
-            rendered += report
-            return rendered
+            self += report
+            return
 
         for hook in self._markup_text_hooks:
             markup = hook(self, markup)
@@ -136,8 +130,8 @@ class pending_node(Base, Unpicklable):
                 f'to {"inline " if self.inline else ""}nodes:'
             )
             report.excption()
-            rendered += report
-            return rendered
+            self += report
+            return
 
         report.text(f'Rendered nodes (inline: {self.inline}):')
         report.code('\n\n'.join([n.pformat() for n in ns]), lang='xml')
@@ -146,21 +140,45 @@ class pending_node(Base, Unpicklable):
             [report.node(msg) for msg in msgs]
 
         # 4. Add rendered nodes to container.
-        rendered += ns
+        for hook in self._rendered_nodes_hooks:
+            hook(self, ns)
+        # TODO: set_source_info?
+        self += ns
 
         if self.template.debug or Config.render_debug:
-            rendered += report
+            self += report
 
-        for hook in self._rendered_node_hooks:
-            hook(self, rendered)
+        Reporter(self).clear_empty()
 
-        return rendered
+        return
 
-    def replace_self_inline(
-        self, rendered: rendered_node, inliner: Report.Inliner
-    ) -> None:
-        # Split inline nodes and system_message noeds from rendered_node node.
-        ns, msgs = rendered.inline(inliner)
+    def unwrap(self) -> list[nodes.Node]:
+        children = self.children
+        self.clear()
+        return children
+
+    def unwrap_inline(
+        self, inliner: Report.Inliner
+    ) -> tuple[list[nodes.Node], list[nodes.system_message]]:
+        # Report (nodes.system_message subclass) is not inline node,
+        # should be removed before inserting to doctree.
+        reports = Reporter(self).clear()
+        for report in reports:
+            self.append(report.problematic(inliner))
+
+        children = self.children
+        self.clear()
+
+        return children, [x for x in reports]
+
+    def unwrap_and_replace_self(self) -> None:
+        children = self.unwrap()
+        # Replace self with children.
+        self.replace_self(children)
+
+    def unwrap_and_replace_self_inline(self, inliner: Report.Inliner) -> None:
+        # Unwrap inline nodes and system_message noeds from node.
+        ns, msgs = self.unwrap_inline(inliner)
 
         # Insert reports to nearst block elements (usually nodes.paragraph).
         doctree = inliner.document if isinstance(inliner, Inliner) else inliner[1]
@@ -175,12 +193,12 @@ class pending_node(Base, Unpicklable):
     type RawDataHook = Callable[[pending_node, RawData], None]
     type ParsedDataHook = Callable[[pending_node, ParsedData | dict[str, Any]], None]
     type MarkupTextHook = Callable[[pending_node, str], str]
-    type RenderedNodeHook = Callable[[pending_node, rendered_node], None]
+    type RenderedNodesHook = Callable[[pending_node, list[nodes.Node]], None]
 
     _raw_data_hooks: list[RawDataHook]
     _parsed_data_hooks: list[ParsedDataHook]
     _markup_text_hooks: list[MarkupTextHook]
-    _rendered_node_hooks: list[RenderedNodeHook]
+    _rendered_nodes_hooks: list[RenderedNodesHook]
 
     def hook_raw_data(self, hook: RawDataHook) -> None:
         self._raw_data_hooks.append(hook)
@@ -191,25 +209,5 @@ class pending_node(Base, Unpicklable):
     def hook_markup_text(self, hook: MarkupTextHook) -> None:
         self._markup_text_hooks.append(hook)
 
-    def hook_rendered_node(self, hook: RenderedNodeHook) -> None:
-        self._rendered_node_hooks.append(hook)
-
-
-class rendered_node(Base, nodes.container):
-    # The data used when rendering this node.
-    data: ParsedData | dict[str, Any] | None
-
-    def inline(
-        self,
-        inliner: Inliner | tuple[nodes.document, nodes.Element],
-    ) -> tuple[list[nodes.Node], list[nodes.system_message]]:
-        # Report (nodes.system_message subclass) is not inline node,
-        # should be removed before inserting to doctree.
-        reports = Reporter(self).clear()
-        for report in reports:
-            self.append(report.problematic(inliner))
-
-        children = self.children
-        self.clear()
-
-        return children, [x for x in reports]
+    def hook_rendered_nodes(self, hook: RenderedNodesHook) -> None:
+        self._rendered_nodes_hooks.append(hook)
