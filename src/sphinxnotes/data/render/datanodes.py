@@ -15,7 +15,6 @@ from ..utils import (
     Reporter,
     find_nearest_block_element,
 )
-from ..config import Config
 
 if TYPE_CHECKING:
     from typing import Any, Callable
@@ -145,7 +144,7 @@ class pending_node(Base, Unpicklable):
         # TODO: set_source_info?
         self += ns
 
-        if self.template.debug or Config.render_debug:
+        if self.template.debug:
             self += report
 
         Reporter(self).clear_empty()

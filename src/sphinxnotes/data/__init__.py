@@ -34,7 +34,6 @@ from .render import (
     ExtraContextGenerator,
 )
 from .examples.strict import StrictDataDefineDirective
-from .config import Config
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
@@ -42,7 +41,6 @@ if TYPE_CHECKING:
 
 """Python API for other Sphinx extesions."""
 __all__ = [
-    'Config',
     'Registry',
     'PlainValue',
     'Value',
@@ -81,10 +79,9 @@ REGISTRY = Registry()
 def setup(app: Sphinx):
     meta.pre_setup(app)
 
-    from . import config, render
+    from . import render
     from .examples import datadomain
 
-    config.setup(app)
     render.setup(app)
     datadomain.setup(app)
 
