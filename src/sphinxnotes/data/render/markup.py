@@ -17,6 +17,7 @@ from docutils.parsers.rst.states import Struct
 from docutils.utils import new_document
 from sphinx.util.docutils import SphinxDirective, SphinxRole
 from sphinx.transforms import SphinxTransform
+from sphinx import version_info
 
 from .render import Host
 
@@ -40,11 +41,12 @@ class MarkupRenderer:
         if isinstance(self.host, SphinxDirective):
             return self.host.parse_text_to_nodes(text)
         elif isinstance(self.host, SphinxTransform):
-            # TODO: sphinx>9
-            # https://github.com/missinglinkelectronics/sphinxcontrib-globalsubs/pull/9/files
-            settings = self.host.document.settings
             # TODO: dont create parser for every time
-            parser = self.host.app.registry.create_source_parser(self.host.app, 'rst')
+            if version_info[0] >= 9:
+                parser = self.host.app.registry.create_source_parser('rst', env=self.host.env, config=self.host.config)
+            else:
+                parser = self.host.app.registry.create_source_parser(self.host.app, 'rst')
+            settings = self.host.document.settings
             doc = new_document('<generated text>', settings=settings)
             parser.parse(text, doc)
             return doc.children
