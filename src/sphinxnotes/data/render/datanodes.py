@@ -71,25 +71,34 @@ class pending_node(Base, Unpicklable):
         assert not self.rendered
         self.rendered = True
 
-        report = Report(
-            'Render Debug Report', 'DEBUG', source=self.source, line=self.line
-        )
+        # Clear empty reports.
+        Reporter(self).clear_empty()
+
+        dbg = Report('Render Report', 'DEBUG', source=self.source, line=self.line)
+
+        def get_error_report() -> Report:
+            if self.template.debug:
+                # Reuse the debug report as possible.
+                dbg['type'] = 'ERROR'
+                return dbg
+            return Report('Render Report', 'ERROR', source=self.source, line=self.line)
 
         # 1. Prepare context for Jinja template.
         if isinstance(self.data, PendingData):
-            report.text('Raw data:')
-            report.code(pformat(self.data.raw), lang='python')
-            report.text('Schema:')
-            report.code(pformat(self.data.schema), lang='python')
+            dbg.text('Raw data:')
+            dbg.code(pformat(self.data.raw), lang='python')
+            dbg.text('Schema:')
+            dbg.code(pformat(self.data.schema), lang='python')
 
             for hook in self._raw_data_hooks:
                 hook(self, self.data.raw)
 
             try:
                 data = self.data = self.data.parse()
-            except ValueError:
+            except ValueError as e:
+                report = get_error_report()
                 report.text('Failed to parse raw data:')
-                report.excption()
+                report.exception(e)
                 self += report
                 return
         else:
@@ -98,45 +107,47 @@ class pending_node(Base, Unpicklable):
         for hook in self._parsed_data_hooks:
             hook(self, data)
 
-        report.text(f'Parsed data (type: {type(data)}):')
-        report.code(pformat(data), lang='python')
-        report.text('Extra context (only keys):')
-        report.code(pformat(list(self.extra.keys())), lang='python')
-        report.text(f'Template (phase: {self.template.phase}):')
-        report.code(self.template.text, lang='jinja')
+        dbg.text(f'Parsed data (type: {type(data)}):')
+        dbg.code(pformat(data), lang='python')
+        dbg.text('Extra context (only keys):')
+        dbg.code(pformat(list(self.extra.keys())), lang='python')
+        dbg.text(f'Template (phase: {self.template.phase}):')
+        dbg.code(self.template.text, lang='jinja')
 
         # 2. Render the template and data to markup text.
         try:
             markup = TemplateRenderer(self.template.text).render(data, extra=self.extra)
-        except Exception:
+        except Exception as e:
+            report = get_error_report()
             report.text('Failed to render Jinja template:')
-            report.excption()
+            report.exception(e)
             self += report
             return
 
         for hook in self._markup_text_hooks:
             markup = hook(self, markup)
 
-        report.text('Rendered markup text:')
-        report.code(markup, lang='rst')
+        dbg.text('Rendered markup text:')
+        dbg.code(markup, lang='rst')
 
         # 3. Render the markup text to doctree nodes.
         try:
             ns, msgs = MarkupRenderer(host).render(markup, inline=self.inline)
-        except Exception:
+        except Exception as e:
+            report = get_error_report()
             report.text(
                 'Failed to render markup text '
                 f'to {"inline " if self.inline else ""}nodes:'
             )
-            report.excption()
+            report.exception(e)
             self += report
             return
 
-        report.text(f'Rendered nodes (inline: {self.inline}):')
-        report.code('\n\n'.join([n.pformat() for n in ns]), lang='xml')
+        dbg.text(f'Rendered nodes (inline: {self.inline}):')
+        dbg.code('\n\n'.join([n.pformat() for n in ns]), lang='xml')
         if msgs:
-            report.text('Systemd messages:')
-            [report.node(msg) for msg in msgs]
+            dbg.text('Systemd messages:')
+            [dbg.node(msg) for msg in msgs]
 
         # 4. Add rendered nodes to container.
         for hook in self._rendered_nodes_hooks:
@@ -145,9 +156,7 @@ class pending_node(Base, Unpicklable):
         self += ns
 
         if self.template.debug:
-            self += report
-
-        Reporter(self).clear_empty()
+            self += dbg
 
         return
 
