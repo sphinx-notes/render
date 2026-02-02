@@ -43,9 +43,13 @@ class MarkupRenderer:
         elif isinstance(self.host, SphinxTransform):
             # TODO: dont create parser for every time
             if version_info[0] >= 9:
-                parser = self.host.app.registry.create_source_parser('rst', env=self.host.env, config=self.host.config)
+                parser = self.host.app.registry.create_source_parser(
+                    'rst', env=self.host.env, config=self.host.config
+                )
             else:
-                parser = self.host.app.registry.create_source_parser(self.host.app, 'rst')
+                parser = self.host.app.registry.create_source_parser(
+                    self.host.app, 'rst'
+                )
             settings = self.host.document.settings
             doc = new_document('<generated text>', settings=settings)
             parser.parse(text, doc)

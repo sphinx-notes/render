@@ -10,8 +10,7 @@ from sphinx.util.docutils import SphinxDirective, SphinxRole
 class Phase(Enum):
     Parsing = 'parsing'
     Parsed = 'parsed'
-    PostTranform = 'post-transform'
-    # TODO: transform?
+    Resolving = 'resolving'
 
     @classmethod
     def default(cls) -> Phase:

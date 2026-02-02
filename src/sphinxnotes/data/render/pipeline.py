@@ -48,6 +48,7 @@ from abc import abstractmethod, ABC
 from docutils import nodes
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective, SphinxRole
+from sphinx.transforms import SphinxTransform
 from sphinx.transforms.post_transforms import SphinxPostTransform, ReferencesResolver
 
 from .render import HostWrapper, Phase, Template, Host, ParseHost, TransformHost
@@ -232,70 +233,42 @@ class BaseDataDefineRole(BaseDataDefiner, SphinxRole):
         return ns, msgs
 
 
-class _ParsedHook(SphinxDirective, Pipeline):
+class _ParsedHook(SphinxTransform, Pipeline):
+    # Before almost all others.
+    default_priority = 100
+
     @override
     def process_pending_node(self, n: pending_node) -> bool:
-        self.state.document.note_source(n.source, n.line)  # type: ignore[arg-type]
-
-        # Generate and save parsed extra context for later use.
-        ExtraContextGenerator(n).on_parsed(cast(ParseHost, self))
-
+        ExtraContextGenerator(n).on_parsed(cast(TransformHost, self))
         return n.template.phase == Phase.Parsed
-
-    @override
-    def run(self) -> list[nodes.Node]:
-        for pending in self.state.document.findall(pending_node):
-            self.queue_pending_node(pending)
-            # Hook system_message method to let it report the
-            # correct line number.
-            # TODO: self.state.document.note_source(source, line)  # type: ignore[arg-type]
-            # def fix_lineno(level, message, *children, **kwargs):
-            #     kwargs['line'] = pending.line
-            #     return orig_sysmsg(level, message, *children, **kwargs)
-
-            # self.state_machine.reporter.system_message = fix_lineno
-
-        ns = self.render_queue()
-        assert len(ns) == 0
-
-        return []  # nothing to return
-
-
-def _insert_parsed_hook(app, docname, content):
-    # NOTE: content is a single element list, representing the content of the
-    # source file.
-    #
-    # .. seealso:: https://www.sphinx-doc.org/en/master/extdev/event_callbacks.html#event-source-read
-    #
-    # TODO: markdown?
-    # TODO: rst_prelog?
-    content[-1] = content[-1] + '\n\n.. data.parsed-hook::'
-
-
-class _ResolvingHook(SphinxPostTransform, Pipeline):
-    # After resolving pending_xref.
-    default_priority = (ReferencesResolver.default_priority or 10) + 5
-
-    @override
-    def process_pending_node(self, n: pending_node) -> bool:
-        # Generate and save post transform extra context for later use.
-        ExtraContextGenerator(n).on_post_transform(cast(TransformHost, self))
-
-        return n.template.phase == Phase.PostTranform
 
     @override
     def apply(self, **kwargs):
         for pending in self.document.findall(pending_node):
             self.queue_pending_node(pending)
+        self.render_queue()
 
+
+class _ResolvingHook(SphinxPostTransform, Pipeline):
+    # After resolving pending_xref
+    default_priority = (ReferencesResolver.default_priority or 10) + 5  
+
+    @override
+    def process_pending_node(self, n: pending_node) -> bool:
+        ExtraContextGenerator(n).on_post_transform(cast(TransformHost, self))
+        return n.template.phase == Phase.Resolving
+
+    @override
+    def apply(self, **kwargs):
+        for pending in self.document.findall(pending_node):
+            self.queue_pending_node(pending)
         ns = self.render_queue()
         assert len(ns) == 0
 
 
 def setup(app: Sphinx) -> None:
     # Hook for Phase.Parsed.
-    app.add_directive('data.parsed-hook', _ParsedHook)
-    app.connect('source-read', _insert_parsed_hook)
+    app.add_transform(_ParsedHook)
 
     # Hook for Phase.Resolving.
     app.add_post_transform(_ResolvingHook)
