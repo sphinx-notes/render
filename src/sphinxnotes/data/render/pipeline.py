@@ -73,7 +73,7 @@ class Pipeline(ABC):
         """
         You can add hooks to pending node here.
 
-        Return ``true`` if you want to render the pending node *immediately*,
+        Return ``true`` if you want to render the pending node *now*,
         otherwise it will be inserted to doctree directly andwaiting to later
         rendering
         """
@@ -123,7 +123,8 @@ class Pipeline(ABC):
         while self._q:
             pending = self._q.pop()
 
-            if not self.process_pending_node(pending):
+            render_now = self.process_pending_node(pending)
+            if not render_now:
                 ns.append(pending)
                 continue
 
@@ -246,12 +247,18 @@ class _ParsedHook(SphinxTransform, Pipeline):
     def apply(self, **kwargs):
         for pending in self.document.findall(pending_node):
             self.queue_pending_node(pending)
-        self.render_queue()
+
+        for n in self.render_queue():
+            # NOTE: In the next Phase, doctrees will be pickled to disk.
+            # As :cls:`data.Schema` is **Unpicklable**, we should ensure
+            # ``pending_node.data`` is parsed, which means pending_node dropped
+            # the reference to Schema.
+            n.ensure_data_parsed()
 
 
 class _ResolvingHook(SphinxPostTransform, Pipeline):
     # After resolving pending_xref
-    default_priority = (ReferencesResolver.default_priority or 10) + 5  
+    default_priority = (ReferencesResolver.default_priority or 10) + 5
 
     @override
     def process_pending_node(self, n: pending_node) -> bool:
@@ -263,6 +270,8 @@ class _ResolvingHook(SphinxPostTransform, Pipeline):
         for pending in self.document.findall(pending_node):
             self.queue_pending_node(pending)
         ns = self.render_queue()
+
+        # NOTE: Should no node left.
         assert len(ns) == 0
 
 

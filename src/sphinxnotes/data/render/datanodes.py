@@ -10,7 +10,6 @@ from .markup import MarkupRenderer
 from .template import TemplateRenderer
 from ..data import RawData, PendingData, ParsedData
 from ..utils import (
-    Unpicklable,
     Report,
     Reporter,
     find_nearest_block_element,
@@ -24,7 +23,7 @@ if TYPE_CHECKING:
 class Base(nodes.Element): ...
 
 
-class pending_node(Base, Unpicklable):
+class pending_node(Base):
     # The data to be rendered by Jinja template.
     data: PendingData | ParsedData | dict[str, Any]
     # The extra context for Jina template.
@@ -35,6 +34,8 @@ class pending_node(Base, Unpicklable):
     inline: bool
     #: Whether the rendering pipeline is finished (failed is also finished).
     rendered: bool
+    #: The report of render pipepine.
+    report: Report
 
     def __init__(
         self,
@@ -51,6 +52,9 @@ class pending_node(Base, Unpicklable):
         self.template = tmpl
         self.inline = inline
         self.rendered = False
+        self.report = Report(
+            'Render Report', 'DEBUG', source=self.source, line=self.line
+        )
 
         # Init hook lists.
         self._raw_data_hooks = []
@@ -58,11 +62,48 @@ class pending_node(Base, Unpicklable):
         self._markup_text_hooks = []
         self._rendered_nodes_hooks = []
 
+    def get_error_report(self) -> Report:
+        if self.template.debug:
+            # Reuse the render report as possible.
+            self.report['type'] = 'ERROR'
+            return self.report
+        return Report('Render Report', 'ERROR', source=self.source, line=self.line)
+
+    def ensure_data_parsed(self) -> ParsedData | dict[str, Any] | None:
+        """
+        Ensure self.data is parsed (instance of ParsedData | dict[str, Any]).
+        if no, parse it.
+        """
+        if not isinstance(self.data, PendingData):
+            return self.data
+
+        self.report.text('Raw data:')
+        self.report.code(pformat(self.data.raw), lang='python')
+        self.report.text('Schema:')
+        self.report.code(pformat(self.data.schema), lang='python')
+
+        for hook in self._raw_data_hooks:
+            hook(self, self.data.raw)
+
+        try:
+            data = self.data = self.data.parse()
+        except ValueError as e:
+            report = self.get_error_report()
+            report.text('Failed to parse raw data:')
+            report.exception(e)
+            self += report
+            return None
+
+        for hook in self._parsed_data_hooks:
+            hook(self, data)
+
+        return data
+
     def render(self, host: Host) -> None:
         """
         The core function for rendering data to docutils nodes.
 
-        1. Schema.parse(RawData) -> ParsedData
+        1. Schema.parse(RawData) -> ParsedData (self.parse_data)
         2. TemplateRenderer.render(ParsedData) -> Markup Text (``str``)
         3. MarkupRenderer.render(Markup Text) -> doctree Nodes (list[nodes.Node])
         """
@@ -74,51 +115,22 @@ class pending_node(Base, Unpicklable):
         # Clear empty reports.
         Reporter(self).clear_empty()
 
-        dbg = Report('Render Report', 'DEBUG', source=self.source, line=self.line)
-
-        def get_error_report() -> Report:
-            if self.template.debug:
-                # Reuse the debug report as possible.
-                dbg['type'] = 'ERROR'
-                return dbg
-            return Report('Render Report', 'ERROR', source=self.source, line=self.line)
-
         # 1. Prepare context for Jinja template.
-        if isinstance(self.data, PendingData):
-            dbg.text('Raw data:')
-            dbg.code(pformat(self.data.raw), lang='python')
-            dbg.text('Schema:')
-            dbg.code(pformat(self.data.schema), lang='python')
+        if (data := self.ensure_data_parsed()) is None:
+            return  # parse failure
 
-            for hook in self._raw_data_hooks:
-                hook(self, self.data.raw)
-
-            try:
-                data = self.data = self.data.parse()
-            except ValueError as e:
-                report = get_error_report()
-                report.text('Failed to parse raw data:')
-                report.exception(e)
-                self += report
-                return
-        else:
-            data = self.data
-
-        for hook in self._parsed_data_hooks:
-            hook(self, data)
-
-        dbg.text(f'Parsed data (type: {type(data)}):')
-        dbg.code(pformat(data), lang='python')
-        dbg.text('Extra context (only keys):')
-        dbg.code(pformat(list(self.extra.keys())), lang='python')
-        dbg.text(f'Template (phase: {self.template.phase}):')
-        dbg.code(self.template.text, lang='jinja')
+        self.report.text(f'Parsed data (type: {type(data)}):')
+        self.report.code(pformat(data), lang='python')
+        self.report.text('Extra context (only keys):')
+        self.report.code(pformat(list(self.extra.keys())), lang='python')
+        self.report.text(f'Template (phase: {self.template.phase}):')
+        self.report.code(self.template.text, lang='jinja')
 
         # 2. Render the template and data to markup text.
         try:
             markup = TemplateRenderer(self.template.text).render(data, extra=self.extra)
         except Exception as e:
-            report = get_error_report()
+            report = self.get_error_report()
             report.text('Failed to render Jinja template:')
             report.exception(e)
             self += report
@@ -127,14 +139,14 @@ class pending_node(Base, Unpicklable):
         for hook in self._markup_text_hooks:
             markup = hook(self, markup)
 
-        dbg.text('Rendered markup text:')
-        dbg.code(markup, lang='rst')
+        self.report.text('Rendered markup text:')
+        self.report.code(markup, lang='rst')
 
         # 3. Render the markup text to doctree nodes.
         try:
             ns, msgs = MarkupRenderer(host).render(markup, inline=self.inline)
         except Exception as e:
-            report = get_error_report()
+            report = self.get_error_report()
             report.text(
                 'Failed to render markup text '
                 f'to {"inline " if self.inline else ""}nodes:'
@@ -143,20 +155,21 @@ class pending_node(Base, Unpicklable):
             self += report
             return
 
-        dbg.text(f'Rendered nodes (inline: {self.inline}):')
-        dbg.code('\n\n'.join([n.pformat() for n in ns]), lang='xml')
+        self.report.text(f'Rendered nodes (inline: {self.inline}):')
+        self.report.code('\n\n'.join([n.pformat() for n in ns]), lang='xml')
         if msgs:
-            dbg.text('Systemd messages:')
-            [dbg.node(msg) for msg in msgs]
+            self.report.text('Systemd messages:')
+            [self.report.node(msg) for msg in msgs]
 
         # 4. Add rendered nodes to container.
         for hook in self._rendered_nodes_hooks:
             hook(self, ns)
+
         # TODO: set_source_info?
         self += ns
 
         if self.template.debug:
-            self += dbg
+            self += self.report
 
         return
 

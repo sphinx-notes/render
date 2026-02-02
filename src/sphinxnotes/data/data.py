@@ -451,7 +451,7 @@ class DSLParser:
 
 
 @dataclass(frozen=True)
-class Schema(object):
+class Schema(Unpicklable):
     name: Field | None
     attrs: dict[str, Field] | Field
     content: Field | None

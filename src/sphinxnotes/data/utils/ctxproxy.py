@@ -8,7 +8,6 @@ from sphinx.util import logging
 from sphinx.config import Config as SphinxConfig
 
 from ..utils import find_first_child
-from ..utils import Unpicklable
 
 
 logger = logging.getLogger(__name__)
@@ -22,8 +21,9 @@ def proxy_property(func: Callable[[Any], Any]) -> property:
     return property(wrapped)
 
 
+# FIXME: Unpicklable?
 @dataclass(frozen=True)
-class Proxy(Unpicklable):
+class Proxy:
     """
     Proxy complex objects into context for convenient and secure access within
     Jinja templates.
