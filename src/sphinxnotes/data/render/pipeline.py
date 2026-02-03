@@ -1,6 +1,6 @@
 """
-sphinxnotes.data.pipeline
-~~~~~~~~~~~~~~~~~~~~~~~~~
+sphinxnotes.data.render.pipeline
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :copyright: Copyright 2026 by the Shengyu Zhang.
 :license: BSD, see LICENSE for details.
@@ -10,32 +10,36 @@ This modeule defines pipeline for rendering data to nodes.
 The Pipline
 ===========
 
-1. Define data: BaseDataDefiner generates a :cls:`pending_node`, which contains:
+1. Define data: BaseDataSource generates a :cls:`pending_node`, which contains:
 
-   - Data and possible extra contexts
-   - Schema for validating Data
+   - Data: :cls:`PendingData` (data to be validated), :cls:`ParsedData`, or
+     simple ``dict[str, Any]``.
    - Template for rendering data to markup text
+   - Possible extra contexts
+
+   See also :cls:`BaseDataSource`.
 
 2. Render data: the ``pending_node`` nodes will be rendered
-   (by calling :meth:`pending_node.render`) at some point, depending on :cls:`Phase`.
+   (by calling :meth:`pending_node.render`) at some point, depending on
+   :attr:`pending_node.template.phase`.
 
    The one who calls ``pending_node.render`` is called ``Host``.
-   The ``Host`` host is responsible for rendering the markup text into doctree
+   The ``Host`` host is responsible for rendering the markup text into docutils
    nodes (See :cls:`MarkupRenderer`).
 
    Phases:
 
    :``Phase.Parsing``:
-      Called by BaseDataDefiner ('s subclasses)
+      Called by BaseDataSource ('s subclasses)
 
    :``Phase.Parsed``:
-      Called by :cls:`_ParsedHook`.
+      Called by :cls:`ParsedHookTransform`.
 
    :``Phase.Resolving``:
-      Called by :cls:`_ResolvingHook`.
+      Called by :cls:`ResolvingHookTransform`.
 
-How :cls:`RawData` be rendered ``list[nodes.Node]``
-===================================================
+How data be rendered ``list[nodes.Node]``
+=========================================
 
 .. seealso:: :meth:`.datanodes.pending_node.render`.
 
@@ -64,6 +68,25 @@ logger = logging.getLogger(__name__)
 
 
 class Pipeline(ABC):
+    """
+    The core class defines the pipleing of rendering :cls:`pending_node`s.
+
+    Subclass is responsible to:
+
+    - call ``queue_xxx`` to add pendin nodes into queue.
+    - override :meth:`process_pending_node` to control when a pending node gets
+      rendered. In this method subclass can also call ``queue_xxx`` to add more
+      pending nodes.
+    - call :meth:`render_queue` to process all queued nodes and
+      returns any that couldn't be rendered in the current phase.
+
+    See Also:
+
+    - :class:`BaseDataSource`: Data source implementation and hook for Phase.Parsing
+    - :class:`ParsedHookTransform`: Built-in hook for Phase.Parsed
+    - :class:`ResolvingHookTransform`: Built-in hook for Phase.Resolving
+    """
+
     #: Queue of pending node to be rendered.
     _q: list[pending_node] | None = None
 
@@ -87,25 +110,14 @@ class Pipeline(ABC):
             self._q = []
         self._q.append(n)
 
+
     @final
-    def queue_raw_data(
-        self, data: RawData, schema: Schema, tmpl: Template
+    def queue_data(self, data: PendingData | ParsedData | dict[str, Any], tmpl: Template
     ) -> pending_node:
-        pending = pending_node(PendingData(data, schema), tmpl)
-        self.queue_pending_node(pending)
-        return pending
-
-    @final
-    def queue_parsed_data(self, data: ParsedData, tmpl: Template) -> pending_node:
         pending = pending_node(data, tmpl)
         self.queue_pending_node(pending)
         return pending
 
-    @final
-    def queue_any_data(self, data: Any, tmpl: Template) -> pending_node:
-        pending = pending_node(data, tmpl)
-        self.queue_pending_node(pending)
-        return pending
 
     @final
     def render_queue(self) -> list[pending_node]:
@@ -147,25 +159,44 @@ class Pipeline(ABC):
         return ns
 
 
-class BaseDataDefiner(Pipeline):
+class BaseDataSource(Pipeline):
     """
-    A abstract class that owns :cls:`RawData` and support
-    validating and rendering the data at the appropriate time.
+    Abstract base class for generateing data, as the source of the rendering
+    pipeline.
 
-    The subclasses *MUST* be subclass of :cls:`SphinxDirective` or
-    :cls:`SphinxRole`.
+    This class also responsible to render data in Phase.Parsing. So the final
+    implementations MUST be subclass of :class:`SphinxDirective` or
+    :class:`SphinxRole`, which provide the execution context and interface for
+    processing reStructuredText markup.
     """
 
     """Methods to be implemented."""
 
     @abstractmethod
-    def current_data(self) -> RawData: ...
+    def current_data(self) -> PendingData | ParsedData | dict[str, Any]:
+        """
+        Return the data to be rendered.
+
+        This method should be implemented to provide the actual data content
+        that will be rendered. The returned data can be a PendingData object,
+        a ParsedData object, or a plain dictionary.
+
+        Returns:
+            The data content to render into nodes.
+        """
 
     @abstractmethod
-    def current_schema(self) -> Schema: ...
+    def current_template(self) -> Template:
+        """
+        Return the template for rendering the data.
 
-    @abstractmethod
-    def current_template(self) -> Template: ...
+        This method should be implemented to provide the Jinja2 template
+        that will render the data into markup text. The template determines
+        the phase at which rendering occurs.
+
+        Returns:
+            The template to use for rendering.
+        """
 
     """Methods override from parent."""
 
@@ -181,20 +212,10 @@ class BaseDataDefiner(Pipeline):
         return n.template.phase == Phase.Parsing
 
 
-class BaseDataDefineDirective(BaseDataDefiner, SphinxDirective):
-    @override
-    def current_data(self) -> RawData:
-        return RawData(
-            ' '.join(self.arguments) if self.arguments else None,
-            self.options.copy(),
-            '\n'.join(self.content) if self.has_content else None,
-        )
-
+class BaseDataDirective(BaseDataSource, SphinxDirective):
     @override
     def run(self) -> list[nodes.Node]:
-        self.queue_raw_data(
-            self.current_data(), self.current_schema(), self.current_template()
-        )
+        self.queue_data(self.current_data(), self.current_template())
 
         ns = []
         for x in self.render_queue():
@@ -206,11 +227,7 @@ class BaseDataDefineDirective(BaseDataDefiner, SphinxDirective):
         return ns
 
 
-class BaseDataDefineRole(BaseDataDefiner, SphinxRole):
-    @override
-    def current_data(self) -> RawData:
-        return RawData(None, {}, self.text)
-
+class BaseDataRole(BaseDataSource, SphinxRole):
     @override
     def process_pending_node(self, n: pending_node) -> bool:
         n.inline = True
@@ -218,9 +235,8 @@ class BaseDataDefineRole(BaseDataDefiner, SphinxRole):
 
     @override
     def run(self) -> tuple[list[nodes.Node], list[nodes.system_message]]:
-        self.queue_raw_data(
-            self.current_data(), self.current_schema(), self.current_template()
-        )
+        pending = self.queue_data(self.current_data(), self.current_template())
+        pending.inline = True
 
         ns, msgs = [], []
         for n in self.render_queue():
@@ -234,7 +250,7 @@ class BaseDataDefineRole(BaseDataDefiner, SphinxRole):
         return ns, msgs
 
 
-class _ParsedHook(SphinxTransform, Pipeline):
+class ParsedHookTransform(SphinxTransform, Pipeline):
     # Before almost all others.
     default_priority = 100
 
@@ -256,7 +272,7 @@ class _ParsedHook(SphinxTransform, Pipeline):
             n.ensure_data_parsed()
 
 
-class _ResolvingHook(SphinxPostTransform, Pipeline):
+class ResolvingHookTransform(SphinxPostTransform, Pipeline):
     # After resolving pending_xref
     default_priority = (ReferencesResolver.default_priority or 10) + 5
 
@@ -277,7 +293,7 @@ class _ResolvingHook(SphinxPostTransform, Pipeline):
 
 def setup(app: Sphinx) -> None:
     # Hook for Phase.Parsed.
-    app.add_transform(_ParsedHook)
+    app.add_transform(ParsedHookTransform)
 
     # Hook for Phase.Resolving.
-    app.add_post_transform(_ResolvingHook)
+    app.add_post_transform(ResolvingHookTransform)

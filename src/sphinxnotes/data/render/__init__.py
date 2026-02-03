@@ -4,10 +4,15 @@ from typing import TYPE_CHECKING
 from .render import Phase, Template, Host
 from .datanodes import pending_node
 from .pipeline import (
-    BaseDataDefineRole,
-    BaseDataDefineDirective,
+    BaseDataRole,
+    BaseDataDirective,
 )
 from .extractx import ExtraContextRegistry, ExtraContextGenerator
+from .sources import (
+    BaseDataDefineDirective,
+    StrictDataDefineDirective,
+    BaseDataDefineRole,
+)
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
@@ -18,10 +23,13 @@ __all__ = [
     'Template',
     'Host',
     'pending_node',
-    'BaseDataDefineRole',
-    'BaseDataDefineDirective',
+    'BaseDataRole',
+    'BaseDataDirective',
     'ExtraContextRegistry',
     'ExtraContextGenerator',
+    'BaseDataDefineDirective',
+    'StrictDataDefineDirective',
+    'BaseDataDefineRole',
 ]
 
 
