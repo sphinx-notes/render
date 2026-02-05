@@ -1,12 +1,11 @@
 """
-sphinxnotes.data.render.data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+sphinxnotes.data.render.ctx
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :copyright: Copyright 2026 by the Shengyu Zhang.
 :license: BSD, see LICENSE for details.
 
-This module wraps the :mod:`..data` module to make it work well with the render
-pipeline (:mod:`pipeline`).
+This module wraps the :mod:`..data` into context for rendering the template.
 """
 
 from typing import TYPE_CHECKING
@@ -35,9 +34,10 @@ class PendingContextRef:
 
 
 class PendingContext(ABC, Unpicklable, Hashable):
-    """A abstract represent of context that is not currently available.
+    """A abstract representation of context that is not currently available.
 
-    Call :meth:`resolve` to get data.
+    Call :meth:`resolve` at the right time (depends on the implment) to get
+    context available.
     """
 
     @abstractmethod
@@ -47,13 +47,15 @@ class PendingContext(ABC, Unpicklable, Hashable):
 class PendingContextStorage:
     """Area for temporarily storing PendingContext.
 
-    This class is indented to resolve the problem that some datas are Unpicklable
-    and can not be hold by :cls:`pending_node` (as ``pending_node`` will be
-    pickled along with the docutils doctree)
+    This class is indented to resolve the problem that:
+
+        Some of the PendingContext are :cls:Unpicklable` and they can not be hold
+        by :cls:`pending_node` (as ``pending_node`` will be pickled along with
+        the docutils doctree)
 
     This class maintains a mapping from :cls:`PendingContextRef` -> :cls:`PendingContext`.
-    ``pending_node`` owns the ``PendingContextRef``, and the PendingContext is Unpicklable,
-    pending_node can get it by calling :meth:`retrieve`.
+    ``pending_node`` owns the ``PendingContextRef``, and can retrieve the context 
+    by calling :meth:`retrieve`.
     """
 
     _next_id: int
