@@ -12,8 +12,7 @@ The Pipline
 
 1. Define context: BaseDataSource generates a :cls:`pending_node`, which contains:
 
-   - Data: :cls:`PendingData` (data to be validated), :cls:`ParsedData`, or
-     simple ``dict[str, Any]``.
+   - Context
    - Template for rendering data to markup text
    - Possible extra contexts
 
@@ -38,8 +37,8 @@ The Pipline
    :``Phase.Resolving``:
       Called by :cls:`ResolvingHookTransform`.
 
-How data be rendered ``list[nodes.Node]``
-=========================================
+How context be rendered ``list[nodes.Node]``
+============================================
 
 .. seealso:: :meth:`.ctxnodes.pending_node.render`.
 
@@ -56,7 +55,7 @@ from sphinx.transforms import SphinxTransform
 from sphinx.transforms.post_transforms import SphinxPostTransform, ReferencesResolver
 
 from .render import HostWrapper, Phase, Template, Host, ParseHost, TransformHost
-from .ctx import Context
+from .ctx import PendingContext, ResolvedContext
 from .ctxnodes import pending_node
 from .extractx import ExtraContextGenerator
 
@@ -111,13 +110,9 @@ class Pipeline(ABC):
         self._q.append(n)
 
     @final
-    def queue_context(self, ctx: Context, tmpl: Template) -> pending_node:
-        pending = pending_node(ctx, tmpl)
-        self.queue_pending_node(pending)
-        return pending
-
-    @final
-    def queue_resolved_data(self, ctx: Context, tmpl: Template) -> pending_node:
+    def queue_context(
+        self, ctx: PendingContext | ResolvedContext, tmpl: Template
+    ) -> pending_node:
         pending = pending_node(ctx, tmpl)
         self.queue_pending_node(pending)
         return pending
@@ -176,7 +171,7 @@ class BaseContextSource(Pipeline):
     """Methods to be implemented."""
 
     @abstractmethod
-    def current_context(self) -> Context:
+    def current_context(self) -> PendingContext | ResolvedContext:
         """Return the context to be rendered."""
         ...
 

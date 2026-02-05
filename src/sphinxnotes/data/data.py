@@ -266,7 +266,10 @@ class Field(Unpicklable):
         sep: str | None = None
 
     def __hash__(self) -> int:
-        return hash((self.etype, self.ctype, frozenset(self.flags.items()), self.dsl))
+        flags = {
+            k: v if not isinstance(v, list) else tuple(v) for k, v in self.flags.items()
+        }
+        return hash((self.etype, self.ctype, frozenset(flags.items()), self.dsl))
 
     @classmethod
     def from_dsl(cls, dsl: str) -> Self:

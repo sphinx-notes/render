@@ -6,7 +6,7 @@ from .render import (
     Template,
     Host,
 )
-from .ctx import Context, PendingContext, PendingContextRef, PendingContextStorage, ResolvedContext
+from .ctx import PendingContext, ResolvedContext
 from .ctxnodes import pending_node
 from .pipeline import (
     BaseContextRole,
@@ -14,6 +14,7 @@ from .pipeline import (
 )
 from .extractx import ExtraContextRegistry, ExtraContextGenerator
 from .sources import (
+    UnparsedData,
     BaseDataDefineDirective,
     StrictDataDefineDirective,
     BaseDataDefineRole,
@@ -27,16 +28,14 @@ __all__ = [
     'Phase',
     'Template',
     'Host',
-    'Context',
     'PendingContext',
-    'PendingContextRef',
-    'PendingContextStorage',
     'ResolvedContext',
     'pending_node',
     'BaseContextRole',
     'BaseContextDirective',
     'ExtraContextRegistry',
     'ExtraContextGenerator',
+    'UnparsedData',
     'BaseDataDefineDirective',
     'StrictDataDefineDirective',
     'BaseDataDefineRole',

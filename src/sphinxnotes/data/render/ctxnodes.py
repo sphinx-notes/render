@@ -6,7 +6,7 @@ from docutils import nodes
 from docutils.parsers.rst.states import Inliner
 
 from .render import Template
-from .ctx import PENDING_CONTEXT_STORAGE, PendingContextRef
+from .ctx import PendingContextRef, PendingContext, PendingContextStorage
 from .markup import MarkupRenderer
 from .template import TemplateRenderer
 from ..utils import (
@@ -16,14 +16,14 @@ from ..utils import (
 )
 
 if TYPE_CHECKING:
-    from typing import Any, Callable
+    from typing import Any, Callable, ClassVar
     from .markup import Host
-    from .ctx import Context, PendingContext, ResolvedContext
+    from .ctx import ResolvedContext
 
 
 class pending_node(nodes.Element):
     # The context to be rendered by Jinja template.
-    ctx: Context
+    ctx: PendingContextRef | ResolvedContext
     # The extra context as supplement to ctx.
     extra: dict[str, Any]
     #: Jinja template for rendering the context.
@@ -33,9 +33,15 @@ class pending_node(nodes.Element):
     #: Whether the rendering pipeline is finished (failed is also finished).
     rendered: bool
 
+    #: Mapping of PendingContextRef -> PendingContext.
+    #:
+    #: NOTE: ``PendingContextStorage`` holds Unpicklable data (``PendingContext``)
+    #: but it is doesn't matters :-), cause pickle doesn't deal with ClassVar.
+    _PENDING_CONTEXTS: ClassVar[PendingContextStorage] = PendingContextStorage()
+
     def __init__(
         self,
-        ctx: Context,
+        ctx: PendingContext | PendingContextRef | ResolvedContext,
         tmpl: Template,
         inline: bool = False,
         rawsource='',
@@ -43,15 +49,18 @@ class pending_node(nodes.Element):
         **attributes,
     ) -> None:
         super().__init__(rawsource, *children, **attributes)
-        self.ctx = ctx
+        if not isinstance(ctx, PendingContext):
+            self.ctx = ctx
+        else:
+            self.ctx = self._PENDING_CONTEXTS.stash(ctx)
         self.extra = {}
         self.template = tmpl
         self.inline = inline
         self.rendered = False
 
         # Init hook lists.
-        self._pending_data_hooks = []
-        self._resoloved_data_hooks = []
+        self._pending_context_hooks = []
+        self._resolved_data_hooks = []
         self._markup_text_hooks = []
         self._rendered_nodes_hooks = []
 
@@ -59,8 +68,8 @@ class pending_node(nodes.Element):
         """
         The core function for rendering context to docutils nodes.
 
-        1. PendingDataRef + PENDING_DATA_RESOLVER -> PendingData -> ResolvedContext
-        2. TemplateRenderer.render(ResolvedData) -> Markup Text (``str``)
+        1. PendingContextRef -> PendingContext -> ResolvedContext
+        2. TemplateRenderer.render(ResolvedContext) -> Markup Text (``str``)
         3. MarkupRenderer.render(Markup Text) -> doctree Nodes (list[nodes.Node])
         """
 
@@ -86,7 +95,7 @@ class pending_node(nodes.Element):
             report.text('Pending context ref:')
             report.code(pformat(self.ctx), lang='python')
 
-            pdata = PENDING_CONTEXT_STORAGE.retrieve(self.ctx)
+            pdata = self._PENDING_CONTEXTS.retrieve(self.ctx)
             if pdata is None:
                 report = err_report()
                 report.text(f'Failed to retrieve pending context from ref {self.ctx}')
@@ -96,7 +105,7 @@ class pending_node(nodes.Element):
             report.text('Pending context:')
             report.code(pformat(pdata), lang='python')
 
-            for hook in self._pending_data_hooks:
+            for hook in self._pending_context_hooks:
                 hook(self, pdata)
 
             try:
@@ -110,7 +119,7 @@ class pending_node(nodes.Element):
         else:
             ctx = self.ctx
 
-        for hook in self._resoloved_data_hooks:
+        for hook in self._resolved_data_hooks:
             hook(self, ctx)
 
         report.text(f'Resolved context (type: {type(ctx)}):')
@@ -205,21 +214,21 @@ class pending_node(nodes.Element):
 
     """Hooks for procssing render intermediate products. """
 
-    type PendingDataHook = Callable[[pending_node, PendingContext], None]
-    type ResolvedDataHook = Callable[[pending_node, ResolvedContext], None]
+    type PendingContextHook = Callable[[pending_node, PendingContext], None]
+    type ResolvedContextHook = Callable[[pending_node, ResolvedContext], None]
     type MarkupTextHook = Callable[[pending_node, str], str]
     type RenderedNodesHook = Callable[[pending_node, list[nodes.Node]], None]
 
-    _pending_data_hooks: list[PendingDataHook]
-    _resoloved_data_hooks: list[ResolvedDataHook]
+    _pending_context_hooks: list[PendingContextHook]
+    _resolved_data_hooks: list[ResolvedContextHook]
     _markup_text_hooks: list[MarkupTextHook]
     _rendered_nodes_hooks: list[RenderedNodesHook]
 
-    def hook_pending_data(self, hook: PendingDataHook) -> None:
-        self._pending_data_hooks.append(hook)
+    def hook_pending_context(self, hook: PendingContextHook) -> None:
+        self._pending_context_hooks.append(hook)
 
-    def hook_resolved_data(self, hook: ResolvedDataHook) -> None:
-        self._resoloved_data_hooks.append(hook)
+    def hook_resolved_context(self, hook: ResolvedContextHook) -> None:
+        self._resolved_data_hooks.append(hook)
 
     def hook_markup_text(self, hook: MarkupTextHook) -> None:
         self._markup_text_hooks.append(hook)

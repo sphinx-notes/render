@@ -9,19 +9,16 @@ This module wraps the :mod:`..data` module to make it work well with the render
 pipeline (:mod:`pipeline`).
 """
 
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING
 from abc import ABC, abstractmethod
 from collections.abc import Hashable
 from dataclasses import dataclass
 
 from sphinxnotes.data.utils import Unpicklable
 
-from ..data import ParsedData, RawData, Schema
-
 if TYPE_CHECKING:
     from typing import Any
-
-type Context = PendingContextRef | ResolvedContext
+    from ..data import ParsedData
 
 type ResolvedContext = ParsedData | dict[str, Any]
 
@@ -48,14 +45,14 @@ class PendingContext(ABC, Unpicklable, Hashable):
 
 
 class PendingContextStorage:
-    """Area for temporarily storing PendingData.
+    """Area for temporarily storing PendingContext.
 
     This class is indented to resolve the problem that some datas are Unpicklable
     and can not be hold by :cls:`pending_node` (as ``pending_node`` will be
     pickled along with the docutils doctree)
 
-    This class maintains a mapping from :cls:`PendingDataRef` -> :cls:`PendingData`.
-    ``pending_node`` owns the ``PendingDataRef``, and the PendingData is Unpicklable,
+    This class maintains a mapping from :cls:`PendingContextRef` -> :cls:`PendingContext`.
+    ``pending_node`` owns the ``PendingContextRef``, and the PendingContext is Unpicklable,
     pending_node can get it by calling :meth:`retrieve`.
     """
 
@@ -75,22 +72,3 @@ class PendingContextStorage:
     def retrieve(self, ref: PendingContextRef) -> PendingContext | None:
         data = self._data.pop(ref, None)
         return data
-
-
-PENDING_CONTEXT_STORAGE = PendingContextStorage()
-
-
-@dataclass
-class UnparsedData(PendingContext):
-    """A implementation of PendingData, contains raw data and its schema."""
-
-    raw: RawData
-    schema: Schema
-
-    @override
-    def resolve(self) -> ResolvedContext:
-        return self.schema.parse(self.raw)
-
-    @override
-    def __hash__(self) -> int:
-        return hash((self.raw, self.schema))

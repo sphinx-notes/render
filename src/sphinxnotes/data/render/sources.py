@@ -11,16 +11,33 @@ This module provides helpful BaseContextSource subclasses.
 from __future__ import annotations
 from typing import TYPE_CHECKING, override
 from abc import abstractmethod
+from dataclasses import dataclass
 
 from docutils.parsers.rst import directives
 
 from ..data import Field, RawData, Schema
-from .ctx import Context, UnparsedData, PENDING_CONTEXT_STORAGE
+from .ctx import PendingContext, ResolvedContext
 from .render import Template
 from .pipeline import BaseContextSource, BaseContextDirective, BaseContextRole
 
 if TYPE_CHECKING:
     pass
+
+
+@dataclass
+class UnparsedData(PendingContext):
+    """A implementation of PendingContext, contains raw data and its schema."""
+
+    raw: RawData
+    schema: Schema
+
+    @override
+    def resolve(self) -> ResolvedContext:
+        return self.schema.parse(self.raw)
+
+    @override
+    def __hash__(self) -> int:
+        return hash((self.raw, self.schema))
 
 
 class BaseRawDataSource(BaseContextSource):
@@ -39,10 +56,8 @@ class BaseRawDataSource(BaseContextSource):
     """Methods to be overrided."""
 
     @override
-    def current_context(self) -> Context:
-        data = UnparsedData(self.current_raw_data(), self.current_schema())
-        ref = PENDING_CONTEXT_STORAGE.stash(data)
-        return ref
+    def current_context(self) -> PendingContext | ResolvedContext:
+        return UnparsedData(self.current_raw_data(), self.current_schema())
 
 
 class BaseDataDefineDirective(BaseRawDataSource, BaseContextDirective):
