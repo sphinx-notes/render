@@ -110,7 +110,7 @@ class pending_node(nodes.Element):
 
             try:
                 ctx = self.ctx = pdata.resolve()
-            except ValueError as e:
+            except Exception as e:
                 report = err_report()
                 report.text('Failed to resolve pending context:')
                 report.exception(e)
