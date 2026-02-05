@@ -1,11 +1,16 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from .render import Phase, Template, Host
-from .datanodes import pending_node
+from .render import (
+    Phase,
+    Template,
+    Host,
+)
+from .ctx import Context, PendingContext, PendingContextRef, PendingContextStorage, ResolvedContext
+from .ctxnodes import pending_node
 from .pipeline import (
-    BaseDataRole,
-    BaseDataDirective,
+    BaseContextRole,
+    BaseContextDirective,
 )
 from .extractx import ExtraContextRegistry, ExtraContextGenerator
 from .sources import (
@@ -22,9 +27,14 @@ __all__ = [
     'Phase',
     'Template',
     'Host',
+    'Context',
+    'PendingContext',
+    'PendingContextRef',
+    'PendingContextStorage',
+    'ResolvedContext',
     'pending_node',
-    'BaseDataRole',
-    'BaseDataDirective',
+    'BaseContextRole',
+    'BaseContextDirective',
     'ExtraContextRegistry',
     'ExtraContextGenerator',
     'BaseDataDefineDirective',

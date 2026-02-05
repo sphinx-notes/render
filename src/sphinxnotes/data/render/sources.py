@@ -5,7 +5,7 @@ sphinxnotes.data.render.sources
 :copyright: Copyright 2026 by the Shengyu Zhang.
 :license: BSD, see LICENSE for details.
 
-This module provides helpful BaseDataSource subclasses.
+This module provides helpful BaseContextSource subclasses.
 """
 
 from __future__ import annotations
@@ -13,18 +13,19 @@ from typing import TYPE_CHECKING, override
 from abc import abstractmethod
 
 from docutils.parsers.rst import directives
-from docutils.parsers.rst.directives import directive
 
-from ..data import Field, RawData, PendingData, ParsedData, Schema
+from ..data import Field, RawData, Schema
+from .ctx import Context, UnparsedData, PENDING_CONTEXT_STORAGE
 from .render import Template
-from .pipeline import BaseDataSource, BaseDataDirective, BaseDataRole
+from .pipeline import BaseContextSource, BaseContextDirective, BaseContextRole
 
 if TYPE_CHECKING:
-    from typing import Any
+    pass
 
-class BaseRawDataSource(BaseDataSource):
+
+class BaseRawDataSource(BaseContextSource):
     """
-    A BaseDataRenderer subclass, which itself is a definition of raw data
+    A BaseContextRenderer subclass, which itself is a definition of raw data.
     """
 
     """Methods to be implemented."""
@@ -38,11 +39,13 @@ class BaseRawDataSource(BaseDataSource):
     """Methods to be overrided."""
 
     @override
-    def current_data(self) -> PendingData | ParsedData | dict[str, Any]:
-        return PendingData(self.current_raw_data(), self.current_schema())
+    def current_context(self) -> Context:
+        data = UnparsedData(self.current_raw_data(), self.current_schema())
+        ref = PENDING_CONTEXT_STORAGE.stash(data)
+        return ref
 
 
-class BaseDataDefineDirective(BaseRawDataSource, BaseDataDirective):
+class BaseDataDefineDirective(BaseRawDataSource, BaseContextDirective):
     @override
     def current_raw_data(self) -> RawData:
         return RawData(
@@ -52,7 +55,7 @@ class BaseDataDefineDirective(BaseRawDataSource, BaseDataDirective):
         )
 
 
-class BaseDataDefineRole(BaseRawDataSource, BaseDataRole):
+class BaseDataDefineRole(BaseRawDataSource, BaseContextRole):
     @override
     def current_raw_data(self) -> RawData:
         return RawData(self.name, self.options.copy(), self.text)
@@ -98,7 +101,7 @@ class StrictDataDefineDirective(BaseDataDefineDirective):
 
         # Generate directive class
         return type(
-            '%sStrictDataDefineDirective' % name.title(),
+            'Strict%sDataDefineDirective' % name.title(),
             (cls,),
             {
                 'schema': schema,

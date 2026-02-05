@@ -5,12 +5,12 @@ sphinxnotes.data.render.pipeline
 :copyright: Copyright 2026 by the Shengyu Zhang.
 :license: BSD, see LICENSE for details.
 
-This modeule defines pipeline for rendering data to nodes.
+This module defines pipeline for rendering data to nodes.
 
 The Pipline
 ===========
 
-1. Define data: BaseDataSource generates a :cls:`pending_node`, which contains:
+1. Define context: BaseDataSource generates a :cls:`pending_node`, which contains:
 
    - Data: :cls:`PendingData` (data to be validated), :cls:`ParsedData`, or
      simple ``dict[str, Any]``.
@@ -41,7 +41,7 @@ The Pipline
 How data be rendered ``list[nodes.Node]``
 =========================================
 
-.. seealso:: :meth:`.datanodes.pending_node.render`.
+.. seealso:: :meth:`.ctxnodes.pending_node.render`.
 
 """
 
@@ -56,12 +56,12 @@ from sphinx.transforms import SphinxTransform
 from sphinx.transforms.post_transforms import SphinxPostTransform, ReferencesResolver
 
 from .render import HostWrapper, Phase, Template, Host, ParseHost, TransformHost
-from .datanodes import pending_node
+from .ctx import Context
+from .ctxnodes import pending_node
 from .extractx import ExtraContextGenerator
-from ..data import RawData, PendingData, ParsedData, Schema
+
 
 if TYPE_CHECKING:
-    from typing import Any
     from sphinx.application import Sphinx
 
 logger = logging.getLogger(__name__)
@@ -82,7 +82,7 @@ class Pipeline(ABC):
 
     See Also:
 
-    - :class:`BaseDataSource`: Data source implementation and hook for Phase.Parsing
+    - :class:`BaseDataSource`: Context source implementation and hook for Phase.Parsing
     - :class:`ParsedHookTransform`: Built-in hook for Phase.Parsed
     - :class:`ResolvingHookTransform`: Built-in hook for Phase.Resolving
     """
@@ -110,14 +110,17 @@ class Pipeline(ABC):
             self._q = []
         self._q.append(n)
 
-
     @final
-    def queue_data(self, data: PendingData | ParsedData | dict[str, Any], tmpl: Template
-    ) -> pending_node:
-        pending = pending_node(data, tmpl)
+    def queue_context(self, ctx: Context, tmpl: Template) -> pending_node:
+        pending = pending_node(ctx, tmpl)
         self.queue_pending_node(pending)
         return pending
 
+    @final
+    def queue_resolved_data(self, ctx: Context, tmpl: Template) -> pending_node:
+        pending = pending_node(ctx, tmpl)
+        self.queue_pending_node(pending)
+        return pending
 
     @final
     def render_queue(self) -> list[pending_node]:
@@ -159,12 +162,12 @@ class Pipeline(ABC):
         return ns
 
 
-class BaseDataSource(Pipeline):
+class BaseContextSource(Pipeline):
     """
-    Abstract base class for generateing data, as the source of the rendering
+    Abstract base class for generateing context, as the source of the rendering
     pipeline.
 
-    This class also responsible to render data in Phase.Parsing. So the final
+    This class also responsible to render context in Phase.Parsing. So the final
     implementations MUST be subclass of :class:`SphinxDirective` or
     :class:`SphinxRole`, which provide the execution context and interface for
     processing reStructuredText markup.
@@ -173,30 +176,23 @@ class BaseDataSource(Pipeline):
     """Methods to be implemented."""
 
     @abstractmethod
-    def current_data(self) -> PendingData | ParsedData | dict[str, Any]:
-        """
-        Return the data to be rendered.
-
-        This method should be implemented to provide the actual data content
-        that will be rendered. The returned data can be a PendingData object,
-        a ParsedData object, or a plain dictionary.
-
-        Returns:
-            The data content to render into nodes.
-        """
+    def current_context(self) -> Context:
+        """Return the context to be rendered."""
+        ...
 
     @abstractmethod
     def current_template(self) -> Template:
         """
-        Return the template for rendering the data.
+        Return the template for rendering the context.
 
         This method should be implemented to provide the Jinja2 template
-        that will render the data into markup text. The template determines
+        that will render the context into markup text. The template determines
         the phase at which rendering occurs.
 
         Returns:
             The template to use for rendering.
         """
+        ...
 
     """Methods override from parent."""
 
@@ -212,10 +208,10 @@ class BaseDataSource(Pipeline):
         return n.template.phase == Phase.Parsing
 
 
-class BaseDataDirective(BaseDataSource, SphinxDirective):
+class BaseContextDirective(BaseContextSource, SphinxDirective):
     @override
     def run(self) -> list[nodes.Node]:
-        self.queue_data(self.current_data(), self.current_template())
+        self.queue_context(self.current_context(), self.current_template())
 
         ns = []
         for x in self.render_queue():
@@ -227,7 +223,7 @@ class BaseDataDirective(BaseDataSource, SphinxDirective):
         return ns
 
 
-class BaseDataRole(BaseDataSource, SphinxRole):
+class BaseContextRole(BaseContextSource, SphinxRole):
     @override
     def process_pending_node(self, n: pending_node) -> bool:
         n.inline = True
@@ -235,7 +231,7 @@ class BaseDataRole(BaseDataSource, SphinxRole):
 
     @override
     def run(self) -> tuple[list[nodes.Node], list[nodes.system_message]]:
-        pending = self.queue_data(self.current_data(), self.current_template())
+        pending = self.queue_context(self.current_context(), self.current_template())
         pending.inline = True
 
         ns, msgs = [], []
@@ -265,11 +261,7 @@ class ParsedHookTransform(SphinxTransform, Pipeline):
             self.queue_pending_node(pending)
 
         for n in self.render_queue():
-            # NOTE: In the next Phase, doctrees will be pickled to disk.
-            # As :cls:`data.Schema` is **Unpicklable**, we should ensure
-            # ``pending_node.data`` is parsed, which means pending_node dropped
-            # the reference to Schema.
-            n.ensure_data_parsed()
+            ...
 
 
 class ResolvingHookTransform(SphinxPostTransform, Pipeline):

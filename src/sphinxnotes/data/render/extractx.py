@@ -7,7 +7,7 @@ from docutils.parsers.rst.directives import _directives
 from docutils.parsers.rst.roles import _roles
 
 from .render import HostWrapper
-from .datanodes import pending_node
+from .ctxnodes import pending_node
 from ..utils import find_current_section, Report, Reporter
 from ..utils.ctxproxy import proxy
 
