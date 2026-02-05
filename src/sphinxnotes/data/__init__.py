@@ -28,12 +28,17 @@ from .render import (
     Template,
     Host,
     pending_node,
-    BaseDataDefineRole,
-    BaseDataDefineDirective,
+    PendingContext,
+    ResolvedContext,
+    BaseContextRole,
+    BaseContextDirective,
     ExtraContextRegistry,
     ExtraContextGenerator,
+    UnparsedData,
+    BaseDataDefineRole,
+    BaseDataDefineDirective,
+    StrictDataDefineDirective,
 )
-from .examples.strict import StrictDataDefineDirective
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
@@ -52,7 +57,12 @@ __all__ = [
     'Phase',
     'Template',
     'Host',
+    'PendingContext',
+    'ResolvedContext',
     'pending_node',
+    'BaseContextRole',
+    'BaseContextDirective',
+    'UnparsedData',
     'BaseDataDefineRole',
     'BaseDataDefineDirective',
     'StrictDataDefineDirective',

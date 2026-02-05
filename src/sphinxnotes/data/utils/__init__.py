@@ -97,15 +97,14 @@ def find_nearest_block_element(node: nodes.Node | None) -> nodes.Element | None:
 
 
 class Report(nodes.system_message):
-    type Level = Literal['DEBUG', 'INFO', 'WARNING', 'ERROR']
+    type Type = Literal['DEBUG', 'INFO', 'WARNING', 'ERROR']
 
-    level: Level
     title: str
 
     def __init__(
-        self, title: str, level: Level = 'DEBUG', *children, **attributes
+        self, title: str, typ: Type = 'DEBUG', *children, **attributes
     ) -> None:
-        super().__init__(title + ':', type=level, level=2, *children, **attributes)
+        super().__init__(title + ':', type=typ, level=2, *children, **attributes)
         self.title = title
 
     def empty(self) -> bool:
@@ -143,12 +142,16 @@ class Report(nodes.system_message):
 
         self.node(bullet_list)
 
-    def excption(self) -> None:
+    def traceback(self) -> None:
         # https://pygments.org/docs/lexers/#pygments.lexers.python.PythonTracebackLexer
         self.code(traceback.format_exc(), lang='pytb')
 
+    def exception(self, e: Exception) -> None:
+        # https://pygments.org/docs/lexers/#pygments.lexers.python.PythonTracebackLexer
+        self.code(str(e), lang='pytb')
+
     def is_error(self) -> bool:
-        return self.level == 'ERROR'
+        return self['type'] == 'ERROR'
 
     type Inliner = RstInliner | tuple[nodes.document, nodes.Element]
 

@@ -128,9 +128,10 @@ class FreeDataDefineRole(BaseDataDefineRole):
         self.orig_name = orig_name
 
     @override
-    def current_data(self) -> RawData:
-        _, _, name = self.orig_name.partition('+')
-        return RawData(name, {}, self.text)
+    def current_raw_data(self) -> RawData:
+        data = super().current_raw_data()
+        _, _, data.name = self.orig_name.partition('+')
+        return data
 
     @override
     def current_schema(self) -> Schema:

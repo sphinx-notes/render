@@ -1,13 +1,24 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from .render import Phase, Template, Host
-from .datanodes import pending_node
+from .render import (
+    Phase,
+    Template,
+    Host,
+)
+from .ctx import PendingContext, ResolvedContext
+from .ctxnodes import pending_node
 from .pipeline import (
-    BaseDataDefineRole,
-    BaseDataDefineDirective,
+    BaseContextRole,
+    BaseContextDirective,
 )
 from .extractx import ExtraContextRegistry, ExtraContextGenerator
+from .sources import (
+    UnparsedData,
+    BaseDataDefineDirective,
+    StrictDataDefineDirective,
+    BaseDataDefineRole,
+)
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
@@ -17,11 +28,17 @@ __all__ = [
     'Phase',
     'Template',
     'Host',
+    'PendingContext',
+    'ResolvedContext',
     'pending_node',
-    'BaseDataDefineRole',
-    'BaseDataDefineDirective',
+    'BaseContextRole',
+    'BaseContextDirective',
     'ExtraContextRegistry',
     'ExtraContextGenerator',
+    'UnparsedData',
+    'BaseDataDefineDirective',
+    'StrictDataDefineDirective',
+    'BaseDataDefineRole',
 ]
 
 

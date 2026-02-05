@@ -7,7 +7,7 @@ from docutils.parsers.rst.directives import _directives
 from docutils.parsers.rst.roles import _roles
 
 from .render import HostWrapper
-from .datanodes import pending_node
+from .ctxnodes import pending_node
 from ..utils import find_current_section, Report, Reporter
 from ..utils.ctxproxy import proxy
 
@@ -40,7 +40,7 @@ class TransformPhaseExtraContext(ABC):
 class ExtraContextRegistry:
     names: set[str]
     parsing: dict[str, ParsePhaseExtraContext]
-    parsed: dict[str, ParsePhaseExtraContext]
+    parsed: dict[str, TransformPhaseExtraContext]
     post_transform: dict[str, TransformPhaseExtraContext]
     global_: dict[str, GlobalExtraContxt]
 
@@ -70,7 +70,7 @@ class ExtraContextRegistry:
         self.parsing['_' + name] = ctxgen
 
     def add_parsed_phase_context(
-        self, name: str, ctxgen: ParsePhaseExtraContext
+        self, name: str, ctxgen: TransformPhaseExtraContext
     ) -> None:
         self._name_dedup(name)
         self.parsed['_' + name] = ctxgen
@@ -163,7 +163,7 @@ class ExtraContextGenerator:
         for name, ctxgen in self.registry.parsing.items():
             self._safegen(name, lambda: ctxgen.generate(host))
 
-    def on_parsed(self, host: ParseHost) -> None:
+    def on_parsed(self, host: TransformHost) -> None:
         for name, ctxgen in self.registry.parsed.items():
             self._safegen(name, lambda: ctxgen.generate(host))
 
@@ -177,7 +177,7 @@ class ExtraContextGenerator:
             self.node.extra[name] = gen()
         except Exception:
             self.report.text(f'Failed to generate extra context "{name}":')
-            self.report.excption()
+            self.report.traceback()
 
 
 def setup(app: Sphinx):

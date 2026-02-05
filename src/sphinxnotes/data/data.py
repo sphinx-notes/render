@@ -217,14 +217,8 @@ class RawData:
     attrs: dict[str, str]
     content: str | None
 
-
-@dataclass
-class PendingData(Unpicklable):
-    raw: RawData
-    schema: Schema
-
-    def parse(self) -> ParsedData:
-        return self.schema.parse(self.raw)
+    def __hash__(self) -> int:
+        return hash((self.name, frozenset(self.attrs.items()), self.content))
 
 
 @dataclass
@@ -232,6 +226,9 @@ class ParsedData:
     name: Value
     attrs: dict[str, Value]
     content: Value
+
+    def __hash__(self) -> int:
+        return hash((self.name, frozenset(self.attrs.items()), self.content))
 
     def asdict(self) -> dict[str, Any]:
         """
@@ -267,6 +264,12 @@ class Field(Unpicklable):
     if TYPE_CHECKING:
         required: bool = False
         sep: str | None = None
+
+    def __hash__(self) -> int:
+        flags = {
+            k: v if not isinstance(v, list) else tuple(v) for k, v in self.flags.items()
+        }
+        return hash((self.etype, self.ctype, frozenset(flags.items()), self.dsl))
 
     @classmethod
     def from_dsl(cls, dsl: str) -> Self:
@@ -451,10 +454,17 @@ class DSLParser:
 
 
 @dataclass(frozen=True)
-class Schema(object):
+class Schema(Unpicklable):
     name: Field | None
     attrs: dict[str, Field] | Field
     content: Field | None
+
+    def __hash__(self) -> int:
+        if isinstance(self.attrs, Field):
+            attrs_hash = hash(self.attrs)
+        else:
+            attrs_hash = hash(frozenset(self.attrs.items()))
+        return hash((self.name, attrs_hash, self.content))
 
     @classmethod
     def from_dsl(

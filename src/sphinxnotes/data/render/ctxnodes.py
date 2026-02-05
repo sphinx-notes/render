@@ -6,28 +6,25 @@ from docutils import nodes
 from docutils.parsers.rst.states import Inliner
 
 from .render import Template
+from .ctx import PendingContextRef, PendingContext, PendingContextStorage
 from .markup import MarkupRenderer
 from .template import TemplateRenderer
-from ..data import RawData, PendingData, ParsedData
 from ..utils import (
-    Unpicklable,
     Report,
     Reporter,
     find_nearest_block_element,
 )
 
 if TYPE_CHECKING:
-    from typing import Any, Callable
+    from typing import Any, Callable, ClassVar
     from .markup import Host
+    from .ctx import ResolvedContext
 
 
-class Base(nodes.Element): ...
-
-
-class pending_node(Base, Unpicklable):
-    # The data to be rendered by Jinja template.
-    data: PendingData | ParsedData | dict[str, Any]
-    # The extra context for Jina template.
+class pending_node(nodes.Element):
+    # The context to be rendered by Jinja template.
+    ctx: PendingContextRef | ResolvedContext
+    # The extra context as supplement to ctx.
     extra: dict[str, Any]
     #: Jinja template for rendering the context.
     template: Template
@@ -36,9 +33,15 @@ class pending_node(Base, Unpicklable):
     #: Whether the rendering pipeline is finished (failed is also finished).
     rendered: bool
 
+    #: Mapping of PendingContextRef -> PendingContext.
+    #:
+    #: NOTE: ``PendingContextStorage`` holds Unpicklable data (``PendingContext``)
+    #: but it is doesn't matters :-), cause pickle doesn't deal with ClassVar.
+    _PENDING_CONTEXTS: ClassVar[PendingContextStorage] = PendingContextStorage()
+
     def __init__(
         self,
-        data: PendingData | ParsedData | dict[str, Any],
+        ctx: PendingContext | PendingContextRef | ResolvedContext,
         tmpl: Template,
         inline: bool = False,
         rawsource='',
@@ -46,24 +49,27 @@ class pending_node(Base, Unpicklable):
         **attributes,
     ) -> None:
         super().__init__(rawsource, *children, **attributes)
-        self.data = data
+        if not isinstance(ctx, PendingContext):
+            self.ctx = ctx
+        else:
+            self.ctx = self._PENDING_CONTEXTS.stash(ctx)
         self.extra = {}
         self.template = tmpl
         self.inline = inline
         self.rendered = False
 
         # Init hook lists.
-        self._raw_data_hooks = []
-        self._parsed_data_hooks = []
+        self._pending_context_hooks = []
+        self._resolved_data_hooks = []
         self._markup_text_hooks = []
         self._rendered_nodes_hooks = []
 
     def render(self, host: Host) -> None:
         """
-        The core function for rendering data to docutils nodes.
+        The core function for rendering context to docutils nodes.
 
-        1. Schema.parse(RawData) -> ParsedData
-        2. TemplateRenderer.render(ParsedData) -> Markup Text (``str``)
+        1. PendingContextRef -> PendingContext -> ResolvedContext
+        2. TemplateRenderer.render(ResolvedContext) -> Markup Text (``str``)
         3. MarkupRenderer.render(Markup Text) -> doctree Nodes (list[nodes.Node])
         """
 
@@ -71,46 +77,65 @@ class pending_node(Base, Unpicklable):
         assert not self.rendered
         self.rendered = True
 
-        report = Report(
-            'Render Debug Report', 'DEBUG', source=self.source, line=self.line
-        )
+        # Clear previous empty reports.
+        Reporter(self).clear_empty()
+        # Create debug report.
+        report = Report('Render Report', 'DEBUG', source=self.source, line=self.line)
+
+        # Constructor for error report.
+        def err_report() -> Report:
+            if self.template.debug:
+                # Reuse the render report as possible.
+                report['type'] = 'ERROR'
+                return report
+            return Report('Render Report', 'ERROR', source=self.source, line=self.line)
 
         # 1. Prepare context for Jinja template.
-        if isinstance(self.data, PendingData):
-            report.text('Raw data:')
-            report.code(pformat(self.data.raw), lang='python')
-            report.text('Schema:')
-            report.code(pformat(self.data.schema), lang='python')
+        if isinstance(self.ctx, PendingContextRef):
+            report.text('Pending context ref:')
+            report.code(pformat(self.ctx), lang='python')
 
-            for hook in self._raw_data_hooks:
-                hook(self, self.data.raw)
+            pdata = self._PENDING_CONTEXTS.retrieve(self.ctx)
+            if pdata is None:
+                report = err_report()
+                report.text(f'Failed to retrieve pending context from ref {self.ctx}')
+                self += report
+                return None
+
+            report.text('Pending context:')
+            report.code(pformat(pdata), lang='python')
+
+            for hook in self._pending_context_hooks:
+                hook(self, pdata)
 
             try:
-                data = self.data = self.data.parse()
-            except ValueError:
-                report.text('Failed to parse raw data:')
-                report.excption()
+                ctx = self.ctx = pdata.resolve()
+            except Exception as e:
+                report = err_report()
+                report.text('Failed to resolve pending context:')
+                report.exception(e)
                 self += report
-                return
+                return None
         else:
-            data = self.data
+            ctx = self.ctx
 
-        for hook in self._parsed_data_hooks:
-            hook(self, data)
+        for hook in self._resolved_data_hooks:
+            hook(self, ctx)
 
-        report.text(f'Parsed data (type: {type(data)}):')
-        report.code(pformat(data), lang='python')
+        report.text(f'Resolved context (type: {type(ctx)}):')
+        report.code(pformat(ctx), lang='python')
         report.text('Extra context (only keys):')
         report.code(pformat(list(self.extra.keys())), lang='python')
         report.text(f'Template (phase: {self.template.phase}):')
         report.code(self.template.text, lang='jinja')
 
-        # 2. Render the template and data to markup text.
+        # 2. Render the template and context to markup text.
         try:
-            markup = TemplateRenderer(self.template.text).render(data, extra=self.extra)
-        except Exception:
+            markup = TemplateRenderer(self.template.text).render(ctx, extra=self.extra)
+        except Exception as e:
+            report = err_report()
             report.text('Failed to render Jinja template:')
-            report.excption()
+            report.exception(e)
             self += report
             return
 
@@ -123,12 +148,13 @@ class pending_node(Base, Unpicklable):
         # 3. Render the markup text to doctree nodes.
         try:
             ns, msgs = MarkupRenderer(host).render(markup, inline=self.inline)
-        except Exception:
+        except Exception as e:
+            report = err_report()
             report.text(
                 'Failed to render markup text '
                 f'to {"inline " if self.inline else ""}nodes:'
             )
-            report.excption()
+            report.exception(e)
             self += report
             return
 
@@ -141,13 +167,12 @@ class pending_node(Base, Unpicklable):
         # 4. Add rendered nodes to container.
         for hook in self._rendered_nodes_hooks:
             hook(self, ns)
+
         # TODO: set_source_info?
         self += ns
 
         if self.template.debug:
             self += report
-
-        Reporter(self).clear_empty()
 
         return
 
@@ -189,21 +214,21 @@ class pending_node(Base, Unpicklable):
 
     """Hooks for procssing render intermediate products. """
 
-    type RawDataHook = Callable[[pending_node, RawData], None]
-    type ParsedDataHook = Callable[[pending_node, ParsedData | dict[str, Any]], None]
+    type PendingContextHook = Callable[[pending_node, PendingContext], None]
+    type ResolvedContextHook = Callable[[pending_node, ResolvedContext], None]
     type MarkupTextHook = Callable[[pending_node, str], str]
     type RenderedNodesHook = Callable[[pending_node, list[nodes.Node]], None]
 
-    _raw_data_hooks: list[RawDataHook]
-    _parsed_data_hooks: list[ParsedDataHook]
+    _pending_context_hooks: list[PendingContextHook]
+    _resolved_data_hooks: list[ResolvedContextHook]
     _markup_text_hooks: list[MarkupTextHook]
     _rendered_nodes_hooks: list[RenderedNodesHook]
 
-    def hook_raw_data(self, hook: RawDataHook) -> None:
-        self._raw_data_hooks.append(hook)
+    def hook_pending_context(self, hook: PendingContextHook) -> None:
+        self._pending_context_hooks.append(hook)
 
-    def hook_parsed_data(self, hook: ParsedDataHook) -> None:
-        self._parsed_data_hooks.append(hook)
+    def hook_resolved_context(self, hook: ResolvedContextHook) -> None:
+        self._resolved_data_hooks.append(hook)
 
     def hook_markup_text(self, hook: MarkupTextHook) -> None:
         self._markup_text_hooks.append(hook)
