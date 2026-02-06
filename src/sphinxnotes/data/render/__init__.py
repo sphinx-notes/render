@@ -1,6 +1,17 @@
+"""
+sphinxnotes.data.render
+~~~~~~~~~~~~~~~~~~~~~~~
+
+:copyright: Copyright 2026 by the Shengyu Zhang.
+:license: BSD, see LICENSE for details.
+
+Sphinx extension entry point.
+"""
+
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from .. import meta
 from .render import (
     Phase,
     Template,
@@ -42,9 +53,13 @@ __all__ = [
 ]
 
 
-def setup(app: Sphinx) -> None:
+def setup(app: Sphinx):
+    meta.pre_setup(app)
+
     from . import pipeline, extractx, template
 
     pipeline.setup(app)
     extractx.setup(app)
     template.setup(app)
+
+    return meta.post_setup(app)

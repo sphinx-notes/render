@@ -89,10 +89,7 @@ REGISTRY = Registry()
 def setup(app: Sphinx):
     meta.pre_setup(app)
 
-    from . import render
-    from .examples import datadomain
-
-    render.setup(app)
-    datadomain.setup(app)
+    from . import poc
+    poc.setup(app)
 
     return meta.post_setup(app)

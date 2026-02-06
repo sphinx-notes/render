@@ -8,12 +8,12 @@
 from __future__ import annotations
 from importlib import metadata
 
-__project__ = 'sphinxnotes-dataview'
+__project__ = 'sphinxnotes-data'
 __author__ = 'Shengyu Zhang'
 __desc__ = 'Create and view data in Sphinx documentation'
 
 try:
-    __version__ = metadata.version('sphinxnotes-dataview')
+    __version__ = metadata.version('sphinxnotes-data')
 except metadata.PackageNotFoundError:
     __version__ = 'unknown'
 
