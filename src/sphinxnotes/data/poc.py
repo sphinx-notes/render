@@ -1,13 +1,16 @@
 """
-sphinxnotes.data.examples.datadomain
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Allow user define, validate, and render data in pure markup and Jinja template.
-
-All directives and roles are added to a domain to prevent naming conflicts.
+sphinxnotes.data.poc
+~~~~~~~~~~~~~~~~~~~~
 
 :copyright: Copyright 2025~2026 by the Shengyu Zhang.
 :license: BSD, see LICENSE for details.
+
+POC (Proof of Concept) of the "sphinxnotes.data.render" extension.
+
+This extension provides directives and roles for user to define, validate, and
+render data.
+
+All directives and roles are added to a "data" domain to prevent naming conflicts.
 """
 
 from __future__ import annotations
@@ -18,9 +21,10 @@ from docutils.parsers.rst import directives
 from sphinx.util.docutils import SphinxDirective, CustomReSTDispatcher
 from sphinx.domains import Domain
 
-from ..data import RawData, Field, Schema
-from ..render import Phase, Template, BaseDataDefineDirective, BaseDataDefineRole
-from ..utils.freestyle import FreeStyleDirective, FreeStyleOptionSpec
+from . import meta
+from .data import RawData, Field, Schema
+from .render import Phase, Template, BaseDataDefineDirective, BaseDataDefineRole
+from .utils.freestyle import FreeStyleDirective, FreeStyleOptionSpec
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
@@ -196,5 +200,11 @@ def _install_dispatcher(app: Sphinx, docname: str, source: list[str]) -> None:
 
 
 def setup(app: Sphinx):
+    if __name__.startswith(meta.__project__.replace('-', '.')):
+        app.setup_extension('sphinxnotes.data.render')
+    else:
+        # For debug, see also :file:`docs/conf.py`.
+        app.setup_extension('data.render')
+
     app.add_domain(DataDomain)
     app.connect('source-read', _install_dispatcher)

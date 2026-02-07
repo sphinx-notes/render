@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 from pprint import pformat
 
 from docutils import nodes
@@ -235,3 +235,16 @@ class pending_node(nodes.Element):
 
     def hook_rendered_nodes(self, hook: RenderedNodesHook) -> None:
         self._rendered_nodes_hooks.append(hook)
+
+
+    """Methods override from parent."""
+
+    @override
+    def copy(self) -> Any:
+        # NOTE: pending_node is no supposed to be copy as it does not make sense.
+        #
+        # For example: ablog extension may copy this node.
+        if self.inline:
+            return nodes.Text('')
+        else:
+            return nodes.paragraph()
