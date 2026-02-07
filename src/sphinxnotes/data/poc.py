@@ -200,7 +200,7 @@ def _install_dispatcher(app: Sphinx, docname: str, source: list[str]) -> None:
 
 
 def setup(app: Sphinx):
-    if __name__.startswith(meta.__project__):
+    if __name__.startswith(meta.__project__.replace('-', '.')):
         app.setup_extension('sphinxnotes.data.render')
     else:
         # For debug, see also :file:`docs/conf.py`.
