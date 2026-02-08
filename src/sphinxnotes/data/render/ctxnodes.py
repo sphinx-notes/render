@@ -248,3 +248,8 @@ class pending_node(nodes.Element):
             return nodes.Text('')
         else:
             return nodes.paragraph()
+
+    @override
+    def deepcopy(self) -> Any:
+        # NOTE: Same to :meth:`copy`.
+        return self.copy()
