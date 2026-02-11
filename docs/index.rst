@@ -2,7 +2,7 @@
    You need to consider modifying the TEMPLATE or modifying THIS FILE.
 
 ==================
-sphinxnotes.render
+sphinxnotes-render
 ==================
 
 .. |docs| image:: https://img.shields.io/github/deployments/sphinx-notes/render/github-pages?label=docs
@@ -11,11 +11,11 @@ sphinxnotes.render
 .. |license| image:: https://img.shields.io/github/license/sphinx-notes/render
    :target: https://github.com/sphinx-notes/data/blob/master/LICENSE
    :alt: Open Source License
-.. |pypi| image:: https://img.shields.io/pypi/v/sphinxnotes.render.svg
-   :target: https://pypistats.org/packages/sphinxnotes.render
+.. |pypi| image:: https://img.shields.io/pypi/v/sphinxnotes-render.svg
+   :target: https://pypistats.org/packages/sphinxnotes-render
    :alt: PyPI Package
-.. |download| image:: https://img.shields.io/pypi/dm/sphinxnotes.render
-   :target: https://pypi.python.org/pypi/sphinxnotes.render
+.. |download| image:: https://img.shields.io/pypi/dm/sphinxnotes-render
+   :target: https://pypi.python.org/pypi/sphinxnotes-render
    :alt: PyPI Package Downloads
 .. |github| image:: https://img.shields.io/badge/GitHub-181717?style=flat&logo=github&logoColor=white/
    :target: https://github.com/sphinx-notes/render

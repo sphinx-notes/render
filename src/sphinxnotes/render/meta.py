@@ -8,12 +8,12 @@
 from __future__ import annotations
 from importlib import metadata
 
-__project__ = 'sphinxnotes.render'
+__project__ = 'sphinxnotes-render'
 __author__ = 'Shengyu Zhang'
 __desc__ = 'A framework to define, constrain, and render data in Sphinx documentation'
 
 try:
-    __version__ = metadata.version('sphinxnotes.render')
+    __version__ = metadata.version('sphinxnotes-render')
 except metadata.PackageNotFoundError:
     __version__ = 'unknown'
 
