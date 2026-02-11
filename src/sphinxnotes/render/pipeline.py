@@ -1,6 +1,6 @@
 """
-sphinxnotes.data.render.pipeline
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+sphinxnotes.render.pipeline
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :copyright: Copyright 2026 by the Shengyu Zhang.
 :license: BSD, see LICENSE for details.
@@ -10,13 +10,13 @@ This module defines pipeline for rendering data to nodes.
 The Pipline
 ===========
 
-1. Define context: BaseDataSource generates a :cls:`pending_node`, which contains:
+1. Define context: BaseDataSource generates a :class:`pending_node`, which contains:
 
    - Context
    - Template for rendering data to markup text
    - Possible extra contexts
 
-   See also :cls:`BaseDataSource`.
+   See also :class:`BaseDataSource`.
 
 2. Render data: the ``pending_node`` nodes will be rendered
    (by calling :meth:`pending_node.render`) at some point, depending on
@@ -24,7 +24,7 @@ The Pipline
 
    The one who calls ``pending_node.render`` is called ``Host``.
    The ``Host`` host is responsible for rendering the markup text into docutils
-   nodes (See :cls:`MarkupRenderer`).
+   nodes (See :class:`MarkupRenderer`).
 
    Phases:
 
@@ -32,10 +32,10 @@ The Pipline
       Called by BaseDataSource ('s subclasses)
 
    :``Phase.Parsed``:
-      Called by :cls:`ParsedHookTransform`.
+      Called by :class:`ParsedHookTransform`.
 
    :``Phase.Resolving``:
-      Called by :cls:`ResolvingHookTransform`.
+      Called by :class:`ResolvingHookTransform`.
 
 How context be rendered ``list[nodes.Node]``
 ============================================
@@ -68,7 +68,7 @@ logger = logging.getLogger(__name__)
 
 class Pipeline(ABC):
     """
-    The core class defines the pipleing of rendering :cls:`pending_node`s.
+    The core class defines the pipleing of rendering :class:`pending_node`s.
 
     Subclass is responsible to:
 
@@ -122,7 +122,7 @@ class Pipeline(ABC):
         """
         Try rendering all pending nodes in queue.
 
-        If the timing(Phase) is ok, :cls:`pending_node` will be rendered
+        If the timing(Phase) is ok, :class:`pending_node` will be rendered
         (pending.rendered = True); otherwise, the pending node is unchanged.
 
         If the pending node is already inserted to document, it will not be return.

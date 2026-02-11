@@ -1,6 +1,6 @@
 """
-sphinxnotes.data.render.sources
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+sphinxnotes.render.sources
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :copyright: Copyright 2026 by the Shengyu Zhang.
 :license: BSD, see LICENSE for details.
@@ -15,7 +15,7 @@ from dataclasses import dataclass
 
 from docutils.parsers.rst import directives
 
-from ..data import Field, RawData, Schema
+from .data import Field, RawData, Schema
 from .ctx import PendingContext, ResolvedContext
 from .render import Template
 from .pipeline import BaseContextSource, BaseContextDirective, BaseContextRole

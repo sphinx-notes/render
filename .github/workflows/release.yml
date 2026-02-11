@@ -15,4 +15,4 @@ jobs:
       - uses: ncipollo/release-action@v1
         with:
           body: |
-            Changelog: https://sphinx.silverrainz.me/data/changelog.html
+            Changelog: https://sphinx.silverrainz.me/render/changelog.html

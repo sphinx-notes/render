@@ -1,3 +1,13 @@
+"""
+sphinxnotes.template
+~~~~~~~~~~~~~~~~~~~~
+
+Rendering Jinja2 template to markup text.
+
+:copyright: Copyright 2026 by the Shengyu Zhang.
+:license: BSD, see LICENSE for details.
+"""
+
 from __future__ import annotations
 from dataclasses import dataclass
 from pprint import pformat
@@ -6,8 +16,8 @@ from typing import TYPE_CHECKING, override
 from jinja2.sandbox import SandboxedEnvironment
 from jinja2 import StrictUndefined, DebugUndefined
 
-from ..data import ParsedData
-from ..utils import Report
+from .data import ParsedData
+from .utils import Report
 
 if TYPE_CHECKING:
     from typing import Any, Iterable
@@ -103,7 +113,7 @@ class _JinjaEnv(SandboxedEnvironment):
         special attributes of internal python objects as returned by the
         is_internal_attribute() function.
 
-        .. seealso:: :cls:`..utils.ctxproxy.Proxy`
+        .. seealso:: :class:`..utils.ctxproxy.Proxy`
         """
         return super().is_safe_attribute(obj, attr, value)
 

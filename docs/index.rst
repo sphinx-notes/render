@@ -1,24 +1,24 @@
 .. This file is generated from sphinx-notes/cookiecutter.
    You need to consider modifying the TEMPLATE or modifying THIS FILE.
 
-================
-sphinxnotes-data
-================
+==================
+sphinxnotes.render
+==================
 
-.. |docs| image:: https://img.shields.io/github/deployments/sphinx-notes/data/github-pages?label=docs
-   :target: https://sphinx.silverrainz.me/data
+.. |docs| image:: https://img.shields.io/github/deployments/sphinx-notes/render/github-pages?label=docs
+   :target: https://sphinx.silverrainz.me/render
    :alt: Documentation Status
-.. |license| image:: https://img.shields.io/github/license/sphinx-notes/data
+.. |license| image:: https://img.shields.io/github/license/sphinx-notes/render
    :target: https://github.com/sphinx-notes/data/blob/master/LICENSE
    :alt: Open Source License
-.. |pypi| image:: https://img.shields.io/pypi/v/sphinxnotes-data.svg
-   :target: https://pypistats.org/packages/sphinxnotes-data
+.. |pypi| image:: https://img.shields.io/pypi/v/sphinxnotes.render.svg
+   :target: https://pypistats.org/packages/sphinxnotes.render
    :alt: PyPI Package
-.. |download| image:: https://img.shields.io/pypi/dm/sphinxnotes-data
-   :target: https://pypi.python.org/pypi/sphinxnotes-data
+.. |download| image:: https://img.shields.io/pypi/dm/sphinxnotes.render
+   :target: https://pypi.python.org/pypi/sphinxnotes.render
    :alt: PyPI Package Downloads
 .. |github| image:: https://img.shields.io/badge/GitHub-181717?style=flat&logo=github&logoColor=white/
-   :target: https://github.com/sphinx-notes/data
+   :target: https://github.com/sphinx-notes/render
    :alt: GitHub Repository
 
 |docs| |license| |pypi| |download| |github|
@@ -28,73 +28,22 @@ Introduction
 
 .. INTRODUCTION START
 
-.. warning::
+A framework to define, constrain, and render data in Sphinx documentation.
 
-   PRE-RELEAST, DO NOT use it.
-
-   This extension provides the underlying functionality for `sphinxnotes-any`__.
+.. seealso:: `sphinxnotes-any`__ and `sphinxnotes-data`__ 
 
    __ https://sphinx.silverrainz.me/any/
-
-.. data:template::
-   :on: parsed
-
-   I am {{ name }}. I have the following attributes:
-
-   {% for k, v in attrs.items() %}
-   :{{ k }}: {{ v }}
-   {%- endfor %}
-
-   This document "{{ _doc.title }}" has {{ _doc.sections | length }} section(s).
-
-   {{ content }} 
-
-.. data:def:: Shengyu Zhang
-   :github: SilverRainZ
-   :homepage: https://silverrainz.me/
-
----
-
-.. data:template::
-   :debug:
-
-   builder: {{ _sphinx.builder.name }}
-
-:data:def+foo:`bar`
+   __ https://sphinx.silverrainz.me/data/
 
 .. INTRODUCTION END
 
 Getting Started
 ===============
 
-.. note::
-
-   We assume you already have a Sphinx documentation,
-   if not, see `Getting Started with Sphinx`_.
-
-
-First, downloading extension from PyPI:
-
-.. code-block:: console
-
-   $ pip install sphinxnotes-data
-
-
-Then, add the extension name to ``extensions`` configuration item in your
-:parsed_literal:`conf.py_`:
-
-.. code-block:: python
-
-   extensions = [
-             # …
-             'sphinxnotes.data',
-             # …
-             ]
-
-.. _Getting Started with Sphinx: https://www.sphinx-doc.org/en/master/usage/quickstart.html
-.. _conf.py: https://www.sphinx-doc.org/en/master/usage/configuration.html
-
 .. ADDITIONAL CONTENT START
+
+This extension is not intended to be used directly by Sphinx user.
+It is for Sphinx extension developer, please refer to :doc:`api`.
 
 .. ADDITIONAL CONTENT END
 
@@ -104,6 +53,7 @@ Contents
 .. toctree::
    :caption: Contents
 
+   api
    changelog
 
 The Sphinx Notes Project

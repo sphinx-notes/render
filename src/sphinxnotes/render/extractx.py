@@ -8,8 +8,8 @@ from docutils.parsers.rst.roles import _roles
 
 from .render import HostWrapper
 from .ctxnodes import pending_node
-from ..utils import find_current_section, Report, Reporter
-from ..utils.ctxproxy import proxy
+from .utils import find_current_section, Report, Reporter
+from .utils.ctxproxy import proxy
 
 if TYPE_CHECKING:
     from typing import Any, Callable, ClassVar

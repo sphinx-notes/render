@@ -23,7 +23,7 @@ class Template:
     text: str
     #: The render phase.
     phase: Phase = Phase.default()
-    #: Enable debug output (shown as :cls:`nodes.system_message` in document.)
+    #: Enable debug output (shown as :class:`nodes.system_message` in document.)
     debug: bool = False
 
 
