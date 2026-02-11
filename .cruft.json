@@ -5,14 +5,14 @@
   "context": {
     "cookiecutter": {
       "namespace": "sphinxnotes",
-      "name": "data",
-      "full_name": "sphinxnotes-data",
+      "name": "render",
+      "full_name": "sphinxnotes.render",
       "author": "Shengyu Zhang",
-      "description": "Use reStructuredText/markdown to define, constrain, render, and analyze data in Sphinx documentations",
+      "description": "A framework to define, constrain, and render data in Sphinx documentation",
       "version": "1.0a0",
       "github_owner": "sphinx-notes",
       "github_repo": "data",
-      "pypi_name": "sphinxnotes-data",
+      "pypi_name": "sphinxnotes.render",
       "pypi_owner": "SilverRainZ",
       "is_python_project": true,
       "python_version": "3.12",

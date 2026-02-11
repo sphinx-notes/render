@@ -9,7 +9,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'sphinxnotes-data'
+project = 'sphinxnotes.render'
 author = 'Shengyu Zhang'
 copyright = "2025, " + author
 
@@ -63,7 +63,7 @@ html_theme_options = {
 
 # The URL which points to the root of the HTML documentation.
 # It is used to indicate the location of document like canonical_url
-html_baseurl = 'https://sphinx.silverrainz.me/data'
+html_baseurl = 'https://sphinx.silverrainz.me/render'
 
 html_logo = html_favicon = '_static/sphinx-notes.png'
 
@@ -118,6 +118,9 @@ primary_domain = 'any'
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../src/sphinxnotes'))
-extensions.append('data')
+extensions.append('render')
 
 # CUSTOM CONFIGURATION
+
+_ = extensions.pop() # no need to load extension
+primary_domain = 'py'

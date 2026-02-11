@@ -1,6 +1,6 @@
 """
-sphinxnotes.data.renderer
-~~~~~~~~~~~~~~~~~~~~~~~~~
+sphinxnotes.markup
+~~~~~~~~~~~~~~~~~~
 
 Rendering markup text to doctree nodes.
 
@@ -94,7 +94,7 @@ class MarkupRenderer:
         may be missing. For example:
 
         - the lack of an ImageCollector result in an incorrect "node['uri']" and
-          a missing "node['candidates']" :cls:`nodes.images
+          a missing "node['candidates']" :class:`nodes.images
 
         .. note::
 
@@ -114,7 +114,7 @@ class MarkupRenderer:
         # NOTE:
         # :meth:`sphinx.environment.collectors.ImageCollector.process_doc` add
         # a 'candidates' key to nodes.image, and subclasses of
-        # :cls:`sphinx.transforms.post_transforms.BaseImageConverter` require
+        # :class:`sphinx.transforms.post_transforms.BaseImageConverter` require
         # the key.
         node['candidates'] = {}
 

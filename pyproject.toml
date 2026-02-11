@@ -6,8 +6,8 @@
 # https://packaging.python.org/en/latest/specifications/declaring-project-metadata/#declaring-project-metadata
 
 [project]
-name = "sphinxnotes-data"
-description = "Use reStructuredText/markdown to define, constrain, render, and analyze data in Sphinx documentations"
+name = "sphinxnotes.render"
+description = "A framework to define, constrain, and render data in Sphinx documentation"
 readme = "README.rst"
 license = "BSD-3-Clause"
 license-files = ["LICENSE"]
@@ -77,10 +77,10 @@ docs = [
 ]
 
 [project.urls]
-homepage = "https://sphinx.silverrainz.me/data"
-documentation = "https://sphinx.silverrainz.me/data"
+homepage = "https://sphinx.silverrainz.me/render"
+documentation = "https://sphinx.silverrainz.me/render"
 repository = "https://github.com/sphinx-notes/data"
-changelog = "https://sphinx.silverrainz.me/data/changelog.html"
+changelog = "https://sphinx.silverrainz.me/render/changelog.html"
 tracker = "https://github.com/sphinx-notes/data/issues"
 
 [build-system]

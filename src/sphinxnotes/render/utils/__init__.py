@@ -175,7 +175,7 @@ class Report(nodes.system_message):
 
 @dataclass
 class Reporter:
-    """A helper class for storing :cls:`Report` to nodes."""
+    """A helper class for storing :class:`Report` to nodes."""
 
     node: nodes.Element
 

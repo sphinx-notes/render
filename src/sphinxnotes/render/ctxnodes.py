@@ -9,7 +9,7 @@ from .render import Template
 from .ctx import PendingContextRef, PendingContext, PendingContextStorage
 from .markup import MarkupRenderer
 from .template import TemplateRenderer
-from ..utils import (
+from .utils import (
     Report,
     Reporter,
     find_nearest_block_element,
