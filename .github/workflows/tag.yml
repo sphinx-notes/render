@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/sphinxnotes-project
+      url: https://pypi.org/p/sphinxnotes-render
     permissions:
       contents: write
     steps:
