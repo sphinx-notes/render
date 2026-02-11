@@ -4,7 +4,7 @@ import unittest
 
 sys.path.insert(0, os.path.abspath('./src/sphinxnotes'))
 
-from data.data import Field, REGISTRY
+from render.data import Field, REGISTRY
 
 
 class TestFieldParser(unittest.TestCase):
