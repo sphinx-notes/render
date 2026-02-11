@@ -236,7 +236,6 @@ class pending_node(nodes.Element):
     def hook_rendered_nodes(self, hook: RenderedNodesHook) -> None:
         self._rendered_nodes_hooks.append(hook)
 
-
     """Methods override from parent."""
 
     @override

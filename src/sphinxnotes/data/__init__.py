@@ -90,6 +90,7 @@ def setup(app: Sphinx):
     meta.pre_setup(app)
 
     from . import poc
+
     poc.setup(app)
 
     return meta.post_setup(app)

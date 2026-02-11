@@ -129,12 +129,21 @@ class Pipeline(ABC):
         And the corrsponding rendered node will replace it too.
         """
 
+        logger.debug(
+            f'{type(self)} is running its render queue, '
+            f'{len(self._q or [])} node(s) to render'
+        )
         ns = []
         while self._q:
             pending = self._q.pop()
 
-            render_now = self.process_pending_node(pending)
-            if not render_now:
+            ok = self.process_pending_node(pending)
+            logger.debug(
+                f'{type(self)} is trying to render '
+                f'{pending.source}:{pending.line}, ok? {ok}'
+            )
+
+            if not ok:
                 ns.append(pending)
                 continue
 
@@ -153,6 +162,11 @@ class Pipeline(ABC):
                 pending.unwrap_and_replace_self_inline((host_.doctree, pending.parent))
             else:
                 pending.unwrap_and_replace_self()
+
+        logger.debug(
+            f'{type(self)} runs out of its render queue, '
+            f'{len(self._q or [])} node(s) hanging'
+        )
 
         return ns
 

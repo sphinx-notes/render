@@ -21,6 +21,8 @@ from docutils.parsers.rst import directives
 from sphinx.util.docutils import SphinxDirective, CustomReSTDispatcher
 from sphinx.domains import Domain
 
+from sphinxnotes.data.render.pipeline import BaseContextDirective
+
 from . import meta
 from .data import RawData, Field, Schema
 from .render import Phase, Template, BaseDataDefineDirective, BaseDataDefineRole
@@ -31,6 +33,7 @@ if TYPE_CHECKING:
     from types import ModuleType
     from docutils.utils import Reporter
     from sphinx.util.typing import RoleFunction
+    from sphinxnotes.data.render.ctx import PendingContext, ResolvedContext
 
 
 # Keys of env.temp_data.
@@ -50,6 +53,7 @@ class TemplateDefineDirective(SphinxDirective):
     }
     has_content = True
 
+    @override
     def run(self) -> list[nodes.Node]:
         self.env.temp_data[TEMPLATE_KEY] = Template(
             '\n'.join(self.content),
@@ -127,6 +131,26 @@ class FreeDataDefineDirective(BaseDataDefineDirective, FreeStyleDirective):
         return cast(Template, tmpl)
 
 
+class RenderDirective(BaseContextDirective):
+    option_spec = {
+        'on': phase_option_spec,
+        'debug': directives.flag,
+    }
+    has_content = True
+
+    @override
+    def current_context(self) -> PendingContext | ResolvedContext:
+        return {}
+
+    @override
+    def current_template(self) -> Template:
+        return Template(
+            '\n'.join(self.content),
+            phase=self.options.get('on', Phase.default()),
+            debug='debug' in self.options,
+        )
+
+
 class FreeDataDefineRole(BaseDataDefineRole):
     def __init__(self, orig_name: str) -> None:
         self.orig_name = orig_name
@@ -182,6 +206,7 @@ class DataDomain(Domain):
         'schema': SchemaDefineDirective,
         'def': FreeDataDefineDirective,
         'define': FreeDataDefineDirective,
+        'render': RenderDirective,
     }
     roles = {
         'def': FreeDataDefineRole(''),
@@ -191,7 +216,7 @@ class DataDomain(Domain):
 
 
 def _install_dispatcher(app: Sphinx, docname: str, source: list[str]) -> None:
-    """Enable IntersphinxDispatcher.
+    """Enable role ispatcher.
 
     .. note:: The installed dispatcher will be uninstalled on disabling sphinx_domain
               automatically.

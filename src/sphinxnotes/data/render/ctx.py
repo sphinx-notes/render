@@ -54,7 +54,7 @@ class PendingContextStorage:
         the docutils doctree)
 
     This class maintains a mapping from :cls:`PendingContextRef` -> :cls:`PendingContext`.
-    ``pending_node`` owns the ``PendingContextRef``, and can retrieve the context 
+    ``pending_node`` owns the ``PendingContextRef``, and can retrieve the context
     by calling :meth:`retrieve`.
     """
 

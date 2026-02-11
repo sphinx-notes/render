@@ -34,6 +34,7 @@ class TestFieldParser(unittest.TestCase):
         # words sep is ' ' (arbitrary whitespace)
         f = Field.from_dsl('words of str')
         self.assertEqual(f.parse('a   b\tc'), ['a', 'b', 'c'])
+        self.assertEqual(f.parse('a   b\nc'), ['a', 'b', 'c'])
 
     def test_lines_form(self):
         # lines sep is '\n'
