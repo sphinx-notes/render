@@ -43,7 +43,7 @@ Getting Started
 .. ADDITIONAL CONTENT START
 
 This extension is not intended to be used directly by Sphinx user.
-It is for Sphinx extension developer, please refer to :doc:`api`.
+It is for Sphinx extension developer, please refer to :doc:`dsl` and :doc:`api`.
 
 .. ADDITIONAL CONTENT END
 
