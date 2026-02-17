@@ -50,14 +50,16 @@ Template
 Pipeline
 --------
 
-.. autoclass:: BaseContextRole
-.. autoclass:: BaseContextDirective
-.. autoclass:: BaseDataDefineRole
-.. autoclass:: BaseDataDefineDirective
-.. autoclass:: StrictDataDefineDirective
+.. autoclass:: sphinxnotes.render.BaseContextRole
+.. autoclass:: sphinxnotes.render.BaseContextDirective
+.. autoclass:: sphinxnotes.render.BaseDataDefineRole
+.. autoclass:: sphinxnotes.render.BaseDataDefineDirective
+.. autoclass:: sphinxnotes.render.StrictDataDefineDirective
 
 Registry
 ========
+
+.. autodata:: sphinxnotes.render.REGISTRY
 
 .. autoclass:: sphinxnotes.render.Registry
 

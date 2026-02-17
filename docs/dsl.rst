@@ -12,6 +12,16 @@ The Field Declaration DSL is a Domain Specific Language (DSL) that used to
 define the type and structure of field values. A DSL declaration consists of
 one or more :term:`modifier`\ s separated by commas (``,``).
 
+Python API
+==========
+
+User can create a :class:`sphinxnotes.render.Field` from DSL and use it to parse
+string to :type:`sphinxnotes.render.Value`:
+
+>>> from sphinxnotes.render import Field
+>>> Field.from_dsl('list of int').parse('1,2,3')
+[1, 2, 3]
+
 Syntax
 ======
 
@@ -174,65 +184,56 @@ Extending the DSL
 
 You can extend the DSL by registering custom types, flags, and by-options
 through the :attr:`~sphinxnotes.render.Registry.data` attribute of
-:class:`sphinxnotes.render.Registry`.
+:data:`sphinxnotes.render.REGISTRY`.
 
 .. _add-custom-types:
 
 Adding Custom Types
 -------------------
 
-Use :meth:`sphinxnotes.render.data.Registry.add_type` to add a new type:
+Use :meth:`~sphinxnotes.render.data.REGISTRY.add_type` method of
+:data:`sphinxnotes.render.REGISTRY` to add a new type:
 
-.. code-block:: python
-
-    from sphinxnotes.render import Registry
-
-    def parse_color(v: str):
-        return tuple(int(x) for x in v.split(';'))
-
-    def color_to_str(v):
-        return ';'.join(str(x) for x in v)
-
-    Registry.data.add_type('color', tuple, parse_color, color_to_str)
-    val = Field.from_dsl('color').parse('255;0;0')
-    assert val == (255, 0, 0)
+>>> from sphinxnotes.render import REGISTRY
+>>> 
+>>> def parse_color(v: str):
+...     return tuple(int(x) for x in v.split(';'))
+...
+>>> def color_to_str(v):
+...     return ';'.join(str(x) for x in v)
+...
+>>> REGISTRY.data.add_type('color', tuple, parse_color, color_to_str)
+>>> Field.from_dsl('color').parse('255;0;0')
+(255, 0, 0)
 
 .. _add-custom-flags:
 
 Adding Custom Flags
 -------------------
 
-Use :meth:`sphinxnotes.render.data.Registry.add_flag` to add a new flag:
+Use :meth:`~sphinxnotes.render.data.Registry.add_flag` method of
+:data:`sphinxnotes.render.REGISTRY` to add a new type:
 
-.. code-block:: python
-
-    from sphinxnotes.render import Registry
-
-    Registry.data.add_flag('unique', default=False)
-    field = Field.from_dsl('int, unique')
-    assert field.unique is True
+>>> from sphinxnotes.render import REGISTRY
+>>> REGISTRY.data.add_flag('unique', default=False)
+>>> field = Field.from_dsl('int, unique')
+>>> field.unique
+True
 
 .. _add-custom-by-options:
 
 Adding Custom By-Options
 ------------------------
 
-Use :meth:`sphinxnotes.render.data.Registry.add_by_option`: to add a new by-option:
+Use :meth:`~sphinxnotes.render.data.Registry.add_by_option` method of
+:data:`sphinxnotes.render.REGISTRY` to add a new by-option:
 
-.. code-block:: python
-
-    from sphinxnotes.render import Registry
-
-    Registry.data.add_by_option('group', str)
-    field = Field.from_dsl('str, group by size')
-    assert field.group == 'size'
-
-    # For options that can be specified multiple times:
-    Registry.data.add_by_option('index', str, store='append')
-    field = Field.from_dsl('str, index by month, index by year')
-    assert field.index == ['month', 'year']
-
-Usage::
-
-    int, group by foo
-    int, index by year, index by month
+>>> from sphinxnotes.render import REGISTRY
+>>> REGISTRY.data.add_by_option('group', str)
+>>> field = Field.from_dsl('str, group by size')
+>>> field.group
+'size'
+>>> REGISTRY.data.add_by_option('index', str, store='append')
+>>> field = Field.from_dsl('str, index by month, index by year')
+>>> field.index
+['month', 'year']

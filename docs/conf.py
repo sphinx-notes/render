@@ -124,3 +124,5 @@ extensions.append('render')
 
 _ = extensions.pop() # no need to load extension
 primary_domain = 'py'
+
+extensions.append('sphinx.ext.doctest')
