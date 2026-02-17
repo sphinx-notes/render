@@ -23,6 +23,7 @@ version = release = '1.0a0'
 # ones.
 extensions = [
     'sphinx.ext.githubpages',
+    'sphinx.ext.doctest',
     'sphinx_design',
     'sphinx_copybutton',
     'sphinx_last_updated_by_git',
