@@ -34,17 +34,17 @@ Syntax
    Modifier
       There are four categories of modifiers:
 
-      Type modifier
-         Specifies the element type (scalar value)
+   Type modifier
+      Specifies the element type (scalar value)
 
-      Form modifier
-         Specifies a container type with element type
+   Form modifier
+      Specifies a container type with element type
 
-      Flag
-         A boolean flag (either on or off)
+   Flag
+      A boolean flag (either on or off)
 
-      By-Option
-         A key-value option
+   By-Option
+      A key-value option
 
 Type
 ====
