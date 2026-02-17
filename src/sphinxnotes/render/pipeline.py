@@ -44,7 +44,6 @@ How context be rendered ``list[nodes.Node]``
 
 """
 
-from __future__ import annotations
 from typing import TYPE_CHECKING, override, final, cast
 from abc import abstractmethod, ABC
 

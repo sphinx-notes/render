@@ -8,7 +8,6 @@ Context data type definitions.
 :license: BSD, see LICENSE for details.
 """
 
-from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
 import re
 from dataclasses import dataclass, asdict, field as dataclass_field
@@ -225,7 +224,7 @@ class Registry:
     ) -> None:
         """Register a by-option.
 
-        :param name: The name for this option, available as a :ref:`By-Option`
+        :param name: The name for this option, available as a :term:`By-Option`
                      in the DSL
         :param etype: The value type for this option
         :param default: The default value for this option

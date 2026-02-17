@@ -8,7 +8,6 @@ sphinxnotes.render.ctx
 This module wraps the :mod:`data` into context for rendering the template.
 """
 
-from __future__ import annotations
 from typing import Any
 from abc import ABC, abstractmethod
 from collections.abc import Hashable
