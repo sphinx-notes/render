@@ -23,6 +23,7 @@ version = release = '1.0a0'
 # ones.
 extensions = [
     'sphinx.ext.githubpages',
+    'sphinx.ext.doctest',
     'sphinx_design',
     'sphinx_copybutton',
     'sphinx_last_updated_by_git',
@@ -124,3 +125,5 @@ extensions.append('render')
 
 _ = extensions.pop() # no need to load extension
 primary_domain = 'py'
+
+extensions.append('sphinx.ext.doctest')

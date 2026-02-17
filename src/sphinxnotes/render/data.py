@@ -9,7 +9,7 @@ Context data type definitions.
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 import re
 from dataclasses import dataclass, asdict, field as dataclass_field
 from ast import literal_eval
@@ -17,7 +17,7 @@ from ast import literal_eval
 from .utils import Unpicklable
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Generator, Self, Literal
+    from typing import Any, Callable, Generator, Self
 
 # ===================================
 # Basic types: Value, Form, Flag, ...
@@ -150,9 +150,6 @@ class Registry:
         # later usage.
         self._sep_by_option = self.byopts['sep']
 
-        # from pprint import pprint
-        # pprint(cls.__dict__)
-
     def add_type(
         self,
         name: str,
@@ -161,6 +158,17 @@ class Registry:
         strify: Callable[[PlainValue], str],
         aliases: list[str] = [],
     ) -> None:
+        """Register a value type for :class:`PlainValue`.
+
+        :param name: The name for this scalar type,
+                     available as a :term:`Type modifier` in the DSL
+        :param etype: The Python type object
+        :param conv: A callable that converts a string to the *etype*
+        :param strify: A callable that converts the *etype* to a string
+        :param aliases: Alternative names for this type
+
+        .. seealso:: :ref:`add-custom-types`
+        """
         self.etypes[name] = etype
         self.convs[etype] = conv
         self.strifys[etype] = strify
@@ -171,6 +179,16 @@ class Registry:
     def add_form(
         self, name: str, ctype: type, sep: str, aliases: list[str] = []
     ) -> None:
+        """Register an value form with its container type and separator for
+        :class:`Value`.
+
+        :param name: The name for this form, available as a :term:`Form modifier`
+                     in the DSL
+        :param ctype: The container type.
+                      (for now, it is :class:`list`, :class:`tuple`, or :class:`set`)
+        :param sep: The separator string used to split/join values
+        :param aliases: Alternative names for this form
+        """
         if ctype not in self.ctypes:
             raise ValueError(f'Unsupported type: "{ctype}". Available: {self.ctypes}')
 
@@ -183,6 +201,14 @@ class Registry:
     def add_flag(
         self, name: str, default: bool = False, aliases: list[str] = []
     ) -> None:
+        """Register a flag.
+
+        :param name: The name for this flag, available as a :term:`Flag` in the DSL
+        :param default: The default value for this flag
+        :param aliases: Alternative names for this flag
+
+        .. seealso:: :ref:`add-custom-flags`
+        """
         flag = Flag(name, default)
 
         self.flags[flag.name] = flag
@@ -197,6 +223,17 @@ class Registry:
         store: ByOptionStore = 'assign',
         aliases: list[str] = [],
     ) -> None:
+        """Register a by-option.
+
+        :param name: The name for this option, available as a :ref:`By-Option`
+                     in the DSL
+        :param etype: The value type for this option
+        :param default: The default value for this option
+        :param store: How to store multiple values
+        :param aliases: Alternative names for this option
+
+        .. seealso:: :ref:`add-custom-by-options`
+        """
         opt = ByOption(name, etype, default, store)
 
         self.byopts[opt.name] = opt
