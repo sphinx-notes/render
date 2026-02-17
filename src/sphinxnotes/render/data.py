@@ -273,10 +273,10 @@ class ParsedData:
         ``self.attrs`` will be automaticlly lifted to top-level context when
         there is no key conflicts. For example:
 
-        - You can access ``Data.attrs['color']`` by "{{ color }}"" instead
-        of "{{ attrs.color }}".
+        - You can access ``Data.attrs['color']`` by "{{ color }}" instead
+          of "{{ attrs.color }}".
         - You can NOT access ``Data.attrs['name']`` by "{{ name }}" cause
-        the variable name is taken by ``Data.name``.
+          the variable name is taken by ``Data.name``.
         """
         ctx = asdict(self)
         for k, v in self.attrs.items():
