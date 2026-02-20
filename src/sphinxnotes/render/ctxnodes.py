@@ -41,7 +41,7 @@ class pending_node(nodes.Element):
 
     def __init__(
         self,
-        ctx: PendingContext | PendingContextRef | ResolvedContext,
+        ctx: PendingContext | ResolvedContext,
         tmpl: Template,
         inline: bool = False,
         rawsource='',
