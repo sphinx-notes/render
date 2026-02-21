@@ -1,4 +1,3 @@
-from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
@@ -13,7 +12,7 @@ class Phase(Enum):
     Resolving = 'resolving'
 
     @classmethod
-    def default(cls) -> Phase:
+    def default(cls) -> 'Phase':
         return cls.Parsing
 
 

@@ -8,7 +8,6 @@ Context data type definitions.
 :license: BSD, see LICENSE for details.
 """
 
-from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
 import re
 from dataclasses import dataclass, asdict, field as dataclass_field
@@ -225,7 +224,7 @@ class Registry:
     ) -> None:
         """Register a by-option.
 
-        :param name: The name for this option, available as a :ref:`By-Option`
+        :param name: The name for this option, available as a :term:`By-Option`
                      in the DSL
         :param etype: The value type for this option
         :param default: The default value for this option
@@ -274,10 +273,10 @@ class ParsedData:
         ``self.attrs`` will be automaticlly lifted to top-level context when
         there is no key conflicts. For example:
 
-        - You can access ``Data.attrs['color']`` by "{{ color }}"" instead
-        of "{{ attrs.color }}".
+        - You can access ``Data.attrs['color']`` by "{{ color }}" instead
+          of "{{ attrs.color }}".
         - You can NOT access ``Data.attrs['name']`` by "{{ name }}" cause
-        the variable name is taken by ``Data.name``.
+          the variable name is taken by ``Data.name``.
         """
         ctx = asdict(self)
         for k, v in self.attrs.items():

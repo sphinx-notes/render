@@ -5,7 +5,6 @@
 # Project meta infos.
 ################################################################################
 
-from __future__ import annotations
 from importlib import metadata
 
 __project__ = 'sphinxnotes-render'

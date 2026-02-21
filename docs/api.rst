@@ -1,27 +1,32 @@
-=============
-API Reference
-=============
+==============
+API References
+==============
 
-Data Types
-==========
+Value, Data, Field and Schema
+=============================
 
-.. autotype:: sphinxnotes.render.PlainValue
-.. autotype:: sphinxnotes.render.Value
+.. autoclass:: sphinxnotes.render.PlainValue
+.. autoclass:: sphinxnotes.render.Value
 
 .. autoclass:: sphinxnotes.render.RawData
+   :members: name, attrs, content
+   :undoc-members:
+
 .. autoclass:: sphinxnotes.render.ParsedData
+   :members: name, attrs, content
+   :undoc-members:
 
 .. autoclass:: sphinxnotes.render.Field
+   :members: parse
+
 .. autoclass:: sphinxnotes.render.Schema
+   :members: name, attrs, content
+   :undoc-members:
 
 .. autoclass:: sphinxnotes.render.data.Registry
+   :members:
 
-   .. automethod:: add_type
-   .. automethod:: add_form
-   .. automethod:: add_flag
-   .. automethod:: add_by_option
-
-      .. autotype:: sphinxnotes.render.data.ByOptionStore
+   .. autotype:: sphinxnotes.render.data.ByOptionStore
 
 The Render Pipeline
 ===================
