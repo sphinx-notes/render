@@ -28,7 +28,13 @@ from .render import (
 )
 from .ctx import PendingContext, ResolvedContext
 from .ctxnodes import pending_node
-from .extractx import ExtraContextRegistry, ExtraContextGenerator
+from .extractx import (
+    ExtraContextRegistry,
+    ExtraContextGenerator,
+    GlobalExtraContxt,
+    ParsePhaseExtraContext,
+    TransformPhaseExtraContext,
+)
 from .pipeline import BaseContextRole, BaseContextDirective
 from .sources import (
     UnparsedData,
@@ -56,6 +62,10 @@ __all__ = [
     'Host',
     'PendingContext',
     'ResolvedContext',
+    'GlobalExtraContxt',
+    'ParsePhaseExtraContext',
+    'TransformPhaseExtraContext',
+    'TransformPhaseExtraContext',
     'pending_node',
     'BaseContextRole',
     'BaseContextDirective',

@@ -157,7 +157,7 @@ class Registry:
         strify: Callable[[PlainValue], str],
         aliases: list[str] = [],
     ) -> None:
-        """Register a value type for :class:`PlainValue`.
+        """Register a value type for :py:class:`PlainValue`.
 
         :param name: The name for this scalar type,
                      available as a :term:`Type modifier` in the DSL
@@ -179,12 +179,12 @@ class Registry:
         self, name: str, ctype: type, sep: str, aliases: list[str] = []
     ) -> None:
         """Register an value form with its container type and separator for
-        :class:`Value`.
+        :py:class:`Value`.
 
         :param name: The name for this form, available as a :term:`Form modifier`
                      in the DSL
         :param ctype: The container type.
-                      (for now, it is :class:`list`, :class:`tuple`, or :class:`set`)
+                      (for now, it is :py:class:`list`, :py:class:`tuple`, or :py:class:`set`)
         :param sep: The separator string used to split/join values
         :param aliases: Alternative names for this form
         """

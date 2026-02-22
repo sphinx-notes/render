@@ -43,14 +43,21 @@ Context
 Extra Context
 -------------
 
-.. autoclass:: sphinxnotes.render.ExtraContextGenerator
+.. autoclass:: sphinxnotes.render.GlobalExtraContxt
+.. autoclass:: sphinxnotes.render.ParsePhaseExtraContext
+.. autoclass:: sphinxnotes.render.TransformPhaseExtraContext
+
 .. autoclass:: sphinxnotes.render.ExtraContextRegistry
+   :members:
 
 Template
 --------
 
 .. autoclass:: sphinxnotes.render.Template
+   :members:
+
 .. autoclass:: sphinxnotes.render.Phase
+   :members:
 
 Pipeline
 --------

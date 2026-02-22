@@ -7,12 +7,19 @@ from sphinx.util.docutils import SphinxDirective, SphinxRole
 
 
 class Phase(Enum):
+    """The phase of rendering template."""
+
+    #: Render template on document parsing.
     Parsing = 'parsing'
+    #: Render template immediately after document has parsed
+    #: (on Sphinx event :external:event:`doctree-read`).
     Parsed = 'parsed'
+    #: Render template immediately after all documents have resolving
+    #: (before Sphinx event :external:event:`doctree-resolved`).
     Resolving = 'resolving'
 
     @classmethod
-    def default(cls) -> 'Phase':
+    def default(cls) -> Phase:
         return cls.Parsing
 
 
@@ -22,15 +29,15 @@ class Template:
     text: str
     #: The render phase.
     phase: Phase = Phase.default()
-    #: Enable debug output (shown as :class:`nodes.system_message` in document.)
+    #: Enable debug output (shown as :py:class:`docutils.nodes.system_message` in document.)
     debug: bool = False
 
 
-# Possible render host of :meth:`pending_node.render`.
+#: Possible render host of :meth:`pending_node.render`.
 type Host = ParseHost | TransformHost
-# Host of source parse phase (Phase.Parsing, Phase.Parsed).
+#: Host of source parse phase (Phase.Parsing, Phase.Parsed).
 type ParseHost = SphinxDirective | SphinxRole
-# Host of source parse phase (Phase.Parsing, Phase.Parsed).
+#: Host of source parse phase (Phase.Parsing, Phase.Parsed).
 type TransformHost = SphinxTransform
 
 

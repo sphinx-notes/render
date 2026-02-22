@@ -133,17 +133,16 @@ extensions.append('sphinxnotes.render')
 
 # CUSTOM CONFIGURATION
 
-_ = extensions.pop()  # no need to load extension
-primary_domain = 'py'
-
-autodoc_inherit_docstrings = False
 autodoc_default_options = {
     'member-order': 'bysource',
 }
-extensions.append('sphinx_autodoc_typehints')
 
-autodoc_type_aliases = {
-    'sphinxnotes.render.data.PlainValue': 'sphinxnotes.render.PlainValue',
-    'sphinxnotes.render.data.Value': 'sphinxnotes.render.Value',
-    'sphinxnotes.render.data.PlainValue': 'sphinxnotes.render.PlainValue',
+extensions.append('sphinxnotes.data')
+
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'sphinx': ('https://www.sphinx-doc.org/en/master', None),
 }
+
+def setup(app):
+    app.add_object_type('event', 'event')
