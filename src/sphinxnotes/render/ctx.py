@@ -8,7 +8,6 @@ sphinxnotes.render.ctx
 This module wraps the :mod:`data` into context for rendering the template.
 """
 
-from __future__ import annotations
 from typing import Any
 from abc import ABC, abstractmethod
 from collections.abc import Hashable
@@ -34,7 +33,7 @@ class PendingContextRef:
 class PendingContext(ABC, Unpicklable, Hashable):
     """A abstract representation of context that is not currently available.
 
-    Call :meth:`resolve` at the right time (depends on the implment) to get
+    Call :py:meth:`resolve` at the right time (depends on the implment) to get
     context available.
     """
 
@@ -53,7 +52,7 @@ class PendingContextStorage:
 
     This class maintains a mapping from :class:`PendingContextRef` -> :cls:`PendingContext`.
     ``pending_node`` owns the ``PendingContextRef``, and can retrieve the context
-    by calling :meth:`retrieve`.
+    by calling :py:meth:`retrieve`.
     """
 
     _next_id: int

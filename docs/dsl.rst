@@ -1,6 +1,6 @@
-=====================
-Field Declaration DSL
-=====================
+==========================
+Field Description Language
+==========================
 
 .. default-domain:: py
 .. highlight:: python
@@ -8,19 +8,9 @@ Field Declaration DSL
    :language: Python
 
 
-The Field Declaration DSL is a Domain Specific Language (DSL) that used to
-define the type and structure of field values. A DSL declaration consists of
+The Field Description Language is a Domain Specific Language (DSL) that used to
+define the type and structure of field values. An FDL declaration consists of
 one or more :term:`modifier`\ s separated by commas (``,``).
-
-Python API
-==========
-
-User can create a :class:`sphinxnotes.render.Field` from DSL and use it to parse
-string to :type:`sphinxnotes.render.Value`:
-
->>> from sphinxnotes.render import Field
->>> Field.from_dsl('list of int').parse('1,2,3')
-[1, 2, 3]
 
 Syntax
 ======
@@ -34,17 +24,28 @@ Syntax
    Modifier
       There are four categories of modifiers:
 
-      Type modifier
-         Specifies the element type (scalar value)
+   Type modifier
+      Specifies the element type (scalar value)
 
-      Form modifier
-         Specifies a container type with element type
+   Form modifier
+      Specifies a container type with element type
 
-      Flag
-         A boolean flag (either on or off)
+   Flag
+      A boolean flag (either on or off)
 
-      By-Option
-         A key-value option
+   By-Option
+      A key-value option
+
+Python API
+==========
+
+User can create a :class:`sphinxnotes.render.Field` from FDL and use it to parse
+string to :type:`sphinxnotes.render.Value`:
+
+>>> from sphinxnotes.render import Field
+>>> Field.from_dsl('list of int').parse('1,2,3')
+[1, 2, 3]
+
 
 Type
 ====
@@ -179,10 +180,10 @@ DSL                 Input     Result
 ``int, sep by ':'`` ``1:2:3`` :py:`[1, 2, 3]`
 =================== ========= ================
 
-Extending the DSL
+Extending the FDL
 =================
 
-You can extend the DSL by registering custom types, flags, and by-options
+You can extend the FDL by registering custom types, flags, and by-options
 through the :attr:`~sphinxnotes.render.Registry.data` attribute of
 :data:`sphinxnotes.render.REGISTRY`.
 

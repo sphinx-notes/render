@@ -11,7 +11,7 @@
 
 project = 'sphinxnotes-render'
 author = 'Shengyu Zhang'
-copyright = "2025, " + author
+copyright = '2025, ' + author
 
 # The full version, including alpha/beta/rc tags
 version = release = '1.0a0'
@@ -57,9 +57,9 @@ keep_warnings = True
 html_theme = 'furo'
 
 html_theme_options = {
-    "source_repository": "https://github.com/sphinx-notes/data/",
-    "source_branch": "master",
-    "source_directory": "docs/",
+    'source_repository': 'https://github.com/sphinx-notes/data/',
+    'source_branch': 'master',
+    'source_directory': 'docs/',
 }
 
 # The URL which points to the root of the HTML documentation.
@@ -88,15 +88,17 @@ extensions.append('sphinxcontrib.gtagjs')
 gtagjs_ids = ['G-E4SNX0WZYV']
 
 extensions.append('sphinx.ext.autodoc')
-autoclass_content = 'init'
-autodoc_typehints = 'description'
+# autoclass_content = 'init'
+autodoc_typehints = 'signature'
+autodoc_typehints_format = 'short'
+autodoc_inherit_docstrings = False
 
 extensions.append('sphinx.ext.intersphinx')
 intersphinx_mapping = {}
 
 extensions.append('sphinx_sitemap')
-sitemap_filename = "sitemap.xml"
-sitemap_url_scheme = "{link}"
+sitemap_filename = 'sitemap.xml'
+sitemap_url_scheme = '{link}'
 
 extensions.append('sphinxext.opengraph')
 ogp_site_url = html_baseurl
@@ -118,12 +120,29 @@ primary_domain = 'any'
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../src/sphinxnotes'))
-extensions.append('render')
+
+sys.path.insert(0, os.path.abspath('../src/'))
+extensions.append('sphinxnotes.render')
+
+# Override type aliases for autodoc (PEP 695 type statement not well supported)
+# import sphinxnotes.render
+# sphinxnotes.render.data.PlainValue = bool | int | float | str | object
+# sphinxnotes.render.PlainValue = bool | int | float | str | object
+# sphinxnotes.render.data.Value = None | sphinxnotes.render.PlainValue | list[sphinxnotes.render.PlainValue]
+# sphinxnotes.render.Value = None | sphinxnotes.render.PlainValue | list[sphinxnotes.render.PlainValue]
 
 # CUSTOM CONFIGURATION
 
-_ = extensions.pop() # no need to load extension
-primary_domain = 'py'
+autodoc_default_options = {
+    'member-order': 'bysource',
+}
 
-extensions.append('sphinx.ext.doctest')
+extensions.append('sphinxnotes.data')
+
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'sphinx': ('https://www.sphinx-doc.org/en/master', None),
+}
+
+def setup(app):
+    app.add_object_type('event', 'event')
