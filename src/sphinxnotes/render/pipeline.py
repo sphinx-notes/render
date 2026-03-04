@@ -44,7 +44,6 @@ How context be rendered ``list[nodes.Node]``
 
 """
 
-from __future__ import annotations
 from typing import TYPE_CHECKING, override, final, cast
 from abc import abstractmethod, ABC
 
@@ -54,7 +53,7 @@ from sphinx.util.docutils import SphinxDirective, SphinxRole
 from sphinx.transforms import SphinxTransform
 from sphinx.transforms.post_transforms import SphinxPostTransform, ReferencesResolver
 
-from .render import HostWrapper, Phase, Template, Host, ParseHost, TransformHost
+from .render import HostWrapper, Phase, Template, Host, ParseHost, ResolveHost
 from .ctx import PendingContext, ResolvedContext
 from .ctxnodes import pending_node
 from .extractx import ExtraContextGenerator
@@ -261,7 +260,7 @@ class ParsedHookTransform(SphinxTransform, Pipeline):
 
     @override
     def process_pending_node(self, n: pending_node) -> bool:
-        ExtraContextGenerator(n).on_parsed(cast(TransformHost, self))
+        ExtraContextGenerator(n).on_parsed(cast(ResolveHost, self))
         return n.template.phase == Phase.Parsed
 
     @override
@@ -279,7 +278,7 @@ class ResolvingHookTransform(SphinxPostTransform, Pipeline):
 
     @override
     def process_pending_node(self, n: pending_node) -> bool:
-        ExtraContextGenerator(n).on_post_transform(cast(TransformHost, self))
+        ExtraContextGenerator(n).on_resolving(cast(ResolveHost, self))
         return n.template.phase == Phase.Resolving
 
     @override

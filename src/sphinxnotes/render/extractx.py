@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import TYPE_CHECKING, override
 from abc import ABC, abstractmethod
 
@@ -14,22 +13,29 @@ from .utils.ctxproxy import proxy
 if TYPE_CHECKING:
     from typing import Any, Callable, ClassVar
     from sphinx.application import Sphinx
-    from .render import ParseHost, TransformHost
+    from .render import ParseHost, ResolveHost
 
 
 class GlobalExtraContxt(ABC):
+    """Extra context availabled on any phase."""
+
     @abstractmethod
     def generate(self) -> Any: ...
 
 
 class ParsePhaseExtraContext(ABC):
+    """Extra context generated during the :py:class:`~Phase.Parsing` or
+    :py:class:`~Phase.Parsing` phase."""
+
     @abstractmethod
     def generate(self, host: ParseHost) -> Any: ...
 
 
-class TransformPhaseExtraContext(ABC):
+class ResolvePhaseExtraContext(ABC):
+    """Extra context generated during the :py:class:`~Phase.Resolving` phase."""
+
     @abstractmethod
-    def generate(self, host: TransformHost) -> Any: ...
+    def generate(self, host: ResolveHost) -> Any: ...
 
 
 # =======================
@@ -40,8 +46,8 @@ class TransformPhaseExtraContext(ABC):
 class ExtraContextRegistry:
     names: set[str]
     parsing: dict[str, ParsePhaseExtraContext]
-    parsed: dict[str, TransformPhaseExtraContext]
-    post_transform: dict[str, TransformPhaseExtraContext]
+    parsed: dict[str, ResolvePhaseExtraContext]
+    post_transform: dict[str, ResolvePhaseExtraContext]
     global_: dict[str, GlobalExtraContxt]
 
     def __init__(self) -> None:
@@ -66,22 +72,26 @@ class ExtraContextRegistry:
     def add_parsing_phase_context(
         self, name: str, ctxgen: ParsePhaseExtraContext
     ) -> None:
+        """Register a extra context for :py:class:`~Phase.Parsing` phase."""
         self._name_dedup(name)
         self.parsing['_' + name] = ctxgen
 
     def add_parsed_phase_context(
-        self, name: str, ctxgen: TransformPhaseExtraContext
+        self, name: str, ctxgen: ResolvePhaseExtraContext
     ) -> None:
+        """Register a extra context for :py:class:`~Phase.Parsed` phase."""
         self._name_dedup(name)
         self.parsed['_' + name] = ctxgen
 
     def add_post_transform_phase_context(
-        self, name: str, ctxgen: TransformPhaseExtraContext
+        self, name: str, ctxgen: ResolvePhaseExtraContext
     ) -> None:
+        """Register a extra context for :py:class:`~Phase.Resolving` phase."""
         self._name_dedup(name)
         self.post_transform['_' + name] = ctxgen
 
     def add_global_context(self, name: str, ctxgen: GlobalExtraContxt):
+        """Register a extra context for :py:class:`~Phase.Resolving` phase."""
         self._name_dedup(name)
         self.global_['_' + name] = ctxgen
 
@@ -163,11 +173,11 @@ class ExtraContextGenerator:
         for name, ctxgen in self.registry.parsing.items():
             self._safegen(name, lambda: ctxgen.generate(host))
 
-    def on_parsed(self, host: TransformHost) -> None:
+    def on_parsed(self, host: ResolveHost) -> None:
         for name, ctxgen in self.registry.parsed.items():
             self._safegen(name, lambda: ctxgen.generate(host))
 
-    def on_post_transform(self, host: TransformHost) -> None:
+    def on_resolving(self, host: ResolveHost) -> None:
         for name, ctxgen in self.registry.post_transform.items():
             self._safegen(name, lambda: ctxgen.generate(host))
 

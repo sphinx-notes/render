@@ -26,6 +26,9 @@ class FreeStyleOptionSpec(dict):
     def __getitem__(self, _):
         return self.conv
 
+    def __contains__(self, _):
+        return True
+
 
 class FreeStyleDirective(SphinxDirective):
     """

@@ -8,8 +8,7 @@ sphinxnotes.render.sources
 This module provides helpful BaseContextSource subclasses.
 """
 
-from __future__ import annotations
-from typing import TYPE_CHECKING, override
+from typing import override
 from abc import abstractmethod
 from dataclasses import dataclass
 
@@ -19,9 +18,6 @@ from .data import Field, RawData, Schema
 from .ctx import PendingContext, ResolvedContext
 from .render import Template
 from .pipeline import BaseContextSource, BaseContextDirective, BaseContextRole
-
-if TYPE_CHECKING:
-    pass
 
 
 @dataclass
@@ -93,7 +89,7 @@ class StrictDataDefineDirective(BaseDataDefineDirective):
     @classmethod
     def derive(
         cls, name: str, schema: Schema, tmpl: Template
-    ) -> type[StrictDataDefineDirective]:
+    ) -> type['StrictDataDefineDirective']:
         if not schema.name:
             required_arguments = 0
             optional_arguments = 0

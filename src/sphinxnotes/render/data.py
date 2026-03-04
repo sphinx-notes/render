@@ -8,7 +8,6 @@ Context data type definitions.
 :license: BSD, see LICENSE for details.
 """
 
-from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
 import re
 from dataclasses import dataclass, asdict, field as dataclass_field
@@ -158,7 +157,7 @@ class Registry:
         strify: Callable[[PlainValue], str],
         aliases: list[str] = [],
     ) -> None:
-        """Register a value type for :class:`PlainValue`.
+        """Register a value type for :py:class:`PlainValue`.
 
         :param name: The name for this scalar type,
                      available as a :term:`Type modifier` in the DSL
@@ -180,12 +179,12 @@ class Registry:
         self, name: str, ctype: type, sep: str, aliases: list[str] = []
     ) -> None:
         """Register an value form with its container type and separator for
-        :class:`Value`.
+        :py:class:`Value`.
 
         :param name: The name for this form, available as a :term:`Form modifier`
                      in the DSL
         :param ctype: The container type.
-                      (for now, it is :class:`list`, :class:`tuple`, or :class:`set`)
+                      (for now, it is :py:class:`list`, :py:class:`tuple`, or :py:class:`set`)
         :param sep: The separator string used to split/join values
         :param aliases: Alternative names for this form
         """
@@ -225,7 +224,7 @@ class Registry:
     ) -> None:
         """Register a by-option.
 
-        :param name: The name for this option, available as a :ref:`By-Option`
+        :param name: The name for this option, available as a :term:`By-Option`
                      in the DSL
         :param etype: The value type for this option
         :param default: The default value for this option
@@ -274,10 +273,10 @@ class ParsedData:
         ``self.attrs`` will be automaticlly lifted to top-level context when
         there is no key conflicts. For example:
 
-        - You can access ``Data.attrs['color']`` by "{{ color }}"" instead
-        of "{{ attrs.color }}".
+        - You can access ``Data.attrs['color']`` by "{{ color }}" instead
+          of "{{ attrs.color }}".
         - You can NOT access ``Data.attrs['name']`` by "{{ name }}" cause
-        the variable name is taken by ``Data.name``.
+          the variable name is taken by ``Data.name``.
         """
         ctx = asdict(self)
         for k, v in self.attrs.items():

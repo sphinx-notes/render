@@ -8,7 +8,6 @@ Rendering Jinja2 template to markup text.
 :license: BSD, see LICENSE for details.
 """
 
-from __future__ import annotations
 from dataclasses import dataclass
 from pprint import pformat
 from typing import TYPE_CHECKING, override
