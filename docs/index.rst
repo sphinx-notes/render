@@ -53,6 +53,7 @@ Contents
 .. toctree::
    :caption: Contents
 
+   tmpl
    dsl
    api
    changelog
