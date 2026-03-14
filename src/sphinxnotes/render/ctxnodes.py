@@ -20,6 +20,8 @@ if TYPE_CHECKING:
 
 
 class pending_node(nodes.Element):
+    """A docutils node to be rendered."""
+
     # The context to be rendered by Jinja template.
     ctx: PendingContextRef | ResolvedContext
     # The extra context as supplement to ctx.
@@ -64,7 +66,7 @@ class pending_node(nodes.Element):
 
     def render(self, host: Host) -> None:
         """
-        The core function for rendering context to docutils nodes.
+        The core function for rendering context and template to docutils nodes.
 
         1. PendingContextRef -> PendingContext -> ResolvedContext
         2. TemplateRenderer.render(ResolvedContext) -> Markup Text (``str``)

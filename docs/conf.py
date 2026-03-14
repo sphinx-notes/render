@@ -130,10 +130,8 @@ autodoc_default_options = {
     'member-order': 'bysource',
 }
 
-
 intersphinx_mapping['python'] = ('https://docs.python.org/3', None)
 intersphinx_mapping['sphinx'] = ('https://www.sphinx-doc.org/en/master', None)
 
 def setup(app):
- 
     app.add_object_type('event', 'event') # for intersphinx

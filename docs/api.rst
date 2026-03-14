@@ -2,10 +2,120 @@
 API References
 ==============
 
-Value, Data, Field and Schema
-=============================
+The Render Pipeline
+===================
+
+The pipeline defines how nodes carrying data are generated and when they are
+rendered to part of the document.
+
+1. Generation: :py:class:`~sphinxnotes.render.BaseContextRole`,
+   :py:class:`~sphinxnotes.render.BaseContextDirective` and their subclasses
+   create :py:class:`~sphinxnotes.render.pending_node` on document parsing,
+   and the node will be inserted to the document tree. The node contains:
+
+   - :ref:`context`, the dynamic content of Jinja template
+
+   - :py:class:`~sphinxnotes.render.Template`,
+     the Jinja template for rendering context to markup text
+     (reStructuredText or Markdown)
+
+2. Render: ``pending_node`` node will be rendered at appropriate
+   :py:class:`~sphinxnotes.render.Phase`, depending on
+   :py:attr:`~sphinxnotes.render.pending_node.template.phase`.
+
+Node
+-----
+
+.. autoclass:: sphinxnotes.render.pending_node
+
+.. _context:
+
+Context
+-------
+
+Context refers dynamic content of Jinja template. It can be:
+
+:py:class:`~sphinxnotes.render.ResolvedContext`:
+  Our dedicated data types (:py:class:`sphinxnotes.render.ParsedData`) , or any
+  Python ``dict``.
+
+:py:class:`~sphinxnotes.render.PendingContext`:
+   Context no yet available. e.g. Context contains
+   :py:class:`un-parsed data <sphinxnotes.render.RawData>`),
+   remote data, and etc.
+
+   PendingContext can be resolved to :py:class:`~sphinxnotes.render.ResolvedContext`.
+   by calling the :py:class:`~sphinxnotes.render.PendingContext.resolve` method.
+
+.. autotype:: sphinxnotes.render.ResolvedContext
+
+.. autoclass:: sphinxnotes.render.PendingContext
+   :members: resolve
+
+``PendingContext`` Implementions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: sphinxnotes.render.UnparsedData
+   :show-inheritance:
+
+.. _extractx:
+
+Template
+--------
+
+.. autoclass:: sphinxnotes.render.Template
+   :members:
+
+.. autoclass:: sphinxnotes.render.Phase
+   :members:
+
+Extra Context
+-------------
+
+.. autoclass:: sphinxnotes.render.GlobalExtraContxt
+
+.. autoclass:: sphinxnotes.render.ParsePhaseExtraContext
+
+.. autoclass:: sphinxnotes.render.ResolvePhaseExtraContext
+
+.. autoclass:: sphinxnotes.render.ExtraContextRegistry
+   :members:
+
+
+Base Roles and Directives
+-------------------------
+
+Base Role Classes
+~~~~~~~~~~~~~~~~~
+
+.. autoclass:: sphinxnotes.render.BaseContextRole
+   :show-inheritance:
+   :members: process_pending_node, queue_pending_node, queue_context, current_context, current_template
+
+.. autoclass:: sphinxnotes.render.BaseDataDefineRole
+   :show-inheritance:
+   :members: process_pending_node, queue_pending_node, queue_context, current_schema, current_template
+
+Base Directive Classes
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: sphinxnotes.render.BaseContextDirective
+   :show-inheritance:
+   :members: process_pending_node, queue_pending_node, queue_context, current_context, current_template
+
+.. autoclass:: sphinxnotes.render.BaseDataDefineDirective
+   :show-inheritance:
+   :members: process_pending_node, queue_pending_node, queue_context, current_schema, current_template
+
+.. autoclass:: sphinxnotes.render.StrictDataDefineDirective
+   :show-inheritance:
+   :members: derive
+
+Data, Field and Schema
+======================
 
 .. autotype:: sphinxnotes.render.PlainValue
+
 .. autotype:: sphinxnotes.render.Value
 
 .. autoclass:: sphinxnotes.render.RawData
@@ -28,48 +138,12 @@ Value, Data, Field and Schema
 
    .. autotype:: sphinxnotes.render.data.ByOptionStore
 
-The Render Pipeline
-===================
-
-Context
--------
-
-.. autoclass:: sphinxnotes.render.PendingContext
-.. autotype:: sphinxnotes.render.ResolvedContext
-.. autoclass:: sphinxnotes.render.UnparsedData
-
-.. autoclass:: sphinxnotes.render.pending_node
-
-Extra Context
--------------
-
-.. autoclass:: sphinxnotes.render.GlobalExtraContxt
-.. autoclass:: sphinxnotes.render.ParsePhaseExtraContext
-.. autoclass:: sphinxnotes.render.ResolvePhaseExtraContext
-
-.. autoclass:: sphinxnotes.render.ExtraContextRegistry
-   :members:
-
-Template
---------
-
-.. autoclass:: sphinxnotes.render.Template
-   :members:
-
-.. autoclass:: sphinxnotes.render.Phase
-   :members:
-
-Pipeline
---------
-
-.. autoclass:: sphinxnotes.render.BaseContextRole
-.. autoclass:: sphinxnotes.render.BaseContextDirective
-.. autoclass:: sphinxnotes.render.BaseDataDefineRole
-.. autoclass:: sphinxnotes.render.BaseDataDefineDirective
-.. autoclass:: sphinxnotes.render.StrictDataDefineDirective
-
 Registry
 ========
+
+Developer can extending the function of this extentison (For example, support
+more data types, add new extra context) by adding new item to
+:py:class:`sphinxnotes.render.REGISTRY`.
 
 .. autodata:: sphinxnotes.render.REGISTRY
 

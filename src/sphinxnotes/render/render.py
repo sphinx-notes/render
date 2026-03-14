@@ -9,7 +9,9 @@ from sphinx.util.docutils import SphinxDirective, SphinxRole
 class Phase(Enum):
     """The phase of rendering template."""
 
-    #: Render template on document parsing.
+    #: Render template on document parsing
+    #: on (:py:class:`~sphinx.util.docutils.SphinxDirective`\ ``.run()`` or
+    #: :py:class:`~sphinx.util.docutils.SphinxRole`\ ``.run()``).
     Parsing = 'parsing'
     #: Render template immediately after document has parsed
     #: (on Sphinx event :external:event:`doctree-read`).

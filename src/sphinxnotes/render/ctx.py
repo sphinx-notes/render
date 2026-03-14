@@ -1,11 +1,6 @@
 """
-sphinxnotes.render.ctx
-~~~~~~~~~~~~~~~~~~~~~~
-
-:copyright: Copyright 2026 by the Shengyu Zhang.
-:license: BSD, see LICENSE for details.
-
-This module wraps the :mod:`data` into context for rendering the template.
+This module wraps the :py:mod:`sphinxnote.render.data` module into context
+suitable for use with Jinja templates.
 """
 
 from typing import Any
@@ -17,6 +12,7 @@ from .data import ParsedData
 from .utils import Unpicklable
 
 type ResolvedContext = ParsedData | dict[str, Any]
+"""The context is """
 
 
 @dataclass
@@ -31,18 +27,17 @@ class PendingContextRef:
 
 
 class PendingContext(ABC, Unpicklable, Hashable):
-    """A abstract representation of context that is not currently available.
-
-    Call :py:meth:`resolve` at the right time (depends on the implment) to get
-    context available.
-    """
+    """A abstract representation of context that is not currently available."""
 
     @abstractmethod
-    def resolve(self) -> ResolvedContext: ...
+    def resolve(self) -> ResolvedContext:
+        """This method will be called when rendering to get the available
+        :py:type:`ResolvedContext`."""
+        ...
 
 
 class PendingContextStorage:
-    """Area for temporarily storing PendingContext.
+    """Area for temporarily storing :py:class:`PendingContext`.
 
     This class is indented to resolve the problem that:
 

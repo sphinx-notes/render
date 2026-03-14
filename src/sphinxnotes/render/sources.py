@@ -22,7 +22,10 @@ from .pipeline import BaseContextSource, BaseContextDirective, BaseContextRole
 
 @dataclass
 class UnparsedData(PendingContext):
-    """A implementation of PendingContext, contains raw data and its schema."""
+    """A pending context which contains raw data and its schema.
+
+    Raw data will be parsed when calling ``resolve``.
+    """
 
     raw: RawData
     schema: Schema
@@ -47,7 +50,12 @@ class BaseRawDataSource(BaseContextSource):
     def current_raw_data(self) -> RawData: ...
 
     @abstractmethod
-    def current_schema(self) -> Schema: ...
+    def current_schema(self) -> Schema:
+        """Return the schema for constraining the generated
+        :py:class`~sphinxnotes.render.RawData`. see :doc:`tmpl` for more details.
+
+        .. note:: User **must not** override ``current_context`` method of this class.
+        """
 
     """Methods to be overrided."""
 
@@ -57,6 +65,8 @@ class BaseRawDataSource(BaseContextSource):
 
 
 class BaseDataDefineDirective(BaseRawDataSource, BaseContextDirective):
+    """User is responsible to implement ``current_schema`` method."""
+
     @override
     def current_raw_data(self) -> RawData:
         return RawData(
@@ -90,6 +100,13 @@ class StrictDataDefineDirective(BaseDataDefineDirective):
     def derive(
         cls, name: str, schema: Schema, tmpl: Template
     ) -> type['StrictDataDefineDirective']:
+        """Dynamically derive a new directive class from schema and template.
+
+        This method generates a new ``StrictDataDefineDirective`` subclass with
+        the given schema and template. It automatically sets the appropriate
+        argument counts, option specifications, and content handling based on
+        the schema definition.
+        """
         if not schema.name:
             required_arguments = 0
             optional_arguments = 0
