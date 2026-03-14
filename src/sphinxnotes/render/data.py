@@ -178,7 +178,7 @@ class Registry:
     def add_form(
         self, name: str, ctype: type, sep: str, aliases: list[str] = []
     ) -> None:
-        """Register an value form with its container type and separator for
+        """Register a value form with its container type and separator for
         :py:class:`Value`.
 
         :param name: The name for this form, available as a :term:`Form modifier`
@@ -270,8 +270,8 @@ class ParsedData:
         """
         Convert Data to a dict for usage of Jinja2 context.
 
-        ``self.attrs`` will be automaticlly lifted to top-level context when
-        there is no key conflicts. For example:
+        ``self.attrs`` will be automatically lifted to top-level context when
+        there are no key conflicts. For example:
 
         - You can access ``Data.attrs['color']`` by "{{ color }}" instead
           of "{{ attrs.color }}".
@@ -293,7 +293,7 @@ class Field(Unpicklable):
     ctype: type | None = None
     #: Flags of field.
     flags: dict[str, Value] = dataclass_field(default_factory=dict)
-    #: The orginal DSL.
+    #: The original DSL.
     dsl: str | None = None
 
     # Type hints for builtin flags.

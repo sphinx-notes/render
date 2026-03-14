@@ -57,7 +57,7 @@ class BaseRawDataSource(BaseContextSource):
         .. note:: User **must not** override ``current_context`` method of this class.
         """
 
-    """Methods to be overrided."""
+    """Methods to be overridden."""
 
     @override
     def current_context(self) -> PendingContext | ResolvedContext:

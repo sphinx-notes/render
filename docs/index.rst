@@ -39,8 +39,8 @@ Getting Started
 
 .. note::
 
-   This extension is not intended to be used directly by Sphinx user.
-   It is for Sphinx extension developer.
+   This extension is not intended to be used directly by Sphinx users.
+   It is for Sphinx extension developers.
 
 .. ADDITIONAL CONTENT END
 

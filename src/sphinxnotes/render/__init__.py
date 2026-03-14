@@ -47,7 +47,7 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
 
-"""Python API for other Sphinx extesions."""
+"""Python API for other Sphinx extensions."""
 __all__ = [
     'Registry',
     'PlainValue',
@@ -76,7 +76,7 @@ __all__ = [
 
 
 class Registry:
-    """The global, all-in-one registry for user."""
+    """The global, all-in-one registry for users."""
 
     @property
     def data(self) -> DataRegistry:

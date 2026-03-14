@@ -6,7 +6,7 @@ Usage
 
    Before reading this documentation, please refer to
    :external+sphinx:doc:`development/tutorials/extending_syntax`.
-   see how to extends :py:class:`SphinxDirective` and :py:class:`SphinxRole`.
+   See how to extend :py:class:`SphinxDirective` and :py:class:`SphinxRole`.
 
 Create a Sphinx documentation with the following ``conf.py``:
 

@@ -17,15 +17,14 @@ if TYPE_CHECKING:
 
 
 class GlobalExtraContxt(ABC):
-    """Extra context availabled on any phase."""
+    """Extra context available in any phase."""
 
     @abstractmethod
     def generate(self) -> Any: ...
 
 
 class ParsePhaseExtraContext(ABC):
-    """Extra context generated during the :py:class:`~Phase.Parsing` or
-    :py:class:`~Phase.Parsing` phase."""
+    """Extra context generated during the :py:class:`~Phase.Parsing` phase."""
 
     @abstractmethod
     def generate(self, host: ParseHost) -> Any: ...
@@ -39,7 +38,7 @@ class ResolvePhaseExtraContext(ABC):
 
 
 # =======================
-# Extra context registion
+# Extra context registration
 # =======================
 
 
@@ -72,32 +71,32 @@ class ExtraContextRegistry:
     def add_parsing_phase_context(
         self, name: str, ctxgen: ParsePhaseExtraContext
     ) -> None:
-        """Register a extra context for :py:class:`~Phase.Parsing` phase."""
+        """Register an extra context for the :py:class:`~Phase.Parsing` phase."""
         self._name_dedup(name)
         self.parsing['_' + name] = ctxgen
 
     def add_parsed_phase_context(
         self, name: str, ctxgen: ResolvePhaseExtraContext
     ) -> None:
-        """Register a extra context for :py:class:`~Phase.Parsed` phase."""
+        """Register an extra context for the :py:class:`~Phase.Parsed` phase."""
         self._name_dedup(name)
         self.parsed['_' + name] = ctxgen
 
     def add_post_transform_phase_context(
         self, name: str, ctxgen: ResolvePhaseExtraContext
     ) -> None:
-        """Register a extra context for :py:class:`~Phase.Resolving` phase."""
+        """Register an extra context for the :py:class:`~Phase.Resolving` phase."""
         self._name_dedup(name)
         self.post_transform['_' + name] = ctxgen
 
     def add_global_context(self, name: str, ctxgen: GlobalExtraContxt):
-        """Register a extra context for :py:class:`~Phase.Resolving` phase."""
+        """Register a global extra context available across phases."""
         self._name_dedup(name)
         self.global_['_' + name] = ctxgen
 
 
 # ===================================
-# Bulitin extra context implementions
+# Builtin extra context implementations
 # ===================================
 
 

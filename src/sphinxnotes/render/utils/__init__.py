@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def parse_text_to_nodes(text: str) -> list[nodes.Node]:
     """
-    Utility for parsing standard reStructuredText (without Sphinx stuffs) to nodes.
+    Utility for parsing standard reStructuredText (without Sphinx-specific features) to nodes.
     Used when there is not a SphinxDirective/SphinxRole available.
     """
     # TODO: markdown support
@@ -30,7 +30,7 @@ def parse_text_to_nodes(text: str) -> list[nodes.Node]:
 
 def role_parse_text_to_nodes(self: SphinxRole, text: str) -> list[nodes.Node]:
     """
-    Utility for parsing reStructuredText (without Sphinx stuffs) to nodes in
+    Utility for parsing reStructuredText (without Sphinx-specific features) to nodes in
     SphinxRole Context.
     """
     memo = Struct(
@@ -155,7 +155,7 @@ class Report(nodes.system_message):
     type Inliner = RstInliner | tuple[nodes.document, nodes.Element]
 
     def problematic(self, inliner: Inliner) -> nodes.problematic:
-        """Create a crossed referenced inline problematic nodes."""
+        """Create a cross-referenced inline problematic node."""
 
         if isinstance(inliner, RstInliner):
             prb = inliner.problematic('', '', self)

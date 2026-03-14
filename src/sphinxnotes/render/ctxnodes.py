@@ -217,7 +217,7 @@ class pending_node(nodes.Element):
         # Replace self with inline nodes.
         self.replace_self(ns)
 
-    """Hooks for procssing render intermediate products. """
+    """Hooks for processing render intermediate products."""
 
     type PendingContextHook = Callable[[pending_node, PendingContext], None]
     type ResolvedContextHook = Callable[[pending_node, ResolvedContext], None]
