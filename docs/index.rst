@@ -51,6 +51,7 @@ Contents
    :caption: Contents
 
    usage
+   tmpl
    dsl
    api
    changelog
