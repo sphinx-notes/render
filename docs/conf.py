@@ -124,8 +124,6 @@ extensions.append('sphinxnotes.render')
 
 # CUSTOM CONFIGURATION
 
-extensions.append('sphinxnotes.data')
-
 autodoc_default_options = {
     'member-order': 'bysource',
 }

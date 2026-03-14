@@ -16,7 +16,7 @@ Now use the directive in your document:
 
 .. code-block:: rst
 
-   .. foo::
+   .. me::
 
 This will render as: My name is Shengyu Zhang.
 
