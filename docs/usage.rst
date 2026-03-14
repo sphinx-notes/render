@@ -18,7 +18,7 @@ Now use the directive in your document:
 
    .. foo::
 
-This will render as: My name is World.
+This will render as: My name is Shengyu Zhang.
 
 .. seealso:: See implementations of `sphinxnotes-any`__ and `sphinxnotes-data`__
    for more details
