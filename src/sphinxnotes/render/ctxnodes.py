@@ -5,7 +5,12 @@ from docutils import nodes
 from docutils.parsers.rst.states import Inliner
 
 from .render import Template
-from .ctx import PendingContextRef, PendingContext, PendingContextStorage, ResolvedContext
+from .ctx import (
+    PendingContextRef,
+    PendingContext,
+    PendingContextStorage,
+    ResolvedContext,
+)
 from .markup import MarkupRenderer
 from .template import TemplateRenderer
 from .utils import (

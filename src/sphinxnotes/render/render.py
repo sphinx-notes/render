@@ -21,7 +21,7 @@ class Phase(Enum):
     Resolving = 'resolving'
 
     @classmethod
-    def default(cls) -> Phase:
+    def default(cls) -> 'Phase':
         return cls.Parsing
 
 

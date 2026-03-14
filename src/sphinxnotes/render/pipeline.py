@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 class Pipeline(ABC):
     """
     The core class defines the pipleing of rendering
-    :py:class:`~sphinxnotes.render.pending_node`\ (s).
+    :py:class:`~sphinxnotes.render.pending_node`.
 
     Subclass is responsible to:
 

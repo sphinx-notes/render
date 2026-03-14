@@ -10,7 +10,7 @@ Usage
 
 Create a Sphinx documentation with the following ``conf.py``:
 
-.. literalinclude:: ../tests/roots/test-usage/conf.py
+.. literalinclude:: ../tests/roots/test-ctxdir-usage/conf.py
 
 Now use the directive in your document:
 

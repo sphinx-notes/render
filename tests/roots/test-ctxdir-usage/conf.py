@@ -1,6 +1,7 @@
 from sphinx.application import Sphinx
 from sphinxnotes.render import ParsedData, BaseContextDirective, Template, Phase
 
+
 class MyDirective(BaseContextDirective):
     def current_context(self):
         return ParsedData('Shengyu Zhang', {}, None)
