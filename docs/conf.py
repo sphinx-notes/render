@@ -24,6 +24,7 @@ version = release = '1.0a0'
 extensions = [
     'sphinx.ext.githubpages',
     'sphinx.ext.doctest',
+    'sphinx.ext.viewcode',
     'sphinx_design',
     'sphinx_copybutton',
     'sphinx_last_updated_by_git',
@@ -118,12 +119,17 @@ primary_domain = 'any'
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../src/sphinxnotes'))
-extensions.append('render')
+sys.path.insert(0, os.path.abspath('../src/'))
+extensions.append('sphinxnotes.render')
 
 # CUSTOM CONFIGURATION
 
-_ = extensions.pop() # no need to load extension
-primary_domain = 'py'
+autodoc_default_options = {
+    'member-order': 'bysource',
+}
 
-extensions.append('sphinx.ext.doctest')
+intersphinx_mapping['python'] = ('https://docs.python.org/3', None)
+intersphinx_mapping['sphinx'] = ('https://www.sphinx-doc.org/en/master', None)
+
+def setup(app):
+    app.add_object_type('event', 'event') # for intersphinx

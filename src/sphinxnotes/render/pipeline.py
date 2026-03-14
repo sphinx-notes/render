@@ -1,50 +1,5 @@
-"""
-sphinxnotes.render.pipeline
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"""This module defines pipeline for rendering data to nodes."""
 
-:copyright: Copyright 2026 by the Shengyu Zhang.
-:license: BSD, see LICENSE for details.
-
-This module defines pipeline for rendering data to nodes.
-
-The Pipline
-===========
-
-1. Define context: BaseDataSource generates a :class:`pending_node`, which contains:
-
-   - Context
-   - Template for rendering data to markup text
-   - Possible extra contexts
-
-   See also :class:`BaseDataSource`.
-
-2. Render data: the ``pending_node`` nodes will be rendered
-   (by calling :meth:`pending_node.render`) at some point, depending on
-   :attr:`pending_node.template.phase`.
-
-   The one who calls ``pending_node.render`` is called ``Host``.
-   The ``Host`` host is responsible for rendering the markup text into docutils
-   nodes (See :class:`MarkupRenderer`).
-
-   Phases:
-
-   :``Phase.Parsing``:
-      Called by BaseDataSource ('s subclasses)
-
-   :``Phase.Parsed``:
-      Called by :class:`ParsedHookTransform`.
-
-   :``Phase.Resolving``:
-      Called by :class:`ResolvingHookTransform`.
-
-How context be rendered ``list[nodes.Node]``
-============================================
-
-.. seealso:: :meth:`.ctxnodes.pending_node.render`.
-
-"""
-
-from __future__ import annotations
 from typing import TYPE_CHECKING, override, final, cast
 from abc import abstractmethod, ABC
 
@@ -54,7 +9,7 @@ from sphinx.util.docutils import SphinxDirective, SphinxRole
 from sphinx.transforms import SphinxTransform
 from sphinx.transforms.post_transforms import SphinxPostTransform, ReferencesResolver
 
-from .render import HostWrapper, Phase, Template, Host, ParseHost, TransformHost
+from .render import HostWrapper, Phase, Template, Host, ParseHost, ResolveHost
 from .ctx import PendingContext, ResolvedContext
 from .ctxnodes import pending_node
 from .extractx import ExtraContextGenerator
@@ -68,36 +23,50 @@ logger = logging.getLogger(__name__)
 
 class Pipeline(ABC):
     """
-    The core class defines the pipleing of rendering :class:`pending_node`s.
+    The core class defines the pipeline for rendering
+    :py:class:`~sphinxnotes.render.pending_node`.
 
-    Subclass is responsible to:
+    Subclasses are responsible for:
 
-    - call ``queue_xxx`` to add pendin nodes into queue.
-    - override :meth:`process_pending_node` to control when a pending node gets
-      rendered. In this method subclass can also call ``queue_xxx`` to add more
-      pending nodes.
-    - call :meth:`render_queue` to process all queued nodes and
-      returns any that couldn't be rendered in the current phase.
+    - calling ``queue_xxx`` to add pending nodes into the queue.
+    - overriding :py:meth:`~Pipeline.process_pending_node` to control when a
+      pending node gets rendered. In this method, subclasses can also call
+      ``queue_xxx`` to add more pending nodes.
+    - calling ``render_queue`` to process all queued nodes and return any that
+      could not be rendered in the current phase.
 
-    See Also:
+    .. seealso::
 
-    - :class:`BaseDataSource`: Context source implementation and hook for Phase.Parsing
-    - :class:`ParsedHookTransform`: Built-in hook for Phase.Parsed
-    - :class:`ResolvingHookTransform`: Built-in hook for Phase.Resolving
+       - :py:class:`BaseContextSource`: Class for generating
+         :py:class:`sphinxnotes.render.pending_node` and hook of
+         :py:data:`~sphinxnotes.render.Phase.Parsing` render phase
+       - :py:class:`ParsedHookTransform`: Built-in hook for
+         :py:data:`~sphinxnotes.render.Phase.Parsed` render phase
+       - :py:class:`ResolvingHookTransform`: Built-in hook for
+         :py:data:`~sphinxnotes.render.Phase.Resolving` render phase
     """
 
-    #: Queue of pending node to be rendered.
+    #: Queue of pending nodes to be rendered.
     _q: list[pending_node] | None = None
 
-    """Methods to be overrided."""
+    """Methods to be overridden."""
 
     def process_pending_node(self, n: pending_node) -> bool:
         """
-        You can add hooks to pending node here.
+        This method is called when it is the pending node's turn to be rendered.
 
-        Return ``true`` if you want to render the pending node *now*,
-        otherwise it will be inserted to doctree directly andwaiting to later
-        rendering
+        Return ``true`` if you want to render the pending node *now*;
+        otherwise it will be inserted into the doctree directly and wait for
+        later rendering (and this method will be called again.).
+
+        You can add hooks to the pending node here, or call
+        :py:meth:`~Pipeline.queue_pending_node`. You are responsible for
+        inserting created nodes into the doctree yourself.
+
+        .. note::
+
+           Please always call ``super().process_pending_node(n)`` to ensure the
+           extension functions properly.
         """
         ...
 
@@ -105,6 +74,8 @@ class Pipeline(ABC):
 
     @final
     def queue_pending_node(self, n: pending_node) -> None:
+        """Push back a new :py:class:`~sphinxnotes.render.pending_node` to the
+        render queue."""
         if not self._q:
             self._q = []
         self._q.append(n)
@@ -113,6 +84,7 @@ class Pipeline(ABC):
     def queue_context(
         self, ctx: PendingContext | ResolvedContext, tmpl: Template
     ) -> pending_node:
+        """A helper method for ``queue_pending_node``."""
         pending = pending_node(ctx, tmpl)
         self.queue_pending_node(pending)
         return pending
@@ -122,11 +94,12 @@ class Pipeline(ABC):
         """
         Try rendering all pending nodes in queue.
 
-        If the timing(Phase) is ok, :class:`pending_node` will be rendered
-        (pending.rendered = True); otherwise, the pending node is unchanged.
+        If the timing (Phase) is appropriate, :py:class:`sphinxnotes.render.pending_node`
+        will be rendered (pending.rendered = True); otherwise, the pending node
+        is unchanged.
 
-        If the pending node is already inserted to document, it will not be return.
-        And the corrsponding rendered node will replace it too.
+        If the pending node is already inserted into the document, it will not be returned.
+        The corresponding rendered node will replace it.
         """
 
         logger.debug(
@@ -173,13 +146,14 @@ class Pipeline(ABC):
 
 class BaseContextSource(Pipeline):
     """
-    Abstract base class for generateing context, as the source of the rendering
+    Abstract base class for generating context, as the source of the rendering
     pipeline.
 
-    This class also responsible to render context in Phase.Parsing. So the final
-    implementations MUST be subclass of :class:`SphinxDirective` or
-    :class:`SphinxRole`, which provide the execution context and interface for
-    processing reStructuredText markup.
+    This class is also responsible for rendering context in :py:data:`Phase.Parsing`.
+    So the final implementations **MUST** be a subclass of
+    :py:class:`~sphinx.util.docutils.SphinxDirective` or
+    :py:class:`~sphinx.util.docutils.SphinxRole`, which provide the execution
+    context and interface for processing reStructuredText markup.
     """
 
     """Methods to be implemented."""
@@ -218,6 +192,13 @@ class BaseContextSource(Pipeline):
 
 
 class BaseContextDirective(BaseContextSource, SphinxDirective):
+    """This class generates :py:meth:`sphinxnotes.render.pending_node` in
+    ``SphinxDirective.run`` method and makes sure it is rendered correctly.
+
+    User should implement ``current_context`` and ``current_template`` methods
+    to provide the constructor parameters of ``pending_node``.
+    """
+
     @override
     def run(self) -> list[nodes.Node]:
         self.queue_context(self.current_context(), self.current_template())
@@ -233,6 +214,13 @@ class BaseContextDirective(BaseContextSource, SphinxDirective):
 
 
 class BaseContextRole(BaseContextSource, SphinxRole):
+    """This class generates :py:meth:`sphinxnotes.render.pending_node` in
+    ``SphinxRole.run`` method and makes sure it is rendered correctly.
+
+    User should implement ``current_context`` and ``current_template`` methods
+    to provide the constructor parameters of ``pending_node``.
+    """
+
     @override
     def process_pending_node(self, n: pending_node) -> bool:
         n.inline = True
@@ -261,7 +249,7 @@ class ParsedHookTransform(SphinxTransform, Pipeline):
 
     @override
     def process_pending_node(self, n: pending_node) -> bool:
-        ExtraContextGenerator(n).on_parsed(cast(TransformHost, self))
+        ExtraContextGenerator(n).on_parsed(cast(ResolveHost, self))
         return n.template.phase == Phase.Parsed
 
     @override
@@ -279,7 +267,7 @@ class ResolvingHookTransform(SphinxPostTransform, Pipeline):
 
     @override
     def process_pending_node(self, n: pending_node) -> bool:
-        ExtraContextGenerator(n).on_post_transform(cast(TransformHost, self))
+        ExtraContextGenerator(n).on_resolving(cast(ResolveHost, self))
         return n.template.phase == Phase.Resolving
 
     @override

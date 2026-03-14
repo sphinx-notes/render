@@ -6,7 +6,6 @@ sphinxnotes.render
 :license: BSD, see LICENSE for details.
 """
 
-from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from . import meta
@@ -29,7 +28,13 @@ from .render import (
 )
 from .ctx import PendingContext, ResolvedContext
 from .ctxnodes import pending_node
-from .extractx import ExtraContextRegistry, ExtraContextGenerator
+from .extractx import (
+    ExtraContextRegistry,
+    ExtraContextGenerator,
+    GlobalExtraContxt,
+    ParsePhaseExtraContext,
+    ResolvePhaseExtraContext,
+)
 from .pipeline import BaseContextRole, BaseContextDirective
 from .sources import (
     UnparsedData,
@@ -42,7 +47,7 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
 
-"""Python API for other Sphinx extesions."""
+"""Python API for other Sphinx extensions."""
 __all__ = [
     'Registry',
     'PlainValue',
@@ -57,6 +62,9 @@ __all__ = [
     'Host',
     'PendingContext',
     'ResolvedContext',
+    'GlobalExtraContxt',
+    'ParsePhaseExtraContext',
+    'ResolvePhaseExtraContext',
     'pending_node',
     'BaseContextRole',
     'BaseContextDirective',
@@ -68,7 +76,7 @@ __all__ = [
 
 
 class Registry:
-    """The global, all-in-one registry for user."""
+    """The global, all-in-one registry for users."""
 
     @property
     def data(self) -> DataRegistry:
@@ -80,6 +88,7 @@ class Registry:
 
 
 REGISTRY = Registry()
+
 
 def setup(app: Sphinx):
     meta.pre_setup(app)

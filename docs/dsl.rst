@@ -1,6 +1,6 @@
-=====================
-Field Declaration DSL
-=====================
+==========================
+Field Description Language
+==========================
 
 .. default-domain:: py
 .. highlight:: python
@@ -8,19 +8,9 @@ Field Declaration DSL
    :language: Python
 
 
-The Field Declaration DSL is a Domain Specific Language (DSL) that used to
-define the type and structure of field values. A DSL declaration consists of
-one or more :term:`modifier`\ s separated by commas (``,``).
-
-Python API
-==========
-
-User can create a :class:`sphinxnotes.render.Field` from DSL and use it to parse
-string to :type:`sphinxnotes.render.Value`:
-
->>> from sphinxnotes.render import Field
->>> Field.from_dsl('list of int').parse('1,2,3')
-[1, 2, 3]
+The Field Description Language is a Domain Specific Language (DSL) that is used to
+define the type and structure of field values. An FDL declaration consists of
+one or more :term:`modifier` entries separated by commas (``,``).
 
 Syntax
 ======
@@ -34,17 +24,28 @@ Syntax
    Modifier
       There are four categories of modifiers:
 
-      Type modifier
-         Specifies the element type (scalar value)
+   Type modifier
+      Specifies the element type (scalar value)
 
-      Form modifier
-         Specifies a container type with element type
+   Form modifier
+      Specifies a container type with element type
 
-      Flag
-         A boolean flag (either on or off)
+   Flag
+      A boolean flag (either on or off)
 
-      By-Option
-         A key-value option
+   By-Option
+      A key-value option
+
+Python API
+==========
+
+Users can create a :class:`sphinxnotes.render.Field` from FDL and use it to parse
+strings into :type:`sphinxnotes.render.Value`:
+
+>>> from sphinxnotes.render import Field
+>>> Field.from_dsl('list of int').parse('1,2,3')
+[1, 2, 3]
+
 
 Type
 ====
@@ -73,7 +74,7 @@ A type modifier specifies the data type of a single (scalar) value.
    * - ``str``
      - :py:class:`str`
      - ``string``
-     - String. If looks like a Python literal (e.g., ``"hello"``), it's parsed accordingly.
+     - String. If it looks like a Python literal (e.g., ``"hello"``), it is parsed accordingly.
 
 Examples:
 
@@ -129,8 +130,8 @@ Flag
 
 A flag is a boolean modifier that can be either on or off.
 
-Every flag is available as a attribute of the :class:`Field`.
-For example, we have a "required" flag registed, we can access ``Field.required``
+Every flag is available as an attribute of the :class:`Field`.
+For example, we have a "required" flag registered, and we can access ``Field.required``
 attribute.
 
 .. list-table::
@@ -154,8 +155,8 @@ By-Option
 
 A by-option is a key-value modifier with the syntax ``<name> by <value>``.
 
-Every by-option is available as a attribute of the :class:`Field`.
-For example, we have a "sep" flag registed, we can get the value of separator
+Every by-option is available as an attribute of the :class:`Field`.
+For example, we have a "sep" by-option registered, and we can get the separator
 from ``Field.sep`` attribute.
 
 Built-in by-options:
@@ -179,10 +180,10 @@ DSL                 Input     Result
 ``int, sep by ':'`` ``1:2:3`` :py:`[1, 2, 3]`
 =================== ========= ================
 
-Extending the DSL
+Extending the FDL
 =================
 
-You can extend the DSL by registering custom types, flags, and by-options
+You can extend the FDL by registering custom types, flags, and by-options
 through the :attr:`~sphinxnotes.render.Registry.data` attribute of
 :data:`sphinxnotes.render.REGISTRY`.
 
@@ -212,7 +213,7 @@ Adding Custom Flags
 -------------------
 
 Use :meth:`~sphinxnotes.render.data.Registry.add_flag` method of
-:data:`sphinxnotes.render.REGISTRY` to add a new type:
+:data:`sphinxnotes.render.REGISTRY` to add a new flag:
 
 >>> from sphinxnotes.render import REGISTRY
 >>> REGISTRY.data.add_flag('unique', default=False)

@@ -30,11 +30,6 @@ Introduction
 
 A framework to define, constrain, and render data in Sphinx documentation.
 
-.. seealso:: `sphinxnotes-any`__ and `sphinxnotes-data`__ 
-
-   __ https://sphinx.silverrainz.me/any/
-   __ https://sphinx.silverrainz.me/data/
-
 .. INTRODUCTION END
 
 Getting Started
@@ -42,8 +37,10 @@ Getting Started
 
 .. ADDITIONAL CONTENT START
 
-This extension is not intended to be used directly by Sphinx user.
-It is for Sphinx extension developer, please refer to :doc:`dsl` and :doc:`api`.
+.. note::
+
+   This extension is not intended to be used directly by Sphinx users.
+   It is for Sphinx extension developers.
 
 .. ADDITIONAL CONTENT END
 
@@ -53,6 +50,7 @@ Contents
 .. toctree::
    :caption: Contents
 
+   usage
    dsl
    api
    changelog

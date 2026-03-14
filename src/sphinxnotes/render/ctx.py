@@ -1,14 +1,8 @@
 """
-sphinxnotes.render.ctx
-~~~~~~~~~~~~~~~~~~~~~~
-
-:copyright: Copyright 2026 by the Shengyu Zhang.
-:license: BSD, see LICENSE for details.
-
-This module wraps the :mod:`data` into context for rendering the template.
+This module wraps the :py:mod:`sphinxnotes.render.data` module into context
+suitable for use with Jinja templates.
 """
 
-from __future__ import annotations
 from typing import Any
 from abc import ABC, abstractmethod
 from collections.abc import Hashable
@@ -18,11 +12,12 @@ from .data import ParsedData
 from .utils import Unpicklable
 
 type ResolvedContext = ParsedData | dict[str, Any]
+"""Resolved context types used by template rendering."""
 
 
 @dataclass
 class PendingContextRef:
-    """A abstract class that references to :class:`PendingCtx`."""
+    """An abstract reference to :class:`PendingContext`."""
 
     ref: int
     chksum: int
@@ -32,28 +27,27 @@ class PendingContextRef:
 
 
 class PendingContext(ABC, Unpicklable, Hashable):
-    """A abstract representation of context that is not currently available.
-
-    Call :meth:`resolve` at the right time (depends on the implment) to get
-    context available.
-    """
+    """An abstract representation of context that is not currently available."""
 
     @abstractmethod
-    def resolve(self) -> ResolvedContext: ...
+    def resolve(self) -> ResolvedContext:
+        """This method will be called when rendering to get the available
+        :py:type:`ResolvedContext`."""
+        ...
 
 
 class PendingContextStorage:
-    """Area for temporarily storing PendingContext.
+    """Area for temporarily storing :py:class:`PendingContext`.
 
-    This class is indented to resolve the problem that:
+    This class is intended to solve the problem that:
 
-        Some of the PendingContext are :class:Unpicklable` and they can not be hold
+        Some :class:`PendingContext` objects are :class:`Unpicklable`, so they cannot be held
         by :class:`pending_node` (as ``pending_node`` will be pickled along with
         the docutils doctree)
 
-    This class maintains a mapping from :class:`PendingContextRef` -> :cls:`PendingContext`.
+    This class maintains a mapping from :class:`PendingContextRef` -> :class:`PendingContext`.
     ``pending_node`` owns the ``PendingContextRef``, and can retrieve the context
-    by calling :meth:`retrieve`.
+    by calling :py:meth:`retrieve`.
     """
 
     _next_id: int

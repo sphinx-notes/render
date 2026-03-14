@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import TYPE_CHECKING, override
 from pprint import pformat
 
@@ -6,7 +5,12 @@ from docutils import nodes
 from docutils.parsers.rst.states import Inliner
 
 from .render import Template
-from .ctx import PendingContextRef, PendingContext, PendingContextStorage
+from .ctx import (
+    PendingContextRef,
+    PendingContext,
+    PendingContextStorage,
+    ResolvedContext,
+)
 from .markup import MarkupRenderer
 from .template import TemplateRenderer
 from .utils import (
@@ -18,10 +22,11 @@ from .utils import (
 if TYPE_CHECKING:
     from typing import Any, Callable, ClassVar
     from .markup import Host
-    from .ctx import ResolvedContext
 
 
 class pending_node(nodes.Element):
+    """A docutils node to be rendered."""
+
     # The context to be rendered by Jinja template.
     ctx: PendingContextRef | ResolvedContext
     # The extra context as supplement to ctx.
@@ -66,7 +71,7 @@ class pending_node(nodes.Element):
 
     def render(self, host: Host) -> None:
         """
-        The core function for rendering context to docutils nodes.
+        The core function for rendering context and template to docutils nodes.
 
         1. PendingContextRef -> PendingContext -> ResolvedContext
         2. TemplateRenderer.render(ResolvedContext) -> Markup Text (``str``)
@@ -212,7 +217,7 @@ class pending_node(nodes.Element):
         # Replace self with inline nodes.
         self.replace_self(ns)
 
-    """Hooks for procssing render intermediate products. """
+    """Hooks for processing render intermediate products."""
 
     type PendingContextHook = Callable[[pending_node, PendingContext], None]
     type ResolvedContextHook = Callable[[pending_node, ResolvedContext], None]
