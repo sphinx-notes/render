@@ -3,6 +3,7 @@ This module wraps the :py:mod:`sphinxnotes.render.data` module into context
 suitable for use with Jinja templates.
 """
 
+from __future__ import annotations
 from typing import Any
 from abc import ABC, abstractmethod
 from collections.abc import Hashable

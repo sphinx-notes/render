@@ -6,6 +6,7 @@ sphinxnotes.render
 :license: BSD, see LICENSE for details.
 """
 
+from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from . import meta
@@ -88,7 +89,6 @@ class Registry:
 
 
 REGISTRY = Registry()
-
 
 def setup(app: Sphinx):
     meta.pre_setup(app)

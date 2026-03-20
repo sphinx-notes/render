@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import TYPE_CHECKING, override
 from pprint import pformat
 
@@ -22,6 +23,7 @@ from .utils import (
 if TYPE_CHECKING:
     from typing import Any, Callable, ClassVar
     from .markup import Host
+    from .ctx import ResolvedContext
 
 
 class pending_node(nodes.Element):

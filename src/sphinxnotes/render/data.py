@@ -8,6 +8,7 @@ Context data type definitions.
 :license: BSD, see LICENSE for details.
 """
 
+from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
 import re
 from dataclasses import dataclass, asdict, field as dataclass_field

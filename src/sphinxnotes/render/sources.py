@@ -8,6 +8,7 @@ sphinxnotes.render.sources
 This module provides helpful BaseContextSource subclasses.
 """
 
+from __future__ import annotations
 from typing import override
 from abc import abstractmethod
 from dataclasses import dataclass
@@ -99,7 +100,7 @@ class StrictDataDefineDirective(BaseDataDefineDirective):
     @classmethod
     def derive(
         cls, name: str, schema: Schema, tmpl: Template
-    ) -> type['StrictDataDefineDirective']:
+    ) -> type[StrictDataDefineDirective]:
         """Dynamically derive a new directive class from schema and template.
 
         This method generates a new ``StrictDataDefineDirective`` subclass with

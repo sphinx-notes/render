@@ -1,5 +1,6 @@
 """This module defines pipeline for rendering data to nodes."""
 
+from __future__ import annotations
 from typing import TYPE_CHECKING, override, final, cast
 from abc import abstractmethod, ABC
 
