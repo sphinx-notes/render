@@ -16,12 +16,15 @@ rendered as part of the document.
    - :ref:`context`, the dynamic content of a Jinja template
 
    - :py:class:`~sphinxnotes.render.Template`,
-     the Jinja template for rendering context to markup text
-     (reStructuredText or Markdown)
+      the Jinja template for rendering context to markup text
+      (reStructuredText or Markdown)
 
 2. Render: the ``pending_node`` node will be rendered at the appropriate
    :py:class:`~sphinxnotes.render.Phase`, depending on
    :py:attr:`~sphinxnotes.render.pending_node.template.phase`.
+
+For a task-oriented explanation of template variables, extra context, and phase
+selection, see :doc:`tmpl`.
 
 Node
 -----
@@ -64,6 +67,8 @@ Context refers to the dynamic content of a Jinja template. It can be:
 Template
 --------
 
+See :doc:`tmpl` for the higher-level guide.
+
 .. autoclass:: sphinxnotes.render.Template
    :members:
 
@@ -72,6 +77,9 @@ Template
 
 Extra Context
 -------------
+
+See :doc:`tmpl` for built-in extra-context names such as ``_doc`` and
+``_sphinx``, plus usage examples.
 
 .. autoclass:: sphinxnotes.render.GlobalExtraContxt
 
@@ -85,6 +93,8 @@ Extra Context
 
 Base Roles and Directives
 -------------------------
+
+For a minimal end-to-end example of a custom directive, start with :doc:`usage`.
 
 Base Role Classes
 ~~~~~~~~~~~~~~~~~

@@ -122,6 +122,8 @@ import sys
 sys.path.insert(0, os.path.abspath('../src/'))
 extensions.append('sphinxnotes.render')
 
+extensions.append('sphinxnotes.data')
+
 # CUSTOM CONFIGURATION
 
 autodoc_default_options = {
