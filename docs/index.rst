@@ -42,6 +42,9 @@ Getting Started
    This extension is not intended to be used directly by Sphinx users.
    It is for Sphinx extension developers.
 
+   If you are new to the project, read :doc:`usage` first, then :doc:`tmpl`,
+   and finally :doc:`dsl` and :doc:`api` as reference material.
+
 .. ADDITIONAL CONTENT END
 
 Contents
@@ -49,6 +52,7 @@ Contents
 
 .. toctree::
    :caption: Contents
+   :maxdepth: 2
 
    usage
    tmpl
