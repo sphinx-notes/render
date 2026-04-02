@@ -71,6 +71,7 @@ docs = [
     # Dependencies of sphinxnotes projcts.
     "sphinxnotes-project",
     "sphinxnotes-comboroles",
+    "sphinxnotes-data",
 
     # CUSTOM DOCS DEPENDENCIES START
     # CUSTOM DOCS DEPENDENCIES END
