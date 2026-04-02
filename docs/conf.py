@@ -122,6 +122,8 @@ import sys
 sys.path.insert(0, os.path.abspath('../src/'))
 extensions.append('sphinxnotes.render')
 
+extensions.append('sphinxnotes.data')
+
 # CUSTOM CONFIGURATION
 
 autodoc_default_options = {
@@ -130,6 +132,11 @@ autodoc_default_options = {
 
 intersphinx_mapping['python'] = ('https://docs.python.org/3', None)
 intersphinx_mapping['sphinx'] = ('https://www.sphinx-doc.org/en/master', None)
+intersphinx_mapping['data'] = ('https://sphinx.silverrainz.me/data', None)
 
 def setup(app):
     app.add_object_type('event', 'event') # for intersphinx
+
+    sys.path.insert(0, os.path.abspath('../tests/roots/test-ctxdir-usage'))
+    from conf import setup as setup_ctxdir_usage_example
+    setup_ctxdir_usage_example(app)

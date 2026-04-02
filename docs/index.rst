@@ -39,8 +39,16 @@ Getting Started
 
 .. note::
 
-   This extension is not intended to be used directly by Sphinx users.
-   It is for Sphinx extension developers.
+   This extension is **aimed at advanced Sphinx users or extension developers**.
+
+   If you are new to Sphinx, you may instersting with
+   :parsed_literal:`sphinxnotes.data__` or :parsed_literal:`sphinxnotes.any__`.
+
+   __ https://sphinx.silverrainz.me/data
+   __ https://sphinx.silverrainz.me/any
+
+We cannot get you started with this short section; please refer to the
+:doc:`usage` for more detailed information.
 
 .. ADDITIONAL CONTENT END
 
@@ -49,8 +57,10 @@ Contents
 
 .. toctree::
    :caption: Contents
+   :maxdepth: 2
 
    usage
+   tmpl
    dsl
    api
    changelog
