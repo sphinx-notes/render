@@ -120,6 +120,10 @@ class Document(NodeWithTitle):
         return Section(section)
 
     @proxy_property
+    def title(self) -> Node | None:
+        return self._top_section().title
+
+    @proxy_property
     def sections(self) -> tuple[Section, ...]:
         return self._top_section().sections
 
