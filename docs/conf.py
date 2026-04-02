@@ -136,3 +136,7 @@ intersphinx_mapping['data'] = ('https://sphinx.silverrainz.me/data', None)
 
 def setup(app):
     app.add_object_type('event', 'event') # for intersphinx
+
+    sys.path.insert(0, os.path.abspath('../tests/roots/test-ctxdir-usage'))
+    from conf import setup as setup_ctxdir_usage_example
+    setup_ctxdir_usage_example(app)

@@ -2,18 +2,53 @@
 Templating
 ==========
 
-``sphinxnotes.render`` uses Jinja2_ to turn structured context data into markup
-text, usually reStructuredText. The rendered text is then parsed again by
-Sphinx/docutils and inserted into the document.
-
 This page focuses on the context made available to templates, when that context
 is available, and how extension authors can add more of it. You should already
 be comfortable with basic Jinja2 syntax before reading this page.
 
 .. _Jinja2: https://jinja.palletsprojects.com/en/stable/templates/
 
-Directive Data Context
-======================
+Jinja Environment
+=================
+
+Templates are rendered in a sandboxed Jinja2 environment.
+
+- Undefined variables raise errors by default (``undefined=DebugUndefined``)
+- Extension ``jinja2.ext.loopcontrols``, ``jinja2.ext.do`` are enabled by default.
+- Output is plain markup text, so you can generate lists, directives, roles,
+  and other reStructuredText constructs.
+
+Built-in filters
+----------------
+
+``role``
+   We provides a ``roles`` filter for producing role markup from a sequence of
+   strings.
+
+   .. example::
+      :style: grid
+
+      .. data.render::
+
+         {%
+         set text = ['index', 'usage']
+                    | roles('doc')
+                    | join(', ')
+         %}
+
+         :Text: ``{{ text }}``
+         :Rendered: {{ text }}
+
+Extending filters
+-----------------
+
+To be done.
+
+Context
+=======
+
+Directive and Role Context
+--------------------------
 
 When a directive or role provides data through
 :py:class:`~sphinxnotes.render.BaseDataDefineDirective` or
@@ -43,32 +78,32 @@ The following `template variables`_ are available in the main context:
 
             {{ name }}
 
-         .. data.define:: foo
+         .. data.define:: This is the argument
 
       For role, this is not available for now.
 
    ``{{ attrs.xxx }}``
       For directive, this refer to the directive options.
       It is a mapping of option's field to its value, so
-      ``{{ attrs.color }}`` and ``{{ attrs['color'] }}`` are equivalent.
+      ``{{ attrs.label }}`` and ``{{ attrs['label'] }}`` are equivalent.
 
       .. example::
          :style: grid
 
          .. data.template::
 
-            Color is {{ attrs.color }}.
+            Label is {{ attrs.label }}.
 
-         .. data::
-            :color: red
+         .. data.define::
+            :label: Important
 
       For role, this is not available for now.
 
       .. note::
 
          Attribute values are also lifted to the top-level template context when
-         there is no name conflict. For example, ``{{ color }}`` can be used
-         instead of ``{{ attrs.color }}``, but ``{{ name }}`` still refers to
+         there is no name conflict. For example, ``{{ label }}`` can be used
+         instead of ``{{ attrs.label }}``, but ``{{ name }}`` still refers to
          the data object's own ``name`` field.
 
          .. example::
@@ -76,10 +111,10 @@ The following `template variables`_ are available in the main context:
 
             .. data.template::
 
-               {{ color }} and {{ attrs.color }} are same.
+               {{ label }} and {{ attrs.label }} are same.
 
-            .. data::
-               :color: red
+            .. data.define::
+               :label: Important
 
    ``{{ content }}``
       For directive, this refer to the directive body.
@@ -91,9 +126,9 @@ The following `template variables`_ are available in the main context:
 
             {{ content }}
 
-         .. data::
-            
-            Color is red.
+         .. data.define::
+
+            This is the body content.
 
       For role, this refer to the interpreted text.
 
@@ -104,7 +139,7 @@ The following `template variables`_ are available in the main context:
 
             {{ content }}
 
-         :data:`Color is red`
+          :data:`This is the interpreted text`
 
 The type of each variable depends on the corresponding :py:class:`~sphinxnote.render.Schema`.
 For developers, the schema is provided by the
@@ -114,15 +149,13 @@ For example, for the `sphinxnotes.data` extension, the schema is defined through
 the :rst:dir:`data.schema` directive.
 
 Extra Context
-=============
-
-TODO: Refactor
+-------------
 
 Templates may also receive extra context entries in addition to the main data
 context. These entries are stored under names prefixed with ``_``.
 
 Built-in extra context
-----------------------
+......................
 
 .. list-table::
    :header-rows: 1
@@ -156,75 +189,22 @@ arbitrary Python object behavior.
 
    .. data.render::
 
-      Current document title is {{ _doc.title }}.
+      Current document title is
+      "{{ _doc.title }}".
 
 Extending extra context
------------------------
+.......................
 
 Extension authors can register more context generators through
 :py:data:`sphinxnotes.render.REGISTRY`.
 
-.. code-block:: python
+TODO.
 
-   from sphinxnotes.render import REGISTRY, ParsePhaseExtraContext
+Template
+========
 
-   class ProjectContext(ParsePhaseExtraContext):
-       def generate(self, host):
-           return {'lineno': host.lineno}
-
-
-   REGISTRY.extra_context.add_parsing_phase_context('project', ProjectContext())
-
-The registered context becomes available in templates as ``_project``.
-
-Depending on when the value can be computed, implement one of these base
-classes:
-
-- :py:class:`~sphinxnotes.render.GlobalExtraContxt` for context available in
-  every phase.
-- :py:class:`~sphinxnotes.render.ParsePhaseExtraContext` for context generated
-  during :py:data:`~sphinxnotes.render.Phase.Parsing`.
-- :py:class:`~sphinxnotes.render.ResolvePhaseExtraContext` for context generated
-  during :py:data:`~sphinxnotes.render.Phase.Parsed` or
-  :py:data:`~sphinxnotes.render.Phase.Resolving`.
-
-Jinja Environment
-=================
-
-Templates are rendered in a sandboxed Jinja2 environment.
-
-- Undefined variables raise errors by default (``undefined=DebugUndefined``)
-- Extension ``jinja2.ext.loopcontrols``, ``jinja2.ext.do`` are enabled by default.
-- Output is plain markup text, so you can generate lists, directives, roles,
-  and other reStructuredText constructs.
-
-Built-in filters
-----------------
-
-``role``
-   We provides a ``roles`` filter for producing role markup from a sequence of
-   strings.
-
-   .. example::
-      :style: grid
-
-      .. data.render::
-      
-         {%
-         set text = ['index', 'usage']
-                    | roles('doc')
-                    | join(', ')
-         %}
-
-         :Text: ``{{ text }}``
-         :Rendered: {{ text }}
-
-Extending filters
------------------
-
-To be done.
-Phases
-======
+Render Phases
+-------------
 
 Each :py:class:`~sphinxnotes.render.Template` has a render phase controlled by
 :py:class:`~sphinxnotes.render.Phase`.
@@ -232,7 +212,7 @@ Each :py:class:`~sphinxnotes.render.Template` has a render phase controlled by
 ``parsing`` (:py:data:`sphinxnotes.render.Phase.Parsing`)
    Render immediately while the directive or role is running.
 
-   This is the default render pahse.
+   This is the default render phase.
    Choose this when the template only needs local information and does not rely
    on the final doctree or cross-document state.
 
@@ -243,9 +223,11 @@ Each :py:class:`~sphinxnotes.render.Template` has a render phase controlled by
          :on: parsing
 
          - The current document has
-           {{ _doc.sections | length }} section(s).
+           {{ _doc.sections | length }}
+           section(s).
          - The current project has
-           {{ _sphinx.env.all_docs | length }} document(s).
+           {{ _sphinx.env.all_docs | length }}
+           document(s).
 
 ``parsed`` (:py:data:`sphinxnotes.render.Phase.Parsed`)
    Render after the current document has been parsed.
@@ -260,9 +242,11 @@ Each :py:class:`~sphinxnotes.render.Template` has a render phase controlled by
          :on: parsed
 
          - The current document has
-           {{ _doc.sections | length }} section(s).
+           {{ _doc.sections | length }}
+           section(s).
          - The current project has
-           {{ _sphinx.env.all_docs | length }} document(s).
+           {{ _sphinx.env.all_docs | length }}
+           document(s).
 
 ``resolving`` (:py:data:`sphinxnotes.render.Phase.Resolving`)
    Render late in the build, after references and other transforms are being
@@ -278,9 +262,22 @@ Each :py:class:`~sphinxnotes.render.Template` has a render phase controlled by
          :on: resolving
 
          - The current document has
-           {{ _doc.sections | length }} section(s).
+           {{ _doc.sections | length }}
+           section(s).
          - The current project has
-           {{ _sphinx.env.all_docs | length }} document(s).
+           {{ _sphinx.env.all_docs | length }}
+           document(s).
+
+Debugging
+---------
+
+Set :py:attr:`sphinxnotes.render.Template.debug` to ``True`` to append a debug
+report to the rendered document. The report includes the resolved context,
+available extra-context keys, the template source, the rendered markup text,
+and the final nodes produced from that markup.
+
+This is especially useful when a template fails because of an undefined
+variable, unexpected data shape, or invalid generated markup.
 
 End-to-End Example
 ==================
@@ -316,14 +313,3 @@ This pattern is often the most convenient way to build small, declarative
 directives. For more control, subclass
 :py:class:`~sphinxnotes.render.BaseDataDefineDirective` directly and implement
 ``current_schema()`` and ``current_template()`` yourself.
-
-Debugging
-=========
-
-Set :py:attr:`sphinxnotes.render.Template.debug` to ``True`` to append a debug
-report to the rendered document. The report includes the resolved context,
-available extra-context keys, the template source, the rendered markup text,
-and the final nodes produced from that markup.
-
-This is especially useful when a template fails because of an undefined
-variable, unexpected data shape, or invalid generated markup.

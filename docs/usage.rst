@@ -8,12 +8,18 @@ Usage
    :external+sphinx:doc:`development/tutorials/extending_syntax`.
    See how to extend :py:class:`SphinxDirective` and :py:class:`SphinxRole`.
 
+``sphinxnotes.render`` uses Jinja2_ to turn structured data into markup
+text, usually reStructuredText. The rendered text is then parsed again by
+Sphinx and inserted into the document.
+
+.. _Jinja2: https://jinja.palletsprojects.com/en/stable/templates/
+
+Now we have a quick example to help you get Started.
 Create a Sphinx documentation with the following ``conf.py``:
 
 .. literalinclude:: ../tests/roots/test-ctxdir-usage/conf.py
 
-This is the smallest useful extension built on top of
-``sphinxnotes.render``:
+This is the smallest useful extension built on top of ``sphinxnotes.render``:
 
 - it defines a custom directive by subclassing
   :py:class:`~sphinxnotes.render.BaseContextDirective`
@@ -25,12 +31,11 @@ This is the smallest useful extension built on top of
 
 Now use the directive in your document:
 
-.. code-block:: rst
+.. example::
+   :style: grid
 
    .. me::
-
-This will render as: My name is Shengyu Zhang.
-
+ 
 Next steps
 ==========
 
