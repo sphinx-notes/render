@@ -32,7 +32,7 @@ class FreeStyleOptionSpec(dict):
 
 class FreeStyleDirective(SphinxDirective):
     """
-    TODO: https://docutils.sourceforge.io/docs/ref/rst/directives.html#role
+    TODO: docutils/parsers/rst/directives/misc.py::Meta
     """
 
     final_argument_whitespace = True
