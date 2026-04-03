@@ -75,17 +75,27 @@ See :doc:`tmpl` for the higher-level guide.
 .. autoclass:: sphinxnotes.render.Phase
    :members:
 
-Extra Context
--------------
+Sources
+-------
 
-See :doc:`tmpl` for built-in extra-context names such as ``_doc`` and
-``_sphinx``, plus usage examples.
+See :doc:`tmpl` for built-in extra-context names such as ``doc`` and
+``sphinx``, plus usage examples.
 
-.. autoclass:: sphinxnotes.render.GlobalExtraContxt
+.. autofunction:: sphinxnotes.render.extra_context
 
-.. autoclass:: sphinxnotes.render.ParsePhaseExtraContext
+.. autoclass:: sphinxnotes.render.ExtraContext
 
-.. autoclass:: sphinxnotes.render.ResolvePhaseExtraContext
+.. autoclass:: sphinxnotes.render.ParsingPhaseExtraContext
+   :members: generate
+
+.. autoclass:: sphinxnotes.render.ParsedPhaseExtraContext
+   :members: generate
+
+.. autoclass:: sphinxnotes.render.ResolvingPhaseExtraContext
+   :members: generate
+
+.. autoclass:: sphinxnotes.render.GlobalExtraContext
+   :members: generate
 
 .. autoclass:: sphinxnotes.render.ExtraContextRegistry
    :members:
@@ -153,7 +163,7 @@ Registry
 ========
 
 Developers can extend this extension (for example, to support more data types
-or add new extra context) by adding new items to
+or add new sources) by adding new items to
 :py:class:`sphinxnotes.render.REGISTRY`.
 
 .. autodata:: sphinxnotes.render.REGISTRY
@@ -161,4 +171,4 @@ or add new extra context) by adding new items to
 .. autoclass:: sphinxnotes.render.Registry
 
    .. autoproperty:: data
-   .. autoproperty:: extra_context
+   .. autoproperty:: source

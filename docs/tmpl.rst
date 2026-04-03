@@ -153,8 +153,9 @@ the :rst:dir:`data.schema` directive.
 Extra Context
 -------------
 
-Templates may also receive extra context entries in addition to the main data
-context. These entries are stored under names prefixed with ``_``.
+Templates can access additional context through **extra context**. Extra context
+must be explicitly declared using the ``:extra:`` option and loaded in the
+template using the ``load()`` function.
 
 Built-in extra context
 ......................
@@ -163,23 +164,23 @@ Built-in extra context
    :header-rows: 1
 
    * - Name
-     - Available in
+     - Available in Pahses
      - Description
-   * - ``_sphinx``
-     - all phases
+   * - ``sphinx``
+     - all
      - A proxy to the Sphinx application object.
-   * - ``_docutils``
-     - all phases
+   * - ``docutils``
+     - all
      - A mapping that exposes registered docutils directives and roles.
-   * - ``_markup``
-     - parsing and later
+   * - ``markup``
+     - :term:`parsing` and later
      - Information about the current directive or role invocation, such as its
        type, name, source text, and line number.
-   * - ``_section``
-     - parsing and later
+   * - ``section``
+     - :term:`parsing` and later
      - A proxy to the current section node, when one exists.
-   * - ``_doc``
-     - parsing and later
+   * - ``doc``
+     - :term:`parsing` and later
      - A proxy to the current document node.
 
 These values are wrapped for safer template access. In practice this means
@@ -190,17 +191,25 @@ arbitrary Python object behavior.
    :style: grid
 
    .. data.render::
+      :extra: doc
 
       Current document title is
-      "{{ _doc.title }}".
+      "{{ load('doc').title }}".
 
 Extending extra context
 .......................
 
-Extension authors can register more context generators through
-:py:data:`sphinxnotes.render.REGISTRY`.
+Extension authors can register custom extra context using the
+:py:func:`~sphinxnotes.render.extra_context` decorator.
 
-TODO.
+.. code-block:: python
+
+   from sphinxnotes.render import extra_context, ParsingPhaseExtraContext
+
+   @extra_context('custom')
+   class CustomExtraContext(ParsingPhaseExtraContext):
+       def generate(self, directive):
+           return {'info': 'custom data'}
 
 Template
 ========
@@ -213,64 +222,81 @@ Render Phases
 Each :py:class:`~sphinxnotes.render.Template` has a render phase controlled by
 :py:class:`~sphinxnotes.render.Phase`.
 
-``parsing`` (:py:data:`sphinxnotes.render.Phase.Parsing`)
-   Render immediately while the directive or role is running.
+.. glossary::
 
-   This is the default render phase.
-   Choose this when the template only needs local information and does not rely
-   on the final doctree or cross-document state.
+   ``parsing``
+      Corresponding to :py:data:`sphinxnotes.render.Phase.Parsing`.
+      Render immediately while the directive or role is running.
 
-   .. example::
-      :style: grid
+      This is the default render phase.
+      Choose this when the template only needs local information and does not rely
+      on the final doctree or cross-document state.
 
-      .. data.render::
-         :on: parsing
+      .. example::
+         :style: grid
 
-         - The current document has
-           {{ _doc.sections | length }}
-           section(s).
-         - The current project has
-           {{ _sphinx.env.all_docs | length }}
-           document(s).
+         .. data.render::
+            :on: parsing
+            :extra: doc sphinx
 
-``parsed`` (:py:data:`sphinxnotes.render.Phase.Parsed`)
-   Render after the current document has been parsed.
+            {% set doc = load('doc') %}
+            {% set sphinx = load('sphinx') %}
 
-   Choose this when the template needs the complete doctree of the current
-   document.
+            - The current document has
+              {{ doc.sections | length }}
+              section(s).
+            - The current project has
+              {{ sphinx.env.all_docs | length }}
+              document(s).
 
-   .. example::
-      :style: grid
+   ``parsed``
+      Corresponding to :py:data:`sphinxnotes.render.Phase.Parsed`.
+      Render after the current document has been parsed.
 
-      .. data.render::
-         :on: parsed
+      Choose this when the template needs the complete doctree of the current
+      document.
 
-         - The current document has
-           {{ _doc.sections | length }}
-           section(s).
-         - The current project has
-           {{ _sphinx.env.all_docs | length }}
-           document(s).
+      .. example::
+         :style: grid
 
-``resolving`` (:py:data:`sphinxnotes.render.Phase.Resolving`)
-   Render late in the build, after references and other transforms are being
-   resolved.
+         .. data.render::
+            :on: parsed
+            :extra: doc sphinx
 
-   Choose this when the template depends on project-wide state or on document
-   structure that is only stable near the end of the pipeline.
+            {% set doc = load('doc') %}
+            {% set sphinx = load('sphinx') %}
 
-   .. example::
-      :style: grid
+            - The current document has
+              {{ doc.sections | length }}
+              section(s).
+            - The current project has
+              {{ sphinx.env.all_docs | length }}
+              document(s).
 
-      .. data.render::
-         :on: resolving
+   ``resolving``
+      Corresponding to :py:data:`sphinxnotes.render.Phase.Resolving`.
+      Render late in the build, after references and other transforms are being
+      resolved.
 
-         - The current document has
-           {{ _doc.sections | length }}
-           section(s).
-         - The current project has
-           {{ _sphinx.env.all_docs | length }}
-           document(s).
+      Choose this when the template depends on project-wide state or on document
+      structure that is only stable near the end of the pipeline.
+
+      .. example::
+         :style: grid
+
+         .. data.render::
+            :on: resolving
+            :extra: doc sphinx
+
+            {% set doc = load('doc') %}
+            {% set sphinx = load('sphinx') %}
+
+            - The current document has
+              {{ doc.sections | length }}
+              section(s).
+            - The current project has
+              {{ sphinx.env.all_docs | length }}
+              document(s).
 
 Debugging
 ---------

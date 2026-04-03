@@ -2,40 +2,66 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, override
 from abc import ABC, abstractmethod
 
-from sphinx.util.docutils import SphinxDirective
-from docutils.parsers.rst.directives import _directives
-from docutils.parsers.rst.roles import _roles
+from sphinx.util.docutils import SphinxDirective, SphinxRole
+from sphinx.transforms import SphinxTransform
 
 from .render import HostWrapper
 from .ctxnodes import pending_node
 from .utils import find_current_section, Report, Reporter
-from .utils.ctxproxy import proxy
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, ClassVar
+    from typing import Any, Callable
     from sphinx.application import Sphinx
-    from .render import ParseHost, ResolveHost
+    from sphinx.environment import BuildEnvironment
 
 
-class GlobalExtraContxt(ABC):
-    """Extra context available in any phase."""
-
-    @abstractmethod
-    def generate(self) -> Any: ...
+# ===================================
+# ExtraContext ABC definitions
+# ===================================
 
 
-class ParsePhaseExtraContext(ABC):
-    """Extra context generated during the :py:class:`~Phase.Parsing` phase."""
-
-    @abstractmethod
-    def generate(self, host: ParseHost) -> Any: ...
+class ExtraContext(ABC):
+    """Base class for all extra context."""
 
 
-class ResolvePhaseExtraContext(ABC):
-    """Extra context generated during the :py:class:`~Phase.Resolving` phase."""
+class ParsingPhaseExtraContext(ExtraContext):
+    """Extra context generated during the Parsing phase.
+
+    The ``generate`` method receives the current directive or role being executed.
+    """
 
     @abstractmethod
-    def generate(self, host: ResolveHost) -> Any: ...
+    def generate(self, directive: SphinxDirective | SphinxRole) -> Any: ...
+
+
+class ParsedPhaseExtraContext(ExtraContext):
+    """Extra context generated during the Parsed phase.
+
+    The ``generate`` method receives the current Sphinx transform.
+    """
+
+    @abstractmethod
+    def generate(self, transform: SphinxTransform) -> Any: ...
+
+
+class ResolvingPhaseExtraContext(ExtraContext):
+    """Extra context generated during the Resolving phase.
+
+    The ``generate`` method receives the current Sphinx transform.
+    """
+
+    @abstractmethod
+    def generate(self, transform: SphinxTransform) -> Any: ...
+
+
+class GlobalExtraContext(ExtraContext):
+    """Extra context available in all phases.
+
+    The ``generate`` method receives the Sphinx build environment.
+    """
+
+    @abstractmethod
+    def generate(self, env: BuildEnvironment) -> Any: ...
 
 
 # =======================
@@ -44,56 +70,64 @@ class ResolvePhaseExtraContext(ABC):
 
 
 class ExtraContextRegistry:
-    names: set[str]
-    parsing: dict[str, ParsePhaseExtraContext]
-    parsed: dict[str, ResolvePhaseExtraContext]
-    post_transform: dict[str, ResolvePhaseExtraContext]
-    global_: dict[str, GlobalExtraContxt]
+    _extra: dict[str, ExtraContext]
 
     def __init__(self) -> None:
-        self.names = set()
-        self.parsing = {}
-        self.parsed = {}
-        self.post_transform = {}
-        self.global_ = {}
+        self._extra = {}
 
-        self.add_global_context('sphinx', _SphinxExtraContext())
-        self.add_global_context('docutils', _DocutilsExtraContext())
-        self.add_parsing_phase_context('markup', _MarkupExtraContext())
-        self.add_parsing_phase_context('section', _SectionExtraContext())
-        self.add_parsing_phase_context('doc', _DocExtraContext())
+    def register(self, name: str, ctx: ExtraContext) -> None:
+        """Register an extra context.
 
-    def _name_dedup(self, name: str) -> None:
-        # TODO: allow dup
-        if name in self.names:
-            raise ValueError(f'Context generator {name} already exists')
-        self.names.add(name)
+        :param name: The context name, used in templates via ``load('name')``.
+        :param ctx: The extra context instance.
+        """
+        if name in self._extra:
+            raise ValueError(f'Extra context "{name}" already registered')
+        self._extra[name] = ctx
 
-    def add_parsing_phase_context(
-        self, name: str, ctxgen: ParsePhaseExtraContext
-    ) -> None:
-        """Register an extra context for the :py:class:`~Phase.Parsing` phase."""
-        self._name_dedup(name)
-        self.parsing['_' + name] = ctxgen
+    def get(self, name: str) -> ExtraContext | None:
+        """Get a registered extra context by name."""
+        return self._extra.get(name)
 
-    def add_parsed_phase_context(
-        self, name: str, ctxgen: ResolvePhaseExtraContext
-    ) -> None:
-        """Register an extra context for the :py:class:`~Phase.Parsed` phase."""
-        self._name_dedup(name)
-        self.parsed['_' + name] = ctxgen
+    @property
+    def names(self) -> list[str]:
+        """Return all registered extra context names."""
+        return list(self._extra.keys())
 
-    def add_post_transform_phase_context(
-        self, name: str, ctxgen: ResolvePhaseExtraContext
-    ) -> None:
-        """Register an extra context for the :py:class:`~Phase.Resolving` phase."""
-        self._name_dedup(name)
-        self.post_transform['_' + name] = ctxgen
 
-    def add_global_context(self, name: str, ctxgen: GlobalExtraContxt):
-        """Register a global extra context available across phases."""
-        self._name_dedup(name)
-        self.global_['_' + name] = ctxgen
+# Global registry instance
+REGISTRY = ExtraContextRegistry()
+
+
+def extra_context(name: str):
+    """Decorator to register an extra context.
+
+    The phase is determined by which ExtraContext subclass is used:
+
+    - :py:class:`GlobalExtraContext` -> available in all phases
+    - :py:class:`ParsingPhaseExtraContext` -> available during Parsing phase
+    - :py:class:`ParsedPhaseExtraContext` -> available during Parsed phase
+    - :py:class:`ResolvingPhaseExtraContext` -> available during Resolving phase
+
+    Example::
+
+        @extra_context('doc')
+        class DocExtraContext(ParsingPhaseExtraContext):
+            def generate(self, directive):
+                return proxy(HostWrapper(directive).doctree)
+
+    :param name: The context name, used in templates via ``load('name')``.
+    """
+
+    def decorator(cls):
+        if not issubclass(cls, ExtraContext):
+            raise TypeError(f'{cls.__name__} must subclass an ExtraContext ABC')
+
+        instance = cls()
+        REGISTRY.register(name, instance)
+        return cls
+
+    return decorator
 
 
 # ===================================
@@ -101,43 +135,54 @@ class ExtraContextRegistry:
 # ===================================
 
 
-class _MarkupExtraContext(ParsePhaseExtraContext):
+@extra_context('markup')
+class MarkupExtraContext(ParsingPhaseExtraContext):
     @override
-    def generate(self, host: ParseHost) -> Any:
-        isdir = isinstance(host, SphinxDirective)
+    def generate(self, directive: SphinxDirective | SphinxRole) -> Any:
+        isdir = isinstance(directive, SphinxDirective)
         return {
             'type': 'directive' if isdir else 'role',
-            'name': host.name,
-            'lineno': host.lineno,
-            'rawtext': host.block_text if isdir else host.rawtext,
+            'name': directive.name,
+            'lineno': directive.lineno,
+            'rawtext': directive.block_text if isdir else directive.rawtext,
         }
 
 
-class _DocExtraContext(ParsePhaseExtraContext):
+@extra_context('doc')
+class DocExtraContext(ParsingPhaseExtraContext):
     @override
-    def generate(self, host: ParseHost) -> Any:
-        return proxy(HostWrapper(host).doctree)
+    def generate(self, directive: SphinxDirective | SphinxRole) -> Any:
+        from .utils.ctxproxy import proxy
+
+        return proxy(HostWrapper(directive).doctree)
 
 
-class _SectionExtraContext(ParsePhaseExtraContext):
+@extra_context('section')
+class SectionExtraContext(ParsingPhaseExtraContext):
     @override
-    def generate(self, host: ParseHost) -> Any:
-        parent = HostWrapper(host).parent
+    def generate(self, directive: SphinxDirective | SphinxRole) -> Any:
+        from .utils.ctxproxy import proxy
+
+        parent = HostWrapper(directive).parent
         return proxy(find_current_section(parent))
 
 
-class _SphinxExtraContext(GlobalExtraContxt):
-    app: ClassVar[Sphinx]
-
+@extra_context('sphinx')
+class SphinxExtraContext(GlobalExtraContext):
     @override
-    def generate(self) -> Any:
-        return proxy(self.app)
+    def generate(self, env: BuildEnvironment) -> Any:
+        from .utils.ctxproxy import proxy
+
+        return proxy(env.app)
 
 
-class _DocutilsExtraContext(GlobalExtraContxt):
+@extra_context('docutils')
+class DocutilsExtraContext(GlobalExtraContext):
     @override
-    def generate(self) -> Any:
-        # FIXME: use unexported api
+    def generate(self, env: BuildEnvironment) -> Any:
+        from docutils.parsers.rst.directives import _directives
+        from docutils.parsers.rst.roles import _roles
+
         return {
             'directives': _directives,
             'roles': _roles,
@@ -145,15 +190,13 @@ class _DocutilsExtraContext(GlobalExtraContxt):
 
 
 # ========================
-# Extra Context Management
+# Extra Context Generation
 # ========================
 
 
 class ExtraContextGenerator:
     node: pending_node
     report: Report
-
-    registry: ClassVar[ExtraContextRegistry] = ExtraContextRegistry()
 
     def __init__(self, node: pending_node) -> None:
         self.node = node
@@ -165,25 +208,37 @@ class ExtraContextGenerator:
         )
         Reporter(node).append(self.report)
 
-    def on_anytime(self) -> None:
-        for name, ctxgen in self.registry.global_.items():
-            self._safegen(name, lambda: ctxgen.generate())
+    def on_anytime(self, app: Sphinx) -> None:
+        """Generate global extra context for requested names."""
+        env = app.env
+        for name in self.node.template.extra:
+            ctx = REGISTRY.get(name)
+            if ctx is not None and isinstance(ctx, GlobalExtraContext):
+                self._safegen(name, lambda c=ctx: c.generate(env))
 
-    def on_parsing(self, host: ParseHost) -> None:
-        for name, ctxgen in self.registry.parsing.items():
-            self._safegen(name, lambda: ctxgen.generate(host))
+    def on_parsing(self, directive: SphinxDirective | SphinxRole) -> None:
+        """Generate parsing phase extra context for requested names."""
+        for name in self.node.template.extra:
+            ctx = REGISTRY.get(name)
+            if ctx is not None and isinstance(ctx, ParsingPhaseExtraContext):
+                self._safegen(name, lambda c=ctx: c.generate(directive))
 
-    def on_parsed(self, host: ResolveHost) -> None:
-        for name, ctxgen in self.registry.parsed.items():
-            self._safegen(name, lambda: ctxgen.generate(host))
+    def on_parsed(self, transform: SphinxTransform) -> None:
+        """Generate parsed phase extra context for requested names."""
+        for name in self.node.template.extra:
+            ctx = REGISTRY.get(name)
+            if ctx is not None and isinstance(ctx, ParsedPhaseExtraContext):
+                self._safegen(name, lambda c=ctx: c.generate(transform))
 
-    def on_resolving(self, host: ResolveHost) -> None:
-        for name, ctxgen in self.registry.post_transform.items():
-            self._safegen(name, lambda: ctxgen.generate(host))
+    def on_resolving(self, transform: SphinxTransform) -> None:
+        """Generate resolving phase extra context for requested names."""
+        for name in self.node.template.extra:
+            ctx = REGISTRY.get(name)
+            if ctx is not None and isinstance(ctx, ResolvingPhaseExtraContext):
+                self._safegen(name, lambda c=ctx: c.generate(transform))
 
     def _safegen(self, name: str, gen: Callable[[], Any]):
         try:
-            # ctxgen.generate can be user-defined code, exception of any kind are possible.
             self.node.extra[name] = gen()
         except Exception:
             self.report.text(f'Failed to generate extra context "{name}":')
@@ -191,4 +246,4 @@ class ExtraContextGenerator:
 
 
 def setup(app: Sphinx):
-    _SphinxExtraContext.app = app
+    pass

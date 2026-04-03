@@ -91,7 +91,7 @@ class Pipeline(ABC):
         return pending
 
     @final
-    def render_queue(self) -> list[pending_node]:
+    def render_queue(self, app: Sphinx) -> list[pending_node]:
         """
         Try rendering all pending nodes in queue.
 
@@ -121,8 +121,8 @@ class Pipeline(ABC):
                 ns.append(pending)
                 continue
 
-            # Generate global extra context for later use.
-            ExtraContextGenerator(pending).on_anytime()
+            # Generate global sources for later use.
+            ExtraContextGenerator(pending).on_anytime(app)
 
             host = cast(Host, self)
             pending.render(host)
@@ -205,7 +205,7 @@ class BaseContextDirective(BaseContextSource, SphinxDirective):
         self.queue_context(self.current_context(), self.current_template())
 
         ns = []
-        for x in self.render_queue():
+        for x in self.render_queue(self.env.app):
             if not x.rendered:
                 ns.append(x)
                 continue
@@ -233,7 +233,7 @@ class BaseContextRole(BaseContextSource, SphinxRole):
         pending.inline = True
 
         ns, msgs = [], []
-        for n in self.render_queue():
+        for n in self.render_queue(self.env.app):
             if not n.rendered:
                 ns.append(n)
                 continue
@@ -258,7 +258,7 @@ class ParsedHookTransform(SphinxTransform, Pipeline):
         for pending in self.document.findall(pending_node):
             self.queue_pending_node(pending)
 
-        for n in self.render_queue():
+        for n in self.render_queue(self.app):
             ...
 
 
@@ -275,7 +275,7 @@ class ResolvingHookTransform(SphinxPostTransform, Pipeline):
     def apply(self, **kwargs):
         for pending in self.document.findall(pending_node):
             self.queue_pending_node(pending)
-        ns = self.render_queue()
+        ns = self.render_queue(self.app)
 
         # NOTE: Should no node left.
         assert len(ns) == 0
