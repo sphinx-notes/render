@@ -228,12 +228,23 @@ class ExtraContextGenerator:
         """Generate extra context of the given type for all requested names."""
         for name in self.node.template.extra:
             ctx = REGISTRY.get(name)
-            if ctx is not None and isinstance(ctx, cls):
-                try:
-                    self.node.extra[name] = gen(ctx)
-                except Exception:
-                    self.report.text(f'Failed to generate extra context "{name}":')
-                    self.report.traceback()
+            if ctx is None:
+                self.report.text(
+                    f'Extra context "{name}" is not registered. '
+                    f'Available: {REGISTRY.names}'
+                )
+                continue
+            if not isinstance(ctx, cls):
+                self.report.text(
+                    f'Extra context "{name}" has wrong type: '
+                    f'expected {cls.__name__}, got {type(ctx).__name__}'
+                )
+                continue
+            try:
+                self.node.extra[name] = gen(ctx)
+            except Exception:
+                self.report.text(f'Failed to generate extra context "{name}":')
+                self.report.traceback()
 
 
 def setup(app: Sphinx):
