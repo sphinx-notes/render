@@ -25,7 +25,7 @@ class ExtraContext(ABC):
 
 
 class ParsingPhaseExtraContext(ExtraContext):
-    """Extra context generated during the Parsing phase.
+    """Extra context generated during the :py:data:`~Phase.Parsing` phase.
 
     The ``generate`` method receives the current directive or role being executed.
     """
@@ -35,7 +35,7 @@ class ParsingPhaseExtraContext(ExtraContext):
 
 
 class ParsedPhaseExtraContext(ExtraContext):
-    """Extra context generated during the Parsed phase.
+    """Extra context generated during the :py:data:`~Phase.Parsed` phase.
 
     The ``generate`` method receives the current Sphinx transform.
     """
@@ -45,7 +45,7 @@ class ParsedPhaseExtraContext(ExtraContext):
 
 
 class ResolvingPhaseExtraContext(ExtraContext):
-    """Extra context generated during the Resolving phase.
+    """Extra context generated during the :py:data:`~Phase.Resolving` phase.
 
     The ``generate`` method receives the current Sphinx transform.
     """
