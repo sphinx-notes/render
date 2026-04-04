@@ -208,41 +208,32 @@ class ExtraContextGenerator:
         )
         Reporter(node).append(self.report)
 
-    def on_anytime(self, app: Sphinx) -> None:
+    def on_anytime(self, env: BuildEnvironment) -> None:
         """Generate global extra context for requested names."""
-        env = app.env
-        for name in self.node.template.extra:
-            ctx = REGISTRY.get(name)
-            if ctx is not None and isinstance(ctx, GlobalExtraContext):
-                self._safegen(name, lambda c=ctx: c.generate(env))
+        self._generate(GlobalExtraContext, lambda ctx: ctx.generate(env))
 
     def on_parsing(self, directive: SphinxDirective | SphinxRole) -> None:
         """Generate parsing phase extra context for requested names."""
-        for name in self.node.template.extra:
-            ctx = REGISTRY.get(name)
-            if ctx is not None and isinstance(ctx, ParsingPhaseExtraContext):
-                self._safegen(name, lambda c=ctx: c.generate(directive))
+        self._generate(ParsingPhaseExtraContext, lambda ctx: ctx.generate(directive))
 
     def on_parsed(self, transform: SphinxTransform) -> None:
         """Generate parsed phase extra context for requested names."""
-        for name in self.node.template.extra:
-            ctx = REGISTRY.get(name)
-            if ctx is not None and isinstance(ctx, ParsedPhaseExtraContext):
-                self._safegen(name, lambda c=ctx: c.generate(transform))
+        self._generate(ParsedPhaseExtraContext, lambda ctx: ctx.generate(transform))
 
     def on_resolving(self, transform: SphinxTransform) -> None:
         """Generate resolving phase extra context for requested names."""
+        self._generate(ResolvingPhaseExtraContext, lambda ctx: ctx.generate(transform))
+
+    def _generate(self, cls: type, gen: Callable[[ExtraContext], Any]) -> None:
+        """Generate extra context of the given type for all requested names."""
         for name in self.node.template.extra:
             ctx = REGISTRY.get(name)
-            if ctx is not None and isinstance(ctx, ResolvingPhaseExtraContext):
-                self._safegen(name, lambda c=ctx: c.generate(transform))
-
-    def _safegen(self, name: str, gen: Callable[[], Any]):
-        try:
-            self.node.extra[name] = gen()
-        except Exception:
-            self.report.text(f'Failed to generate extra context "{name}":')
-            self.report.traceback()
+            if ctx is not None and isinstance(ctx, cls):
+                try:
+                    self.node.extra[name] = gen(ctx)
+                except Exception:
+                    self.report.text(f'Failed to generate extra context "{name}":')
+                    self.report.traceback()
 
 
 def setup(app: Sphinx):

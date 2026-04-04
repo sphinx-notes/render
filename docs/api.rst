@@ -75,8 +75,8 @@ See :doc:`tmpl` for the higher-level guide.
 .. autoclass:: sphinxnotes.render.Phase
    :members:
 
-Sources
--------
+Extra Context
+-------------
 
 See :doc:`tmpl` for built-in extra-context names such as ``doc`` and
 ``sphinx``, plus usage examples.
@@ -96,9 +96,6 @@ See :doc:`tmpl` for built-in extra-context names such as ``doc`` and
 
 .. autoclass:: sphinxnotes.render.GlobalExtraContext
    :members: generate
-
-.. autoclass:: sphinxnotes.render.ExtraContextRegistry
-   :members:
 
 
 Base Roles and Directives
@@ -163,7 +160,7 @@ Registry
 ========
 
 Developers can extend this extension (for example, to support more data types
-or add new sources) by adding new items to
+or add new extra context) by adding new items to
 :py:class:`sphinxnotes.render.REGISTRY`.
 
 .. autodata:: sphinxnotes.render.REGISTRY
@@ -171,4 +168,3 @@ or add new sources) by adding new items to
 .. autoclass:: sphinxnotes.render.Registry
 
    .. autoproperty:: data
-   .. autoproperty:: source

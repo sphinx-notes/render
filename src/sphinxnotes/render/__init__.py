@@ -30,9 +30,6 @@ from .render import (
 from .ctx import PendingContext, ResolvedContext
 from .ctxnodes import pending_node
 from .extractx import (
-    ExtraContextRegistry,
-    ExtraContextGenerator,
-    ExtraContext,
     ParsingPhaseExtraContext,
     ParsedPhaseExtraContext,
     ResolvingPhaseExtraContext,
@@ -66,14 +63,11 @@ __all__ = [
     'Host',
     'PendingContext',
     'ResolvedContext',
-    'ExtraContext',
     'ParsingPhaseExtraContext',
     'ParsedPhaseExtraContext',
     'ResolvingPhaseExtraContext',
     'GlobalExtraContext',
     'extra_context',
-    'ExtraContextRegistry',
-    'ExtraContextGenerator',
     'pending_node',
     'BaseContextRole',
     'BaseContextDirective',
@@ -90,12 +84,6 @@ class Registry:
     @property
     def data(self) -> DataRegistry:
         return DATA_REGISTRY
-
-    @property
-    def source(self) -> ExtraContextRegistry:
-        from .extractx import REGISTRY as SOURCE_REGISTRY
-
-        return SOURCE_REGISTRY
 
 
 REGISTRY = Registry()

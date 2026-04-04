@@ -121,8 +121,8 @@ class Pipeline(ABC):
                 ns.append(pending)
                 continue
 
-            # Generate global sources for later use.
-            ExtraContextGenerator(pending).on_anytime(app)
+            # Generate global extra context for later use.
+            ExtraContextGenerator(pending).on_anytime(app.env)
 
             host = cast(Host, self)
             pending.render(host)
