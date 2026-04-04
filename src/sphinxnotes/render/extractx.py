@@ -15,16 +15,20 @@ if TYPE_CHECKING:
     from sphinx.environment import BuildEnvironment
 
 
-# ===================================
+# ============================
 # ExtraContext ABC definitions
-# ===================================
+# ============================
+
+type ExtraContext = (
+    ParsingPhaseExtraContext
+    | ParsingPhaseExtraContext
+    | ResolvingPhaseExtraContext
+    | GlobalExtraContext
+)
+"""Type alias of all available extra contexts."""
 
 
-class ExtraContext(ABC):
-    """Base class for all extra context."""
-
-
-class ParsingPhaseExtraContext(ExtraContext):
+class ParsingPhaseExtraContext(ABC):
     """Extra context generated during the :py:data:`~Phase.Parsing` phase.
 
     The ``generate`` method receives the current directive or role being executed.
@@ -34,7 +38,7 @@ class ParsingPhaseExtraContext(ExtraContext):
     def generate(self, directive: SphinxDirective | SphinxRole) -> Any: ...
 
 
-class ParsedPhaseExtraContext(ExtraContext):
+class ParsedPhaseExtraContext(ABC):
     """Extra context generated during the :py:data:`~Phase.Parsed` phase.
 
     The ``generate`` method receives the current Sphinx transform.
@@ -44,7 +48,7 @@ class ParsedPhaseExtraContext(ExtraContext):
     def generate(self, transform: SphinxTransform) -> Any: ...
 
 
-class ResolvingPhaseExtraContext(ExtraContext):
+class ResolvingPhaseExtraContext(ABC):
     """Extra context generated during the :py:data:`~Phase.Resolving` phase.
 
     The ``generate`` method receives the current Sphinx transform.
@@ -54,7 +58,7 @@ class ResolvingPhaseExtraContext(ExtraContext):
     def generate(self, transform: SphinxTransform) -> Any: ...
 
 
-class GlobalExtraContext(ExtraContext):
+class GlobalExtraContext(ABC):
     """Extra context available in all phases.
 
     The ``generate`` method receives the Sphinx build environment.
@@ -64,50 +68,66 @@ class GlobalExtraContext(ExtraContext):
     def generate(self, env: BuildEnvironment) -> Any: ...
 
 
-# =======================
+# ==========================
 # Extra context registration
-# =======================
+# ==========================
 
 
-class ExtraContextRegistry:
-    _extra: dict[str, ExtraContext]
+class _ExtraContextRegistry:
+    ctxs: dict[str, ExtraContext]
 
     def __init__(self) -> None:
-        self._extra = {}
+        self.ctxs = {}
+
+    def is_extra_context(self, ctx: Any) -> bool:
+        return isinstance(
+            ctx,
+            (
+                ParsingPhaseExtraContext,
+                ParsingPhaseExtraContext,
+                ResolvingPhaseExtraContext,
+                GlobalExtraContext,
+            ),
+        )
 
     def register(self, name: str, ctx: ExtraContext) -> None:
-        """Register an extra context.
-
-        :param name: The context name, used in templates via ``load('name')``.
-        :param ctx: The extra context instance.
-        """
-        if name in self._extra:
+        if name in self.ctxs:
             raise ValueError(f'Extra context "{name}" already registered')
-        self._extra[name] = ctx
+        if not self.is_extra_context(ctx):
+            raise TypeError(
+                f'Invalid extra context instance "{name}", Expecting {ExtraContext}'
+            )
+        self.ctxs[name] = ctx
 
     def get(self, name: str) -> ExtraContext | None:
-        """Get a registered extra context by name."""
-        return self._extra.get(name)
+        if name not in self.ctxs:
+            return None
+        return self.ctxs[name]
 
-    @property
-    def names(self) -> list[str]:
-        """Return all registered extra context names."""
-        return list(self._extra.keys())
+    def get_names_by_phase(self, cls: type) -> set[str]:
+        return {name for name, ctx in self.ctxs.items() if isinstance(ctx, cls)}
+
+    def get_names(self) -> set[str]:
+        return set(self.ctxs.keys())
 
 
-# Global registry instance
-REGISTRY = ExtraContextRegistry()
+# Global registry instance.
+_REGISTRY = _ExtraContextRegistry()
 
 
 def extra_context(name: str):
     """Decorator to register an extra context.
 
-    The phase is determined by which ExtraContext subclass is used:
+    The phase is determined by which ExtraContext class is used:
 
-    - :py:class:`GlobalExtraContext` -> available in all phases
-    - :py:class:`ParsingPhaseExtraContext` -> available during Parsing phase
-    - :py:class:`ParsedPhaseExtraContext` -> available during Parsed phase
-    - :py:class:`ResolvingPhaseExtraContext` -> available during Resolving phase
+    :py:class:`GlobalExtraContext`
+        available in all phases
+    :py:class:`ParsingPhaseExtraContext`
+        available during Parsing phase
+    :py:class:`ParsedPhaseExtraContext`
+        available during Parsed phase
+    :py:class:`ResolvingPhaseExtraContext`
+        available during Resolving phase
 
     Example::
 
@@ -120,19 +140,74 @@ def extra_context(name: str):
     """
 
     def decorator(cls):
-        if not issubclass(cls, ExtraContext):
-            raise TypeError(f'{cls.__name__} must subclass an ExtraContext ABC')
-
-        instance = cls()
-        REGISTRY.register(name, instance)
+        _REGISTRY.register(name, cls())
         return cls
 
     return decorator
 
 
-# ===================================
+# ========================
+# Extra Context Generation
+# ========================
+
+
+class ExtraContextGenerator:
+    node: pending_node
+    todo: set[str]
+    report: Report
+
+    def __init__(self, node: pending_node) -> None:
+        self.node = node
+        self.report = Report(
+            'Extra Context Generation Report',
+            'ERROR',
+            source=node.source,
+            line=node.line,
+        )
+        Reporter(node).append(self.report)
+
+        # Initialize todo with requested extra contexts, validate they exist
+        requested = set(node.template.extra)
+        avail = _REGISTRY.get_names()
+        self.todo = requested & avail
+
+        # Report errors for non-existent contexts
+        if nonexist := requested - avail:
+            self.report.text(f'Extra contexts {nonexist} are not registered.')
+
+    def on_anytime(self, env: BuildEnvironment) -> None:
+        self._generate(GlobalExtraContext, lambda ctx: ctx.generate(env))
+
+    def on_parsing(self, directive: SphinxDirective | SphinxRole) -> None:
+        self._generate(ParsingPhaseExtraContext, lambda ctx: ctx.generate(directive))
+
+    def on_parsed(self, transform: SphinxTransform) -> None:
+        self._generate(ParsedPhaseExtraContext, lambda ctx: ctx.generate(transform))
+
+    def on_resolving(self, transform: SphinxTransform) -> None:
+        self._generate(ResolvingPhaseExtraContext, lambda ctx: ctx.generate(transform))
+
+    def _generate(self, cls: type, gen: Callable[..., Any]) -> None:
+        # Get all context names available for this phase
+        avail = _REGISTRY.get_names_by_phase(cls)
+        # Find which ones are requested and not yet generated
+        todo = avail & self.todo
+
+        for name in todo:
+            ctx = _REGISTRY.get(name)
+            if ctx is None:
+                continue
+            try:
+                self.node.extra[name] = gen(ctx)
+                self.todo.discard(name)
+            except Exception:
+                self.report.text(f'Failed to generate extra context "{name}":')
+                self.report.traceback()
+
+
+# =====================================
 # Builtin extra context implementations
-# ===================================
+# =====================================
 
 
 @extra_context('markup')
@@ -169,11 +244,22 @@ class SectionExtraContext(ParsingPhaseExtraContext):
 
 @extra_context('sphinx')
 class SphinxExtraContext(GlobalExtraContext):
+    app: Sphinx
+
     @override
     def generate(self, env: BuildEnvironment) -> Any:
         from .utils.ctxproxy import proxy
 
-        return proxy(env.app)
+        return proxy(self.app)
+
+
+@extra_context('env')
+class SphinxBuildEnvExtraContext(GlobalExtraContext):
+    @override
+    def generate(self, env: BuildEnvironment) -> Any:
+        from .utils.ctxproxy import proxy
+
+        return proxy(env)
 
 
 @extra_context('docutils')
@@ -189,63 +275,5 @@ class DocutilsExtraContext(GlobalExtraContext):
         }
 
 
-# ========================
-# Extra Context Generation
-# ========================
-
-
-class ExtraContextGenerator:
-    node: pending_node
-    report: Report
-
-    def __init__(self, node: pending_node) -> None:
-        self.node = node
-        self.report = Report(
-            'Extra Context Generation Report',
-            'ERROR',
-            source=node.source,
-            line=node.line,
-        )
-        Reporter(node).append(self.report)
-
-    def on_anytime(self, env: BuildEnvironment) -> None:
-        """Generate global extra context for requested names."""
-        self._generate(GlobalExtraContext, lambda ctx: ctx.generate(env))
-
-    def on_parsing(self, directive: SphinxDirective | SphinxRole) -> None:
-        """Generate parsing phase extra context for requested names."""
-        self._generate(ParsingPhaseExtraContext, lambda ctx: ctx.generate(directive))
-
-    def on_parsed(self, transform: SphinxTransform) -> None:
-        """Generate parsed phase extra context for requested names."""
-        self._generate(ParsedPhaseExtraContext, lambda ctx: ctx.generate(transform))
-
-    def on_resolving(self, transform: SphinxTransform) -> None:
-        """Generate resolving phase extra context for requested names."""
-        self._generate(ResolvingPhaseExtraContext, lambda ctx: ctx.generate(transform))
-
-    def _generate(self, cls: type, gen: Callable[[ExtraContext], Any]) -> None:
-        """Generate extra context of the given type for all requested names."""
-        for name in self.node.template.extra:
-            ctx = REGISTRY.get(name)
-            if ctx is None:
-                self.report.text(
-                    f'Extra context "{name}" is not registered. '
-                    f'Available: {REGISTRY.names}'
-                )
-                continue
-            if not isinstance(ctx, cls):
-                self.report.text(
-                    f'Extra context "{name}" has wrong type: '
-                    f'expected {cls.__name__}, got {type(ctx).__name__}'
-                )
-                continue
-            try:
-                self.node.extra[name] = gen(ctx)
-            except Exception:
-                self.report.text(f'Failed to generate extra context "{name}":')
-                self.report.traceback()
-
-
 def setup(app: Sphinx):
-    pass
+    SphinxExtraContext.app = app
