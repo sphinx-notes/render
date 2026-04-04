@@ -50,8 +50,8 @@ class TemplateRenderer:
         elif isinstance(data, dict):
             ctx = data.copy()
 
-        # Inject load() function for accessing extra context.
-        def load(name: str):
+        # Inject load_extra() function for accessing extra context.
+        def load_extra(name: str):
             if name not in extra:
                 raise ValueError(
                     f'Extra context "{name}" is not available. '
@@ -59,7 +59,7 @@ class TemplateRenderer:
                 )
             return extra[name]
 
-        ctx['load'] = load
+        ctx['load_extra'] = load_extra
 
         text = self._render(ctx, debug=debug is not None)
 

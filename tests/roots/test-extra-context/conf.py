@@ -27,8 +27,8 @@ class CustomExtraContextDirective(BaseContextDirective):
     def current_template(self):
         return Template(
             """
-{% set _parsing = load('custom_parsing') %}
-{% set _global = load('custom_global') %}
+{% set _parsing = load_extra('custom_parsing') %}
+{% set _global = load_extra('custom_global') %}
 Parsing: {{ _parsing.custom_value }}
 Global: {{ _global.custom_value }}
 """,

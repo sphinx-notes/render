@@ -155,7 +155,7 @@ Extra Context
 
 Templates can access additional context through **extra context**. Extra context
 must be explicitly declared using the ``:extra:`` option and loaded in the
-template using the ``load()`` function.
+template using the ``load_extra()`` function.
 
 Built-in extra context
 ......................
@@ -194,7 +194,7 @@ arbitrary Python object behavior.
       :extra: doc
 
       Current document title is
-      "{{ load('doc').title }}".
+      "{{ load_extra('doc').title }}".
 
 Extending extra context
 .......................
@@ -239,8 +239,8 @@ Each :py:class:`~sphinxnotes.render.Template` has a render phase controlled by
             :on: parsing
             :extra: doc sphinx
 
-            {% set doc = load('doc') %}
-            {% set sphinx = load('sphinx') %}
+            {% set doc = load_extra('doc') %}
+            {% set sphinx = load_extra('sphinx') %}
 
             - The current document has
               {{ doc.sections | length }}
@@ -263,8 +263,8 @@ Each :py:class:`~sphinxnotes.render.Template` has a render phase controlled by
             :on: parsed
             :extra: doc sphinx
 
-            {% set doc = load('doc') %}
-            {% set sphinx = load('sphinx') %}
+            {% set doc = load_extra('doc') %}
+            {% set sphinx = load_extra('sphinx') %}
 
             - The current document has
               {{ doc.sections | length }}
@@ -288,8 +288,8 @@ Each :py:class:`~sphinxnotes.render.Template` has a render phase controlled by
             :on: resolving
             :extra: doc sphinx
 
-            {% set doc = load('doc') %}
-            {% set sphinx = load('sphinx') %}
+            {% set doc = load_extra('doc') %}
+            {% set sphinx = load_extra('sphinx') %}
 
             - The current document has
               {{ doc.sections | length }}

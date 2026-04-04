@@ -136,7 +136,7 @@ def extra_context(name: str):
             def generate(self, directive):
                 return proxy(HostWrapper(directive).doctree)
 
-    :param name: The context name, used in templates via ``load('name')``.
+    :param name: The context name, used in templates via ``load_extra('name')``.
     """
 
     def decorator(cls):
