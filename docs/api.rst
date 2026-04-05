@@ -78,18 +78,26 @@ See :doc:`tmpl` for the higher-level guide.
 Extra Context
 -------------
 
-See :doc:`tmpl` for built-in extra-context names such as ``_doc`` and
-``_sphinx``, plus usage examples.
+See :doc:`tmpl` for built-in extra-context names such as ``doc`` and
+``sphinx``, plus usage examples.
 
-.. autoclass:: sphinxnotes.render.GlobalExtraContxt
+.. autofunction:: sphinxnotes.render.extra_context
 
-.. autoclass:: sphinxnotes.render.ParsePhaseExtraContext
+.. autoclass:: sphinxnotes.render.ParsingPhaseExtraContext
+   :members: phase, generate
+   :undoc-members:
 
-.. autoclass:: sphinxnotes.render.ResolvePhaseExtraContext
+.. autoclass:: sphinxnotes.render.ParsedPhaseExtraContext
+   :members: phase, generate
+   :undoc-members:
 
-.. autoclass:: sphinxnotes.render.ExtraContextRegistry
-   :members:
+.. autoclass:: sphinxnotes.render.ResolvingPhaseExtraContext
+   :members: phase, generate
+   :undoc-members:
 
+.. autoclass:: sphinxnotes.render.GlobalExtraContext
+   :members: phase, generate
+   :undoc-members:
 
 Base Roles and Directives
 -------------------------
@@ -161,4 +169,3 @@ or add new extra context) by adding new items to
 .. autoclass:: sphinxnotes.render.Registry
 
    .. autoproperty:: data
-   .. autoproperty:: extra_context

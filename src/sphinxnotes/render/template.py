@@ -41,7 +41,7 @@ class TemplateRenderer:
 
             debug.text('Data:')
             debug.code(pformat(data), lang='python')
-            debug.text('Extra context (just key):')
+            debug.text('Available extra context (just keys):')
             debug.code(pformat(list(extra.keys())), lang='python')
 
         # Convert data to context dict.
@@ -50,13 +50,16 @@ class TemplateRenderer:
         elif isinstance(data, dict):
             ctx = data.copy()
 
-        # Merge extra context and main context.
-        conflicts = set()
-        for name, e in extra.items():
-            if name not in ctx:
-                ctx[name] = e
-            else:
-                conflicts.add(name)
+        # Inject load_extra() function for accessing extra context.
+        def load_extra(name: str):
+            if name not in extra:
+                raise ValueError(
+                    f'Extra context "{name}" is not available. '
+                    f'Available: {list(extra.keys())}'
+                )
+            return extra[name]
+
+        ctx['load_extra'] = load_extra
 
         text = self._render(ctx, debug=debug is not None)
 

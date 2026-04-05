@@ -30,11 +30,11 @@ from .render import (
 from .ctx import PendingContext, ResolvedContext
 from .ctxnodes import pending_node
 from .extractx import (
-    ExtraContextRegistry,
-    ExtraContextGenerator,
-    GlobalExtraContxt,
-    ParsePhaseExtraContext,
-    ResolvePhaseExtraContext,
+    ParsingPhaseExtraContext,
+    ParsedPhaseExtraContext,
+    ResolvingPhaseExtraContext,
+    GlobalExtraContext,
+    extra_context,
 )
 from .pipeline import BaseContextRole, BaseContextDirective
 from .sources import (
@@ -63,9 +63,11 @@ __all__ = [
     'Host',
     'PendingContext',
     'ResolvedContext',
-    'GlobalExtraContxt',
-    'ParsePhaseExtraContext',
-    'ResolvePhaseExtraContext',
+    'ParsingPhaseExtraContext',
+    'ParsedPhaseExtraContext',
+    'ResolvingPhaseExtraContext',
+    'GlobalExtraContext',
+    'extra_context',
     'pending_node',
     'BaseContextRole',
     'BaseContextDirective',
@@ -83,12 +85,9 @@ class Registry:
     def data(self) -> DataRegistry:
         return DATA_REGISTRY
 
-    @property
-    def extra_context(cls) -> ExtraContextRegistry:
-        return ExtraContextGenerator.registry
-
 
 REGISTRY = Registry()
+
 
 def setup(app: Sphinx):
     meta.pre_setup(app)

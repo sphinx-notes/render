@@ -121,10 +121,12 @@ class Pipeline(ABC):
                 ns.append(pending)
                 continue
 
-            # Generate global extra context for later use.
-            ExtraContextGenerator(pending).on_anytime()
-
             host = cast(Host, self)
+
+            # Generate global extra context for later use.
+            ExtraContextGenerator(pending).on_anytime(host.env)
+
+            # Perform render.
             pending.render(host)
 
             if pending.parent is None:

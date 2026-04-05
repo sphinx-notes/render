@@ -1,159 +1,158 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, ClassVar, override
 from abc import ABC, abstractmethod
 
-from sphinx.util.docutils import SphinxDirective
-from docutils.parsers.rst.directives import _directives
-from docutils.parsers.rst.roles import _roles
+from sphinx.util.docutils import SphinxDirective, SphinxRole
+from sphinx.transforms import SphinxTransform
 
-from .render import HostWrapper
+from .render import HostWrapper, Phase
 from .ctxnodes import pending_node
 from .utils import find_current_section, Report, Reporter
-from .utils.ctxproxy import proxy
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, ClassVar
+    from typing import Any, Callable
     from sphinx.application import Sphinx
-    from .render import ParseHost, ResolveHost
+    from sphinx.environment import BuildEnvironment
+
+# ============================
+# ExtraContext ABC definitions
+# ============================
 
 
-class GlobalExtraContxt(ABC):
-    """Extra context available in any phase."""
+class _ExtraContext(ABC):
+    """Base class of extra context."""
 
-    @abstractmethod
-    def generate(self) -> Any: ...
-
-
-class ParsePhaseExtraContext(ABC):
-    """Extra context generated during the :py:class:`~Phase.Parsing` phase."""
-
-    @abstractmethod
-    def generate(self, host: ParseHost) -> Any: ...
-
-
-class ResolvePhaseExtraContext(ABC):
-    """Extra context generated during the :py:class:`~Phase.Resolving` phase."""
+    phase: ClassVar[Phase | None] = None
 
     @abstractmethod
-    def generate(self, host: ResolveHost) -> Any: ...
+    def generate(self, *args, **kwargs) -> Any: ...
 
 
-# =======================
+class ParsingPhaseExtraContext(_ExtraContext):
+    """Extra context generated during the :py:data:`~Phase.Parsing` phase.
+    The ``generate`` method receives the current directive or role being executed.
+    """
+
+    phase = Phase.Parsing
+
+    @abstractmethod
+    def generate(self, directive: SphinxDirective | SphinxRole) -> Any: ...
+
+
+class ParsedPhaseExtraContext(_ExtraContext):
+    """Extra context generated during the :py:data:`~Phase.Parsed` phase.
+    The ``generate`` method receives the current Sphinx transform.
+    """
+
+    phase = Phase.Parsed
+
+    @abstractmethod
+    def generate(self, transform: SphinxTransform) -> Any: ...
+
+
+class ResolvingPhaseExtraContext(_ExtraContext):
+    """Extra context generated during the :py:data:`~Phase.Resolving` phase.
+    The ``generate`` method receives the current Sphinx transform.
+    """
+
+    phase = Phase.Resolving
+
+    @abstractmethod
+    def generate(self, transform: SphinxTransform) -> Any: ...
+
+
+class GlobalExtraContext(_ExtraContext):
+    """Extra context available in all phases.
+    The ``generate`` method receives the Sphinx build environment.
+    """
+
+    phase = None
+
+    @abstractmethod
+    def generate(self, env: BuildEnvironment) -> Any: ...
+
+
+# ==========================
 # Extra context registration
-# =======================
+# ==========================
 
 
-class ExtraContextRegistry:
-    names: set[str]
-    parsing: dict[str, ParsePhaseExtraContext]
-    parsed: dict[str, ResolvePhaseExtraContext]
-    post_transform: dict[str, ResolvePhaseExtraContext]
-    global_: dict[str, GlobalExtraContxt]
+class _ExtraContextRegistry:
+    ctxs: dict[str, _ExtraContext]
 
     def __init__(self) -> None:
-        self.names = set()
-        self.parsing = {}
-        self.parsed = {}
-        self.post_transform = {}
-        self.global_ = {}
+        self.ctxs = {}
 
-        self.add_global_context('sphinx', _SphinxExtraContext())
-        self.add_global_context('docutils', _DocutilsExtraContext())
-        self.add_parsing_phase_context('markup', _MarkupExtraContext())
-        self.add_parsing_phase_context('section', _SectionExtraContext())
-        self.add_parsing_phase_context('doc', _DocExtraContext())
+    def register(self, name: str, ctx: _ExtraContext) -> None:
+        if name in self.ctxs:
+            raise ValueError(f'Extra context "{name}" already registered')
+        self.ctxs[name] = ctx
 
-    def _name_dedup(self, name: str) -> None:
-        # TODO: allow dup
-        if name in self.names:
-            raise ValueError(f'Context generator {name} already exists')
-        self.names.add(name)
+    def get(self, name: str) -> _ExtraContext | None:
+        if name not in self.ctxs:
+            return None
+        return self.ctxs[name]
 
-    def add_parsing_phase_context(
-        self, name: str, ctxgen: ParsePhaseExtraContext
-    ) -> None:
-        """Register an extra context for the :py:class:`~Phase.Parsing` phase."""
-        self._name_dedup(name)
-        self.parsing['_' + name] = ctxgen
+    def get_names(self) -> set[str]:
+        return set(self.ctxs.keys())
 
-    def add_parsed_phase_context(
-        self, name: str, ctxgen: ResolvePhaseExtraContext
-    ) -> None:
-        """Register an extra context for the :py:class:`~Phase.Parsed` phase."""
-        self._name_dedup(name)
-        self.parsed['_' + name] = ctxgen
+    def get_names_at_phase(self, phase: Phase | None) -> set[str]:
+        return {name for name, ctx in self.ctxs.items() if ctx.phase == phase}
 
-    def add_post_transform_phase_context(
-        self, name: str, ctxgen: ResolvePhaseExtraContext
-    ) -> None:
-        """Register an extra context for the :py:class:`~Phase.Resolving` phase."""
-        self._name_dedup(name)
-        self.post_transform['_' + name] = ctxgen
-
-    def add_global_context(self, name: str, ctxgen: GlobalExtraContxt):
-        """Register a global extra context available across phases."""
-        self._name_dedup(name)
-        self.global_['_' + name] = ctxgen
-
-
-# ===================================
-# Builtin extra context implementations
-# ===================================
-
-
-class _MarkupExtraContext(ParsePhaseExtraContext):
-    @override
-    def generate(self, host: ParseHost) -> Any:
-        isdir = isinstance(host, SphinxDirective)
+    def get_names_before_phase(self, phase: Phase | None) -> set[str]:
         return {
-            'type': 'directive' if isdir else 'role',
-            'name': host.name,
-            'lineno': host.lineno,
-            'rawtext': host.block_text if isdir else host.rawtext,
+            name
+            for name, ctx in self.ctxs.items()
+            if phase is None or ctx.phase is None or phase >= ctx.phase
         }
 
 
-class _DocExtraContext(ParsePhaseExtraContext):
-    @override
-    def generate(self, host: ParseHost) -> Any:
-        return proxy(HostWrapper(host).doctree)
+# Global registry instance.
+_REGISTRY = _ExtraContextRegistry()
 
 
-class _SectionExtraContext(ParsePhaseExtraContext):
-    @override
-    def generate(self, host: ParseHost) -> Any:
-        parent = HostWrapper(host).parent
-        return proxy(find_current_section(parent))
+def extra_context(name: str):
+    """Decorator to register an extra context.
 
+    The phase is determined by which ExtraContext class is used:
 
-class _SphinxExtraContext(GlobalExtraContxt):
-    app: ClassVar[Sphinx]
+    :py:class:`GlobalExtraContext`
+        available in all phases
+    :py:class:`ParsingPhaseExtraContext`
+        available during Parsing phase
+    :py:class:`ParsedPhaseExtraContext`
+        available during Parsed phase
+    :py:class:`ResolvingPhaseExtraContext`
+        available during Resolving phase
 
-    @override
-    def generate(self) -> Any:
-        return proxy(self.app)
+    Example::
 
+        @extra_context('doc')
+        class DocExtraContext(ParsingPhaseExtraContext):
+            def generate(self, ctx):
+                return proxy(HostWrapper(ctx).doctree)
 
-class _DocutilsExtraContext(GlobalExtraContxt):
-    @override
-    def generate(self) -> Any:
-        # FIXME: use unexported api
-        return {
-            'directives': _directives,
-            'roles': _roles,
-        }
+    :param name: The context name, used in templates via ``load_extra('name')``.
+    """
+
+    def decorator(cls):
+        _REGISTRY.register(name, cls())
+        return cls
+
+    return decorator
 
 
 # ========================
-# Extra Context Management
+# Extra Context Generation
 # ========================
 
 
 class ExtraContextGenerator:
     node: pending_node
+    todo: set[str]
     report: Report
 
-    registry: ClassVar[ExtraContextRegistry] = ExtraContextRegistry()
+    env: ClassVar[BuildEnvironment]
 
     def __init__(self, node: pending_node) -> None:
         self.node = node
@@ -165,30 +164,104 @@ class ExtraContextGenerator:
         )
         Reporter(node).append(self.report)
 
-    def on_anytime(self) -> None:
-        for name, ctxgen in self.registry.global_.items():
-            self._safegen(name, lambda: ctxgen.generate())
+        # Initialize todo with requested extra contexts, validate they exist
+        total = _REGISTRY.get_names()
+        avail = _REGISTRY.get_names_before_phase(node.template.phase)
+        requested = set(node.template.extra)
+        self.todo = requested & avail
 
-    def on_parsing(self, host: ParseHost) -> None:
-        for name, ctxgen in self.registry.parsing.items():
-            self._safegen(name, lambda: ctxgen.generate(host))
+        # Report errors for non-existent contexts
+        if nonexist := requested - total:
+            self.report.text(f'Extra contexts {nonexist} are non-exist.')
+        if nonavail := requested & total - avail:
+            self.report.text(
+                f'Extra contexts {nonavail} are not available '
+                f'at pahse {node.template.phase}.'
+            )
 
-    def on_parsed(self, host: ResolveHost) -> None:
-        for name, ctxgen in self.registry.parsed.items():
-            self._safegen(name, lambda: ctxgen.generate(host))
+    def on_anytime(self, env: BuildEnvironment) -> None:
+        self._generate(GlobalExtraContext, lambda ctx: ctx.generate(env))
 
-    def on_resolving(self, host: ResolveHost) -> None:
-        for name, ctxgen in self.registry.post_transform.items():
-            self._safegen(name, lambda: ctxgen.generate(host))
+    def on_parsing(self, directive: SphinxDirective | SphinxRole) -> None:
+        self._generate(ParsingPhaseExtraContext, lambda ctx: ctx.generate(directive))
 
-    def _safegen(self, name: str, gen: Callable[[], Any]):
-        try:
-            # ctxgen.generate can be user-defined code, exception of any kind are possible.
-            self.node.extra[name] = gen()
-        except Exception:
-            self.report.text(f'Failed to generate extra context "{name}":')
-            self.report.traceback()
+    def on_parsed(self, transform: SphinxTransform) -> None:
+        self._generate(ParsedPhaseExtraContext, lambda ctx: ctx.generate(transform))
+
+    def on_resolving(self, transform: SphinxTransform) -> None:
+        self._generate(ResolvingPhaseExtraContext, lambda ctx: ctx.generate(transform))
+
+    def _generate(self, cls: type[_ExtraContext], gen: Callable[..., Any]) -> None:
+        # Get all context names available for this phase
+        avail = _REGISTRY.get_names_at_phase(cls.phase)
+        # Find which ones are requested and not yet generated
+        todo = avail & self.todo
+
+        for name in todo:
+            ctx = _REGISTRY.get(name)
+            if ctx is None:
+                continue
+            try:
+                self.node.extra[name] = gen(ctx)
+                self.todo.discard(name)
+            except Exception:
+                self.report.text(f'Failed to generate extra context "{name}":')
+                self.report.traceback()
 
 
-def setup(app: Sphinx):
-    _SphinxExtraContext.app = app
+# =====================================
+# Builtin extra context implementations
+# =====================================
+
+
+@extra_context('markup')
+class MarkupExtraContext(ParsingPhaseExtraContext):
+    @override
+    def generate(self, directive: SphinxDirective | SphinxRole) -> Any:
+        isdir = isinstance(directive, SphinxDirective)
+        return {
+            'type': 'directive' if isdir else 'role',
+            'name': directive.name,
+            'lineno': directive.lineno,
+            'rawtext': directive.block_text if isdir else directive.rawtext,
+        }
+
+
+@extra_context('doc')
+class DocExtraContext(ParsingPhaseExtraContext):
+    @override
+    def generate(self, directive: SphinxDirective | SphinxRole) -> Any:
+        from .utils.ctxproxy import proxy
+
+        return proxy(HostWrapper(directive).doctree)
+
+
+@extra_context('section')
+class SectionExtraContext(ParsingPhaseExtraContext):
+    @override
+    def generate(self, directive: SphinxDirective | SphinxRole) -> Any:
+        from .utils.ctxproxy import proxy
+
+        parent = HostWrapper(directive).parent
+        return proxy(find_current_section(parent))
+
+
+@extra_context('sphinx')
+class SphinxAppExtraContext(GlobalExtraContext):
+    @override
+    def generate(self, env: BuildEnvironment) -> Any:
+        from .utils.ctxproxy import proxy
+
+        return proxy(env.app)
+
+
+@extra_context('env')
+class SphinxBuildEnvExtraContext(GlobalExtraContext):
+    @override
+    def generate(self, env: BuildEnvironment) -> Any:
+        from .utils.ctxproxy import proxy
+
+        return proxy(env)
+
+
+def setup(app: Sphinx): ...
