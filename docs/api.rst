@@ -83,22 +83,20 @@ See :doc:`tmpl` for built-in extra-context names such as ``doc`` and
 
 .. autofunction:: sphinxnotes.render.extra_context
 
-.. autoclass:: sphinxnotes.render.ExtraContext
-
 .. autoclass:: sphinxnotes.render.ParsingPhaseExtraContext
-   :members: generate
+   :members: phase, generate
    :undoc-members:
 
 .. autoclass:: sphinxnotes.render.ParsedPhaseExtraContext
-   :members: generate
+   :members: phase, generate
    :undoc-members:
 
 .. autoclass:: sphinxnotes.render.ResolvingPhaseExtraContext
-   :members: generate
+   :members: phase, generate
    :undoc-members:
 
 .. autoclass:: sphinxnotes.render.GlobalExtraContext
-   :members: generate
+   :members: phase, generate
    :undoc-members:
 
 Base Roles and Directives

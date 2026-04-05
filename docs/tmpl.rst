@@ -154,38 +154,47 @@ Extra Context
 -------------
 
 Templates can access additional context through **extra context**. Extra context
-must be explicitly declared using the ``:extra:`` option and loaded in the
+must be explicitly declared using the :rst:dir:`templat:extra` option and loaded in the
 template using the ``load_extra()`` function.
 
-Built-in extra context
-......................
+Built-in Extra Contexts
+~~~~~~~~~~~~~~~~~~~~~~~
 
-.. list-table::
-   :header-rows: 1
+``sphinx``
+..........
 
-   * - Name
-     - Available in Pahses
-     - Description
-   * - ``sphinx``
-     - all
-     - A proxy to the Sphinx application object.
-   * - ``docutils``
-     - all
-     - A mapping that exposes registered docutils directives and roles.
-   * - ``markup``
-     - :term:`parsing` and later
-     - Information about the current directive or role invocation, such as its
-       type, name, source text, and line number.
-   * - ``section``
-     - :term:`parsing` and later
-     - A proxy to the current section node, when one exists.
-   * - ``doc``
-     - :term:`parsing` and later
-     - A proxy to the current document node.
+:Phase: all
 
-These values are wrapped for safer template access. In practice this means
-templates can read public, non-callable attributes, but should not rely on
-arbitrary Python object behavior.
+A proxy to the :py:class:`sphinx.application.Sphinx` object.
+
+``env``
+.......
+
+:Phase: all
+
+A proxy to the :py:class:`sphinx.environment.BuildEnvironment` object.
+
+``markup``
+..........
+
+:Phase: :term:`parsing` and later
+
+Information about the current directive or role invocation, such as its
+type, name, source text, and line number.
+
+``section``
+............
+
+:Phase: :term:`parsing` and later
+
+A proxy to the current :py:class:`docutils.nodes.section` node, when one exists.
+
+``doc``
+.......
+
+:Phase: :term:`parsing` and later
+
+A proxy to the current :py:class:`docutils.notes.document` node.
 
 .. example::
    :style: grid
@@ -193,7 +202,8 @@ arbitrary Python object behavior.
    .. data.render::
       :extra: doc
 
-      Current document title is
+
+      Title of current document is
       "{{ load_extra('doc').title }}".
 
 Extending extra context
@@ -237,16 +247,16 @@ Each :py:class:`~sphinxnotes.render.Template` has a render phase controlled by
 
          .. data.render::
             :on: parsing
-            :extra: doc sphinx
+            :extra: doc env
 
             {% set doc = load_extra('doc') %}
-            {% set sphinx = load_extra('sphinx') %}
+            {% set env = load_extra('env') %}
 
             - The current document has
               {{ doc.sections | length }}
               section(s).
             - The current project has
-              {{ sphinx.env.all_docs | length }}
+              {{ env.all_docs | length }}
               document(s).
 
    ``parsed``
@@ -261,16 +271,16 @@ Each :py:class:`~sphinxnotes.render.Template` has a render phase controlled by
 
          .. data.render::
             :on: parsed
-            :extra: doc sphinx
+            :extra: doc env
 
             {% set doc = load_extra('doc') %}
-            {% set sphinx = load_extra('sphinx') %}
+            {% set env = load_extra('env') %}
 
             - The current document has
               {{ doc.sections | length }}
               section(s).
             - The current project has
-              {{ sphinx.env.all_docs | length }}
+              {{ env.all_docs | length }}
               document(s).
 
    ``resolving``
@@ -278,7 +288,7 @@ Each :py:class:`~sphinxnotes.render.Template` has a render phase controlled by
       Render late in the build, after references and other transforms are being
       resolved.
 
-      Choose this when the template depends on project-wide state or on document
+      Choose this when the template depends on pr
       structure that is only stable near the end of the pipeline.
 
       .. example::
@@ -286,16 +296,16 @@ Each :py:class:`~sphinxnotes.render.Template` has a render phase controlled by
 
          .. data.render::
             :on: resolving
-            :extra: doc sphinx
+            :extra: doc env
 
             {% set doc = load_extra('doc') %}
-            {% set sphinx = load_extra('sphinx') %}
+            {% set env = load_extra('env') %}
 
             - The current document has
               {{ doc.sections | length }}
               section(s).
             - The current project has
-              {{ sphinx.env.all_docs | length }}
+              {{ env.all_docs | length }}
               document(s).
 
 Debugging
@@ -343,3 +353,9 @@ This pattern is often the most convenient way to build small, declarative
 directives. For more control, subclass
 :py:class:`~sphinxnotes.render.BaseDataDefineDirective` directly and implement
 ``current_schema()`` and ``current_template()`` yourself.
+   .. data.render::
+      :extra: doc
+
+
+      Title of current document is
+      "{{ load_extra('doc').title }}".

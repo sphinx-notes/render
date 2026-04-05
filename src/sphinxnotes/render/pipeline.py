@@ -91,7 +91,7 @@ class Pipeline(ABC):
         return pending
 
     @final
-    def render_queue(self, app: Sphinx) -> list[pending_node]:
+    def render_queue(self) -> list[pending_node]:
         """
         Try rendering all pending nodes in queue.
 
@@ -121,10 +121,12 @@ class Pipeline(ABC):
                 ns.append(pending)
                 continue
 
-            # Generate global extra context for later use.
-            ExtraContextGenerator(pending).on_anytime(app.env)
-
             host = cast(Host, self)
+
+            # Generate global extra context for later use.
+            ExtraContextGenerator(pending).on_anytime(host.env)
+
+            # Perform render.
             pending.render(host)
 
             if pending.parent is None:
@@ -205,7 +207,7 @@ class BaseContextDirective(BaseContextSource, SphinxDirective):
         self.queue_context(self.current_context(), self.current_template())
 
         ns = []
-        for x in self.render_queue(self.env.app):
+        for x in self.render_queue():
             if not x.rendered:
                 ns.append(x)
                 continue
@@ -233,7 +235,7 @@ class BaseContextRole(BaseContextSource, SphinxRole):
         pending.inline = True
 
         ns, msgs = [], []
-        for n in self.render_queue(self.env.app):
+        for n in self.render_queue():
             if not n.rendered:
                 ns.append(n)
                 continue
@@ -258,7 +260,7 @@ class ParsedHookTransform(SphinxTransform, Pipeline):
         for pending in self.document.findall(pending_node):
             self.queue_pending_node(pending)
 
-        for n in self.render_queue(self.app):
+        for n in self.render_queue():
             ...
 
 
@@ -275,7 +277,7 @@ class ResolvingHookTransform(SphinxPostTransform, Pipeline):
     def apply(self, **kwargs):
         for pending in self.document.findall(pending_node):
             self.queue_pending_node(pending)
-        ns = self.render_queue(self.app)
+        ns = self.render_queue()
 
         # NOTE: Should no node left.
         assert len(ns) == 0

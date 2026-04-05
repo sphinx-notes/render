@@ -25,6 +25,10 @@ class Phase(Enum):
     def default(cls) -> Phase:
         return cls.Parsing
 
+    def __ge__(self, other: Phase) -> bool:
+        _ORDER = {Phase.Parsing: 1, Phase.Parsed: 2, Phase.Resolving: 3}
+        return _ORDER[self] >= _ORDER[other]
+
 
 @dataclass
 class Template:
