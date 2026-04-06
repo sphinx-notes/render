@@ -43,6 +43,7 @@ dependencies = [
     "Sphinx >= 7.0",
 
     # CUSTOM DEPENDENCIES START
+    "Jinja2",
     # CUSTOM DEPENDENCIES END
 ]
 
@@ -58,6 +59,7 @@ dev = [
 ]
 test = [
     "pytest",
+    "schema", # python dict schema validation
 ]
 docs = [
     "furo",
@@ -73,7 +75,11 @@ docs = [
     "sphinxnotes-comboroles",
 
     # CUSTOM DOCS DEPENDENCIES START
+    "schema", # python dict schema validation
     # CUSTOM DOCS DEPENDENCIES END
+]
+ext = [
+    "schema", # python dict schema validation
 ]
 
 [project.urls]

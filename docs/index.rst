@@ -59,7 +59,7 @@ First, downloading extension from PyPI:
 
 .. code-block:: console
 
-   $ pip install sphinxnotes-render
+   $ pip install "sphinxnotes-render[ext]"
 
 
 Then, add the extension name to ``extensions`` configuration item in your
