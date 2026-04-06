@@ -134,7 +134,7 @@ Defining Custom Directives
 
 Instead of using :rst:dir:`data.define`, :rst:dir:`data.template`, and
 :rst:dir:`data.schema` directives to define data in documents, you can define
-custom directives in :file:`conf.py` using the :confval:`data_define_directives`
+custom directives in :file:`conf.py` using the :confval:`render_ext_data_define_directives`
 configuration option.
 
 This is useful when you want to create a reusable directive with a fixed schema
@@ -161,5 +161,5 @@ a ``color`` options and a content. Use it in your document:
 
       I like fish!
 
-For more details please refer to the :confval:`data_define_directives`
+For more details please refer to the :confval:`render_ext_data_define_directives`
 configuration value.

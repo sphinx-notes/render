@@ -134,7 +134,7 @@ a ``color`` option and a content block. Use it in your document:
 
       I like fish!
 
-Please refer to :confval:`data_define_directives` for more details.
+Please refer to :confval:`render_ext_data_define_directives` for more details.
 
 .. ADDITIONAL CONTENT END
 

@@ -68,7 +68,7 @@ PHASES = ['parsing', 'parsed', 'resolving']
 
 @pytest.mark.sphinx('html', testroot='data-define')
 @pytest.mark.parametrize('phase', PHASES)
-def test_data_define_directives(app, status, warning, phase):
+def test_render_ext_data_define_directives(app, status, warning, phase):
     """Test that data.template and data.define directives work correctly."""
     index_path = app.srcdir / 'index.rst'
     content = index_path.read_text(encoding='utf-8')
@@ -88,8 +88,8 @@ def test_data_define_directives(app, status, warning, phase):
 
 
 @pytest.mark.sphinx('html', testroot='derive')
-def test_derived_data_define_directives(app, status, warning):
-    """Test that data_define_directives generates directives correctly."""
+def test_derived_render_ext_data_define_directives(app, status, warning):
+    """Test that render_ext_data_define_directives generates directives correctly."""
     app.build()
 
     html = (app.outdir / 'index.html').read_text(encoding='utf-8')

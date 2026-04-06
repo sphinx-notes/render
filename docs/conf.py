@@ -127,7 +127,7 @@ extensions.append('sphinxnotes.render')
 extensions.append('sphinxnotes.render.ext')
 
 # [example config start]
-data_define_directives = {
+render_ext_data_define_directives = {
    'cat': {
        'schema': {
            'name': 'str, required',

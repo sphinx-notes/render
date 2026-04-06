@@ -57,12 +57,12 @@ def _validate_directive_define(d: dict, config: Config) -> tuple[Schema, Templat
 
 
 def _config_inited(app: Sphinx, config: Config) -> None:
-    for name, objdef in app.config.data_define_directives.items():
+    for name, objdef in app.config.render_ext_data_define_directives.items():
         try:
             schema, tmpl = _validate_directive_define(objdef, config)
         except (DictSchemaError, ValueError) as e:
             raise ConfigError(
-                f'Validating data_define_directives[{repr(name)}]: {e}'
+                f'Validating render_ext_data_define_directives[{repr(name)}]: {e}'
             ) from e
 
         directive_cls = StrictDataDefineDirective.derive(name, schema, tmpl)
@@ -70,5 +70,5 @@ def _config_inited(app: Sphinx, config: Config) -> None:
 
 
 def setup(app: Sphinx) -> None:
-    app.add_config_value('data_define_directives', {}, 'env', types=dict)
+    app.add_config_value('render_ext_data_define_directives', {}, 'env', types=dict)
     app.connect('config-inited', _config_inited)

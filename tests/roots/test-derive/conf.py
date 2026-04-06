@@ -2,7 +2,7 @@ keep_warnings = True
 
 extensions = ['sphinxnotes.render.ext']
 
-data_define_directives = {
+render_ext_data_define_directives = {
     'custom': {
         'schema': {
             'name': 'str, required',

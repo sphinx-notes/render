@@ -4,7 +4,7 @@ Configuration
 
 The extension provides the following configuration:
 
-.. autoconfval:: data_define_directives
+.. autoconfval:: render_ext_data_define_directives
 
    A dictionary ``dict[str, directive_def]`` for creating custom directives for
    data definition.

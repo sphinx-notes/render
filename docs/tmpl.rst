@@ -18,7 +18,7 @@ and inserted into the document.
 
 The way of defining template will vary depending on the extension you use.
 For ``sphinxnotes.render.ext``, you can use :rst:dir:`data.template` or
-:confval:`data_define_directives`.
+:confval:`render_ext_data_define_directives`.
 
 .. tip::
 
@@ -137,7 +137,7 @@ The following `template variables`_ are available:
 The type of each variable depends on the corresponding schema. Different
 extensions define schemas differently. For example, the ``sphinxnotes.render.ext``
 extension defines the schema through the :rst:dir:`data.schema` directive or
-``schema`` field of :confval:`data_define_directives`.
+``schema`` field of :confval:`render_ext_data_define_directives`.
 
 .. tip::
 
@@ -165,7 +165,7 @@ so you need to declare them in advance, and load it in the template using the
 The way of declaring extra context is vary depending on the extension you use.
 For ``sphinxnotes.render.ext`` extension, :rst:dir:`data.template:extra`,
 :rst:dir:`data.render:extra` and the ``templat.extra`` field of
-:confval:`data_define_directives` are for this.
+:confval:`render_ext_data_define_directives` are for this.
 
 .. example::
    :style: grid
