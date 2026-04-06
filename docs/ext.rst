@@ -17,7 +17,7 @@ Adding Custom Types
 Use :py:meth:`~sphinxnotes.render.data.REGISTRY.add_type` method of
 :py:data:`sphinxnotes.render.REGISTRY` to add a new type:
 
->>> from sphinxnotes.render import REGISTRY
+>>> from sphinxnotes.render import REGISTRY, Field
 >>> 
 >>> def parse_color(v: str):
 ...     return tuple(int(x) for x in v.split(';'))
@@ -37,7 +37,7 @@ Adding Custom Flags
 Use :py:meth:`~sphinxnotes.render.data.Registry.add_flag` method of
 :py:data:`sphinxnotes.render.REGISTRY` to add a new flag:
 
->>> from sphinxnotes.render import REGISTRY
+>>> from sphinxnotes.render import REGISTRY, Field
 >>> REGISTRY.data.add_flag('unique', default=False)
 >>> field = Field.from_dsl('int, unique')
 >>> field.unique
@@ -51,7 +51,7 @@ Adding Custom By-Options
 Use :py:meth:`~sphinxnotes.render.data.Registry.add_by_option` method of
 :py:data:`sphinxnotes.render.REGISTRY` to add a new by-option:
 
->>> from sphinxnotes.render import REGISTRY
+>>> from sphinxnotes.render import REGISTRY, Field
 >>> REGISTRY.data.add_by_option('group', str)
 >>> field = Field.from_dsl('str, group by size')
 >>> field.group
