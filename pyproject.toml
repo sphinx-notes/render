@@ -7,7 +7,7 @@
 
 [project]
 name = "sphinxnotes-render"
-description = "A framework to define, constrain, and render data in Sphinx documentation"
+description = "Define, constrain, and render data in Sphinx documentation"
 readme = "README.rst"
 license = "BSD-3-Clause"
 license-files = ["LICENSE"]

@@ -20,7 +20,7 @@ from sphinx.util.docutils import SphinxDirective, SphinxRole
 from sphinx.transforms import SphinxTransform
 from sphinx.environment.collectors.asset import ImageCollector
 
-from .render import Host
+from .template import Host
 
 if TYPE_CHECKING:
     from docutils.nodes import Node, system_message

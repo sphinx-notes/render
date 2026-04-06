@@ -10,7 +10,7 @@ from sphinx.util.docutils import SphinxDirective, SphinxRole
 from sphinx.transforms import SphinxTransform
 from sphinx.transforms.post_transforms import SphinxPostTransform, ReferencesResolver
 
-from .render import HostWrapper, Phase, Template, Host, ParseHost, ResolveHost
+from .template import HostWrapper, Phase, Template, Host
 from .ctx import PendingContext, ResolvedContext
 from .ctxnodes import pending_node
 from .extractx import ExtraContextGenerator
@@ -184,8 +184,7 @@ class BaseContextSource(Pipeline):
 
     @override
     def process_pending_node(self, n: pending_node) -> bool:
-        host = cast(ParseHost, self)
-
+        host = cast(SphinxDirective | SphinxRole, self)
         # Set source and line.
         host.set_source_info(n)
         # Generate and save parsing phase extra context for later use.
@@ -195,13 +194,14 @@ class BaseContextSource(Pipeline):
 
 
 class BaseContextDirective(BaseContextSource, SphinxDirective):
-    """This class generates :py:meth:`sphinxnotes.render.pending_node` in
-    ``SphinxDirective.run`` method and makes sure it is rendered correctly.
+    """This class generates :py:class:`sphinxnotes.render.pending_node` in
+    ``SphinxDirective.run()`` method and makes sure it is rendered correctly.
 
     User should implement ``current_context`` and ``current_template`` methods
     to provide the constructor parameters of ``pending_node``.
     """
 
+    @final
     @override
     def run(self) -> list[nodes.Node]:
         self.queue_context(self.current_context(), self.current_template())
@@ -217,8 +217,8 @@ class BaseContextDirective(BaseContextSource, SphinxDirective):
 
 
 class BaseContextRole(BaseContextSource, SphinxRole):
-    """This class generates :py:meth:`sphinxnotes.render.pending_node` in
-    ``SphinxRole.run`` method and makes sure it is rendered correctly.
+    """This class generates :py:class:`sphinxnotes.render.pending_node` in
+    ``SphinxRole.run()`` method and makes sure it is rendered correctly.
 
     User should implement ``current_context`` and ``current_template`` methods
     to provide the constructor parameters of ``pending_node``.
@@ -229,6 +229,7 @@ class BaseContextRole(BaseContextSource, SphinxRole):
         n.inline = True
         return super().process_pending_node(n)
 
+    @final
     @override
     def run(self) -> tuple[list[nodes.Node], list[nodes.system_message]]:
         pending = self.queue_context(self.current_context(), self.current_template())
@@ -246,13 +247,13 @@ class BaseContextRole(BaseContextSource, SphinxRole):
         return ns, msgs
 
 
-class ParsedHookTransform(SphinxTransform, Pipeline):
+class _ParsedHookTransform(SphinxTransform, Pipeline):
     # Before almost all others.
     default_priority = 100
 
     @override
     def process_pending_node(self, n: pending_node) -> bool:
-        ExtraContextGenerator(n).on_parsed(cast(ResolveHost, self))
+        ExtraContextGenerator(n).on_parsed(self)
         return n.template.phase == Phase.Parsed
 
     @override
@@ -264,13 +265,13 @@ class ParsedHookTransform(SphinxTransform, Pipeline):
             ...
 
 
-class ResolvingHookTransform(SphinxPostTransform, Pipeline):
+class _ResolvingHookTransform(SphinxPostTransform, Pipeline):
     # After resolving pending_xref
     default_priority = (ReferencesResolver.default_priority or 10) + 5
 
     @override
     def process_pending_node(self, n: pending_node) -> bool:
-        ExtraContextGenerator(n).on_resolving(cast(ResolveHost, self))
+        ExtraContextGenerator(n).on_resolving(self)
         return n.template.phase == Phase.Resolving
 
     @override
@@ -285,7 +286,7 @@ class ResolvingHookTransform(SphinxPostTransform, Pipeline):
 
 def setup(app: Sphinx) -> None:
     # Hook for Phase.Parsed.
-    app.add_transform(ParsedHookTransform)
+    app.add_transform(_ParsedHookTransform)
 
     # Hook for Phase.Resolving.
-    app.add_post_transform(ResolvingHookTransform)
+    app.add_post_transform(_ResolvingHookTransform)

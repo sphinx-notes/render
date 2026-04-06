@@ -9,7 +9,7 @@ This module provides helpful BaseContextSource subclasses.
 """
 
 from __future__ import annotations
-from typing import override
+from typing import final, override
 from abc import abstractmethod
 from dataclasses import dataclass
 
@@ -17,7 +17,7 @@ from docutils.parsers.rst import directives
 
 from .data import Field, RawData, Schema
 from .ctx import PendingContext, ResolvedContext
-from .render import Template
+from .template import Template
 from .pipeline import BaseContextSource, BaseContextDirective, BaseContextRole
 
 
@@ -54,12 +54,11 @@ class BaseRawDataSource(BaseContextSource):
     def current_schema(self) -> Schema:
         """Return the schema for constraining the generated
         :py:class`~sphinxnotes.render.RawData`. see :doc:`tmpl` for more details.
-
-        .. note:: User **must not** override ``current_context`` method of this class.
         """
 
     """Methods to be overridden."""
 
+    @final
     @override
     def current_context(self) -> PendingContext | ResolvedContext:
         return UnparsedData(self.current_raw_data(), self.current_schema())
@@ -70,6 +69,19 @@ class BaseDataDefineDirective(BaseRawDataSource, BaseContextDirective):
 
     @override
     def current_raw_data(self) -> RawData:
+        """
+        Return the :py:class:`~sphinxnotes.render.RawData` generating from 
+        from directive's arguments, options, and content, and then it will be
+        parsed by :py:class:`~sphinxnotes.render.Schema` returned from
+        ``current_schema`` method.
+
+        See :ref:`context` for more details.
+
+        .. note::
+
+           In most cases, the default implementation works well and you don't
+           need to override it.
+        """
         return RawData(
             ' '.join(self.arguments) if self.arguments else None,
             self.options.copy(),
@@ -80,6 +92,19 @@ class BaseDataDefineDirective(BaseRawDataSource, BaseContextDirective):
 class BaseDataDefineRole(BaseRawDataSource, BaseContextRole):
     @override
     def current_raw_data(self) -> RawData:
+        """
+        Return the :py:class:`~sphinxnotes.render.RawData` generating from 
+        from roles's text, and then it will be parsed by
+        :py:class:`~sphinxnotes.render.Schema` returned from ``current_schema``
+        method.
+
+        See :ref:`context` for more details.
+
+        .. note::
+
+           In most cases, the default implementation works well and you don't
+           need to override it.
+        """
         return RawData(self.name, self.options.copy(), self.text)
 
 

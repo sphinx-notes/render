@@ -20,7 +20,7 @@ sphinxnotes-render
 
 |docs| |license| |pypi| |download|
 
-A framework to define, constrain, and render data in Sphinx documentation.
+Define, constrain, and render data in Sphinx documentation.
 
 .. INTRODUCTION START 
    (MUST written in standard reStructuredText, without Sphinx stuff)
