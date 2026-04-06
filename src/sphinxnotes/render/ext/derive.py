@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 DATA_DEFINE_DIRECTIVE = DictSchema(
     {
         'schema': {
-            Optional('name', default='str, required, uniq, ref'): Or(str, type(None)),
+            Optional('name', default='str'): Or(str, type(None)),
             Optional('attrs', default={}): {str: str},
             Optional('content', default='str'): Or(str, type(None)),
         },

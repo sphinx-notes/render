@@ -175,7 +175,7 @@ class ExtraContextGenerator:
         if nonavail := requested & total - avail:
             self.report.text(
                 f'Extra contexts {nonavail} are not available '
-                f'at pahse {node.template.phase}.'
+                f'at phase {node.template.phase}.'
             )
 
     def on_anytime(self, env: BuildEnvironment) -> None:

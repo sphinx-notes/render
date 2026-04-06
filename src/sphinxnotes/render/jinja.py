@@ -32,9 +32,11 @@ class TemplateRenderer:
     def render(
         self,
         data: ParsedData | dict[str, Any],
-        extra: dict[str, Any] = {},
+        extra: dict[str, Any] | None = None,
         debug: Report | None = None,
     ) -> str:
+        if extra is None:
+            extra = {}
         if debug:
             debug.text('Starting Jinja template rendering...')
 
