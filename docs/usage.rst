@@ -84,7 +84,7 @@ Directives
 
 .. rst:directive:: .. data.schema:: <DSL>
 
-   Define a schema for restricting data. The schema will be applid to the
+   Define a schema for restricting data. The schema will be applied to the
    subsequent :rst:dir:`data.define` directives.
    We use a custom Domain Specified Language (DSL) to descript field's type,
    please refer to :doc:`dsl`.
@@ -93,7 +93,7 @@ Directives
       :type: <DSL>
 
       This directive uses the "freestyle" option spec, which allows arbitrary
-      options to be specified. Each option corrsponding to an option of
+      options to be specified. Each option corresponding to an option of
       :rst:dir:`data.define` directive.
 
       ``content: <DSL>``

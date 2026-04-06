@@ -158,7 +158,7 @@ sources (such as Sphinx application, JSON file, and etc.). Unlike main context
 which comes from the directive/role itself, extra context lets you fetch data
 that was prepared beforehand.
 
-Extra contests are typically generated on demand at different construction stages,
+Extra contexts are typically generated on demand at different construction stages,
 so you need to declare them in advance, and load it in the template using the
 ``load_extra()`` function:
 
@@ -249,7 +249,7 @@ The following extra contexts are available:
       .. data.render::
          :extra: section
 
-         Seciont Title:
+          Section Title:
          "{{ load_extra('section').title }}"
 
 ``doc``
@@ -263,7 +263,7 @@ The following extra contexts are available:
       .. data.render::
          :extra: doc
 
-         Document titie:
+         Document title:
          "{{ load_extra('doc').title }}".
 
 .. seealso:: :ref:`ext-extra-context`

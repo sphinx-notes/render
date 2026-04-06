@@ -101,7 +101,7 @@ it creates and stashes a temporary template for later use:
 
    {{ content }}.
 
-Now we can define data now, using a :rst:dir:`data.define` directive:
+Now we can define data, using a :rst:dir:`data.define` directive:
 
 .. example::
    :style: grid
@@ -124,7 +124,7 @@ Add the following code to your :file:`conf.py`:
    :end-before: [example config end]
 
 This creates a ``.. cat::`` directive that requires a name argument and accepts
-a ``color`` options and a content block. Use it in your document:
+a ``color`` option and a content block. Use it in your document:
 
 .. example::
    :style: grid
