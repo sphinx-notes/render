@@ -24,7 +24,7 @@ DATA_DEFINE_DIRECTIVE = DictSchema(
     {
         'schema': {
             Optional('name', default='str'): Or(str, type(None)),
-            Optional('attrs', default={}): {str: str},
+            Optional('attrs', default={}): Or({str: str}, {}),
             Optional('content', default='str'): Or(str, type(None)),
         },
         'template': {
