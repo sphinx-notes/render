@@ -2,62 +2,164 @@
 Usage
 =====
 
-.. seealso::
+This extension provides directives and roles for user to define, validate, and
+render data.
 
-   Before reading this documentation, please refer to
-   :external+sphinx:doc:`development/tutorials/extending_syntax`.
-   See how to extend :py:class:`SphinxDirective` and :py:class:`SphinxRole`.
+.. highlight:: rst
 
-``sphinxnotes.render`` uses Jinja2_ to turn structured data into markup
-text, usually reStructuredText. The rendered text is then parsed again by
-Sphinx and inserted into the document.
+.. _ext-usage-directives:
 
-.. _Jinja2: https://jinja.palletsprojects.com/en/stable/templates/
+Directives
+==========
 
-Now we have a quick example to help you get Started.
-Create a Sphinx documentation with the following ``conf.py``:
+.. rst:directive:: .. data.define:: name
 
-.. literalinclude:: ../tests/roots/test-ctxdir-usage/conf.py
+   Define data and render it inplace.
 
-This is the smallest useful extension built on top of ``sphinxnotes.render``:
+   .. rst:directive:option:: *
+      :type: depends on the schema
 
-- it defines a custom directive by subclassing
-  :py:class:`~sphinxnotes.render.BaseContextDirective`
-- it returns a context object from ``current_context()``
-- it returns a :py:class:`~sphinxnotes.render.Template` from
-  ``current_template()``
-- the template is rendered in the default
-  :py:data:`~sphinxnotes.render.Phase.Parsing` phase
+      This directive uses the "freestyle" option spec, if no any
+      :rst:dir:`data.schema` applied, it allows arbitrary options to be specified.
+      Otherwise, the option name and value is depends on the schema.
 
-Now use the directive in your document:
+   The directive generates a dict-like data structure, we call it
+   :ref:`context`, which looks like:
+
+   .. example::
+      :style: grid
+
+      .. data.define:: mimi
+         :color: black and brown
+
+         I like fish!
+
+   The fields of data context can be restricted and customized, see
+   :rst:dir:`data.schema` for details.
+
+   The data will be rendered by template defined by the previous
+   :rst:dir:`data.template` directive.
+
+.. rst:directive:: data.template
+
+   Define a template for rendering data. The template will be applied to
+   the subsequent :rst:dir:`data.define` directives.
+   Refer to :doc:`tmpl` for guide of writing template.
+
+   .. rst:directive:option:: on
+      :type: choice
+
+      Determinate :ref:`render-phases` of template. Defaults to ``parsing``.
+      Available values: ``['parsing', 'parsed', 'resolving']``.
+
+   .. rst:directive:option:: debug
+      :type: flag
+
+      Enable :ref:`debug report <debug>` for template rendering.
+
+   .. rst:directive:option:: extra
+      :type: space separted list
+
+      List of :ref:`extra-context` to be used in the template.
+
+   The content of the directive should be Jinja2 Template, please refer to
+   ::doc:`tmpl`.
+
+   Example:
+
+   .. example::
+      :style: grid
+
+      .. data.template::
+
+         Hi human! I am a cat named {{ name }}, I have {{ color }} fur.
+
+         {{ content }}.
+
+      .. data.define:: mimi
+         :color: black and brown
+
+         I like fish!
+
+
+.. rst:directive:: .. data.schema:: <DSL>
+
+   Define a schema for restricting data. The schema will be applid to the
+   subsequent :rst:dir:`data.define` directives.
+   We use a custom Domain Specified Language (DSL) to descript field's type,
+   please refer to :doc:`dsl`.
+
+   .. rst:directive:option:: *
+      :type: <DSL>
+
+      This directive uses the "freestyle" option spec, which allows arbitrary
+      options to be specified. Each option corrsponding to an option of
+      :rst:dir:`data.define` directive.
+
+      ``content: <DSL>``
+
+   .. example::
+      :style: grid
+
+      .. data.schema:: int
+
+      .. data.template::
+
+         ``{{ name }} + 1 =  {{ name + 1 }}``
+
+      .. data.define:: 1
+
+.. rst:directive:: data.render
+
+   Render a template immediately without defining data.
+   This is useful when you want to render some fixed content or predefined data.
+
+   .. rst:directive:option:: on
+   .. rst:directive:option:: debug
+   .. rst:directive:option:: extra
+
+      The options of this directive are same to :rst:dir:`data.template`.
+
+   .. example::
+      :style: grid
+
+      .. data.render::
+
+         ``1 + 1 = {{ 1 + 1 }}``
+
+.. _usage-custom-directive:
+
+Defining Custom Directives
+===========================
+
+Instead of using :rst:dir:`data.define`, :rst:dir:`data.template`, and
+:rst:dir:`data.schema` directives to define data in documents, you can define
+custom directives in :file:`conf.py` using the :confval:`data_define_directives`
+configuration option.
+
+This is useful when you want to create a reusable directive with a fixed schema
+and template across multiple documents.
+
+First, add ``'sphinxnotes.data'`` to your extension list like what we do in
+:doc:`Getting Started </index>`.
+
+Then add the following code to your :file:`conf.py`:
+
+.. literalinclude:: conf.py
+   :language: python
+   :start-after: [example config start]
+   :end-before: [example config end]
+
+This creates a ``.. cat::`` directive that requires a name argument and accepts
+a ``color`` options and a content. Use it in your document:
 
 .. example::
    :style: grid
 
-   .. me::
- 
-Next steps
-==========
+   .. cat:: mimi
+      :color: black and brown
 
-Once you understand this minimal example, the rest of the workflow is usually:
+      I like fish!
 
-1. define a :py:class:`~sphinxnotes.render.Schema` so your directive input is
-   parsed into structured values
-2. write a Jinja template that consumes that structured context
-3. choose an appropriate :py:class:`~sphinxnotes.render.Phase` when the
-   template needs document-level or project-level information
-4. add custom extra context if built-in variables are not enough
-
-See also:
-
-- :doc:`tmpl` for template variables, phases, and extra context
-- :doc:`dsl` for the field description language used by
-  :py:class:`~sphinxnotes.render.Field` and
-  :py:class:`~sphinxnotes.render.Schema`
-- :doc:`api` for the full Python API
-
-.. seealso:: See implementations of `sphinxnotes-any`__ and `sphinxnotes-data`__
-   for more details
-
-   __ https://github.com/sphinx-notes/any
-   __ https://github.com/sphinx-notes/data
+For more details please refer to the :confval:`data_define_directives`
+configuration value.

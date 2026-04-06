@@ -2,39 +2,52 @@
 API References
 ==============
 
-The Render Pipeline
-===================
+.. _api-directives:
+.. _api-roles:
 
-The pipeline defines how nodes carrying data are generated and when they are
-rendered as part of the document.
+Roles and Directives
+====================
 
-1. Generation: :py:class:`~sphinxnotes.render.BaseContextRole`,
-   :py:class:`~sphinxnotes.render.BaseContextDirective` and their subclasses
-   create :py:class:`~sphinxnotes.render.pending_node` on document parsing,
-   and the node will be inserted to the document tree. The node contains:
+.. seealso::
 
-   - :ref:`context`, the dynamic content of a Jinja template
+   For a minimal end-to-end example of creating your own directive, start with
+   :ref:`ext-directives`.
 
-   - :py:class:`~sphinxnotes.render.Template`,
-      the Jinja template for rendering context to markup text
-      (reStructuredText or Markdown)
+Base Role Classes
+-----------------
 
-2. Render: the ``pending_node`` node will be rendered at the appropriate
-   :py:class:`~sphinxnotes.render.Phase`, depending on
-   :py:attr:`~sphinxnotes.render.pending_node.template.phase`.
+.. autoclass:: sphinxnotes.render.BaseContextRole
+   :show-inheritance:
+   :members: process_pending_node, queue_pending_node, queue_context, current_context, current_template
 
-For a task-oriented explanation of template variables, extra context, and phase
-selection, see :doc:`tmpl`.
+.. autoclass:: sphinxnotes.render.BaseDataDefineRole
+   :show-inheritance:
+   :members: process_pending_node, queue_pending_node, queue_context, current_schema, current_template
+
+Base Directive Classes
+----------------------
+
+.. autoclass:: sphinxnotes.render.BaseContextDirective
+   :show-inheritance:
+   :members: process_pending_node, queue_pending_node, queue_context, current_raw_data, current_context, current_template
+
+.. autoclass:: sphinxnotes.render.BaseDataDefineDirective
+   :show-inheritance:
+   :members: process_pending_node, queue_pending_node, queue_context, current_raw_data, current_schema, current_template
+
+.. autoclass:: sphinxnotes.render.StrictDataDefineDirective
+   :show-inheritance:
+   :members: derive
 
 Node
------
+=====
 
 .. autoclass:: sphinxnotes.render.pending_node
 
-.. _context:
+.. _api-context:
 
 Context
--------
+=======
 
 Context refers to the dynamic content of a Jinja template. It can be:
 
@@ -57,7 +70,7 @@ Context refers to the dynamic content of a Jinja template. It can be:
    :members: resolve
 
 ``PendingContext`` Implementations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------
 
 .. autoclass:: sphinxnotes.render.UnparsedData
    :show-inheritance:
@@ -65,7 +78,7 @@ Context refers to the dynamic content of a Jinja template. It can be:
 .. _extractx:
 
 Template
---------
+========
 
 See :doc:`tmpl` for the higher-level guide.
 
@@ -76,12 +89,12 @@ See :doc:`tmpl` for the higher-level guide.
    :members:
 
 Extra Context
--------------
+=============
 
 See :doc:`tmpl` for built-in extra-context names such as ``doc`` and
 ``sphinx``, plus usage examples.
 
-.. autofunction:: sphinxnotes.render.extra_context
+.. autodecorator:: sphinxnotes.render.extra_context
 
 .. autoclass:: sphinxnotes.render.ParsingPhaseExtraContext
    :members: phase, generate
@@ -99,36 +112,10 @@ See :doc:`tmpl` for built-in extra-context names such as ``doc`` and
    :members: phase, generate
    :undoc-members:
 
-Base Roles and Directives
--------------------------
+Filters
+=======
 
-For a minimal end-to-end example of a custom directive, start with :doc:`usage`.
-
-Base Role Classes
-~~~~~~~~~~~~~~~~~
-
-.. autoclass:: sphinxnotes.render.BaseContextRole
-   :show-inheritance:
-   :members: process_pending_node, queue_pending_node, queue_context, current_context, current_template
-
-.. autoclass:: sphinxnotes.render.BaseDataDefineRole
-   :show-inheritance:
-   :members: process_pending_node, queue_pending_node, queue_context, current_schema, current_template
-
-Base Directive Classes
-~~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: sphinxnotes.render.BaseContextDirective
-   :show-inheritance:
-   :members: process_pending_node, queue_pending_node, queue_context, current_context, current_template
-
-.. autoclass:: sphinxnotes.render.BaseDataDefineDirective
-   :show-inheritance:
-   :members: process_pending_node, queue_pending_node, queue_context, current_schema, current_template
-
-.. autoclass:: sphinxnotes.render.StrictDataDefineDirective
-   :show-inheritance:
-   :members: derive
+.. autodecorator:: sphinxnotes.render.filter
 
 Data, Field and Schema
 ======================
