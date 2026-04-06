@@ -122,9 +122,30 @@ import sys
 sys.path.insert(0, os.path.abspath('../src/'))
 extensions.append('sphinxnotes.render')
 
-extensions.append('sphinxnotes.data')
-
 # CUSTOM CONFIGURATION
+
+extensions.append('sphinxnotes.render.ext')
+
+# [example config start]
+data_define_directives = {
+   'cat': {
+       'schema': {
+           'name': 'str, required',
+           'attrs': {
+               'color': 'str',
+           },
+           'content': 'str, required'
+       },
+       'template': {
+           'text': '\n'.join([
+               'Hi human! I am a cat named {{ name }}, I have {{ color }} fur.',
+               '',
+               '{{ content }}.',
+           ]),
+       },
+   },
+}
+# [example config end]
 
 autodoc_default_options = {
     'member-order': 'bysource',
@@ -132,13 +153,15 @@ autodoc_default_options = {
 
 intersphinx_mapping['python'] = ('https://docs.python.org/3', None)
 intersphinx_mapping['sphinx'] = ('https://www.sphinx-doc.org/en/master', None)
-intersphinx_mapping['data'] = ('https://sphinx.silverrainz.me/data', None)
 
-ctxdir_usage_example_path = os.path.abspath('../tests/roots/test-ctxdir-usage')
+test_roots = os.path.abspath('../tests/roots')
 
 def setup(app):
     app.add_object_type('event', 'event') # for intersphinx
 
-    sys.path.insert(0, ctxdir_usage_example_path)
-    from conf import setup as setup_ctxdir_usage_example
-    setup_ctxdir_usage_example(app)
+    sys.path.insert(0, test_roots)
+    __import__('test-extra-context.conf').conf.setup(app)
+    __import__('test-base-context-directive-example.conf').conf.setup(app)
+    __import__('test-base-data-define-directive-example.conf').conf.setup(app)
+    __import__('test-strict-data-define-directive-example.conf').conf.setup(app)
+    __import__('test-filter-example.conf').conf.setup(app)

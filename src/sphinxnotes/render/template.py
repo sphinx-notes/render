@@ -1,149 +1,66 @@
-"""
-sphinxnotes.template
-~~~~~~~~~~~~~~~~~~~~
-
-Rendering Jinja2 template to markup text.
-
-:copyright: Copyright 2026 by the Shengyu Zhang.
-:license: BSD, see LICENSE for details.
-"""
-
 from __future__ import annotations
-from dataclasses import dataclass
-from pprint import pformat
-from typing import TYPE_CHECKING, override
+from dataclasses import dataclass, field
+from enum import Enum
 
-from jinja2.sandbox import SandboxedEnvironment
-from jinja2 import StrictUndefined, DebugUndefined
+from docutils import nodes
+from sphinx.transforms import SphinxTransform
+from sphinx.util.docutils import SphinxDirective, SphinxRole
 
-from .data import ParsedData
-from .utils import Report
 
-if TYPE_CHECKING:
-    from typing import Any, Iterable
-    from sphinx.application import Sphinx
-    from sphinx.environment import BuildEnvironment
-    from sphinx.builders import Builder
+class Phase(Enum):
+    """The phase of rendering template."""
+
+    #: Render template on document parsing
+    #: on (:py:class:`~sphinx.util.docutils.SphinxDirective`\ ``.run()`` or
+    #: :py:class:`~sphinx.util.docutils.SphinxRole`\ ``.run()``).
+    Parsing = 'parsing'
+    #: Render template immediately after document has parsed
+    #: (on Sphinx event :external:event:`doctree-read`).
+    Parsed = 'parsed'
+    #: Render template immediately after all documents have resolving
+    #: (before Sphinx event :external:event:`doctree-resolved`).
+    Resolving = 'resolving'
+
+    @classmethod
+    def default(cls) -> Phase:
+        return cls.Parsing
+
+    def __ge__(self, other: Phase) -> bool:
+        _ORDER = {Phase.Parsing: 1, Phase.Parsed: 2, Phase.Resolving: 3}
+        return _ORDER[self] >= _ORDER[other]
 
 
 @dataclass
-class TemplateRenderer:
+class Template:
+    #: Jinja template for rendering the context.
     text: str
-
-    def render(
-        self,
-        data: ParsedData | dict[str, Any],
-        extra: dict[str, Any] = {},
-        debug: Report | None = None,
-    ) -> str:
-        if debug:
-            debug.text('Starting Jinja template rendering...')
-
-            debug.text('Data:')
-            debug.code(pformat(data), lang='python')
-            debug.text('Available extra context (just keys):')
-            debug.code(pformat(list(extra.keys())), lang='python')
-
-        # Convert data to context dict.
-        if isinstance(data, ParsedData):
-            ctx = data.asdict()
-        elif isinstance(data, dict):
-            ctx = data.copy()
-
-        # Inject load_extra() function for accessing extra context.
-        def load_extra(name: str):
-            if name not in extra:
-                raise ValueError(
-                    f'Extra context "{name}" is not available. '
-                    f'Available: {list(extra.keys())}'
-                )
-            return extra[name]
-
-        ctx['load_extra'] = load_extra
-
-        text = self._render(ctx, debug=debug is not None)
-
-        return text
-
-    def _render(self, ctx: dict[str, Any], debug: bool = False) -> str:
-        extensions = [
-            'jinja2.ext.loopcontrols',  # enable {% break %}, {% continue %}
-            'jinja2.ext.do',  # enable {% do ... %}
-        ]
-        if debug:
-            extensions.append('jinja2.ext.debug')
-
-        env = _JinjaEnv(
-            undefined=DebugUndefined if debug else StrictUndefined,
-            extensions=extensions,
-        )
-        # TODO: cache jinja env
-
-        return env.from_string(self.text).render(ctx)
-
-    def _report_self(self, reporter: Report) -> None:
-        reporter.text('Template:')
-        reporter.code(self.text, lang='jinja')
+    #: The render phase.
+    phase: Phase = Phase.default()
+    #: Enable debug output (shown as :py:class:`docutils.nodes.system_message` in document.)
+    debug: bool = False
+    #: Names of extra context to be generated and available in the template.
+    extra: list[str] = field(default_factory=list)
 
 
-class _JinjaEnv(SandboxedEnvironment):
-    _builder: Builder
-    # List of user defined filter factories.
-    _filter_factories = {}
-
-    @classmethod
-    def _on_builder_inited(cls, app: Sphinx):
-        cls._builder = app.builder
-
-    @classmethod
-    def _on_build_finished(cls, app: Sphinx, exception): ...
-
-    @classmethod
-    def add_filter(cls, name: str, ff):
-        cls._filter_factories[name] = ff
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for name, factory in self._filter_factories.items():
-            self.filters[name] = factory(self._builder.env)
-
-    @override
-    def is_safe_attribute(self, obj, attr, value=None):
-        """
-        The sandboxed environment will call this method to check if the
-        attribute of an object is safe to access. Per default all attributes
-        starting with an underscore are considered private as well as the
-        special attributes of internal python objects as returned by the
-        is_internal_attribute() function.
-
-        .. seealso:: :class:`..utils.ctxproxy.Proxy`
-        """
-        return super().is_safe_attribute(obj, attr, value)
+#: Possible render host of :meth:`pending_node.render`.
+type Host = ParseHost | ResolveHost
+#: Host of source parse phase (Phase.Parsing, Phase.Parsed).
+type ParseHost = SphinxDirective | SphinxRole
+#: Host of source parse phase (Phase.Parsing, Phase.Parsed).
+type ResolveHost = SphinxTransform
 
 
-def _roles_filter(env: BuildEnvironment):
-    """
-    Fetch artwork picture by ID and install theme to Sphinx's source directory,
-    return the relative URI of current doc root.
-    """
+@dataclass
+class HostWrapper:
+    v: Host
 
-    def _filter(value: Iterable[str], role: str) -> Iterable[str]:
-        """
-        A heplfer filter for converting list of string to list of role.
-
-        For example::
-
-            {{ ["foo", "bar"] | roles("doc") }}
-
-        Produces ``[":doc:`foo`", ":doc:`bar`"]``.
-        """
-        return map(lambda x: ':%s:`%s`' % (role, x), value)
-
-    return _filter
-
-
-def setup(app: Sphinx):
-    app.connect('builder-inited', _JinjaEnv._on_builder_inited)
-    app.connect('build-finished', _JinjaEnv._on_build_finished)
-
-    _JinjaEnv.add_filter('roles', _roles_filter)
+    @property
+    def doctree(self) -> nodes.document:
+        if isinstance(self.v, SphinxDirective):
+            return self.v.state.document
+        elif isinstance(self.v, SphinxRole):
+            return self.v.inliner.document
+        elif isinstance(self.v, SphinxTransform):
+            return self.v.document
+        else:
+            raise NotImplementedError

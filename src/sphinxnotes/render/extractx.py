@@ -1,17 +1,16 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, ClassVar, override
+from typing import TYPE_CHECKING, ClassVar
 from abc import ABC, abstractmethod
 
 from sphinx.util.docutils import SphinxDirective, SphinxRole
 from sphinx.transforms import SphinxTransform
 
-from .render import HostWrapper, Phase
+from .template import Phase
 from .ctxnodes import pending_node
-from .utils import find_current_section, Report, Reporter
+from .utils import Report, Reporter
 
 if TYPE_CHECKING:
     from typing import Any, Callable
-    from sphinx.application import Sphinx
     from sphinx.environment import BuildEnvironment
 
 # ============================
@@ -176,7 +175,7 @@ class ExtraContextGenerator:
         if nonavail := requested & total - avail:
             self.report.text(
                 f'Extra contexts {nonavail} are not available '
-                f'at pahse {node.template.phase}.'
+                f'at phase {node.template.phase}.'
             )
 
     def on_anytime(self, env: BuildEnvironment) -> None:
@@ -207,61 +206,3 @@ class ExtraContextGenerator:
             except Exception:
                 self.report.text(f'Failed to generate extra context "{name}":')
                 self.report.traceback()
-
-
-# =====================================
-# Builtin extra context implementations
-# =====================================
-
-
-@extra_context('markup')
-class MarkupExtraContext(ParsingPhaseExtraContext):
-    @override
-    def generate(self, directive: SphinxDirective | SphinxRole) -> Any:
-        isdir = isinstance(directive, SphinxDirective)
-        return {
-            'type': 'directive' if isdir else 'role',
-            'name': directive.name,
-            'lineno': directive.lineno,
-            'rawtext': directive.block_text if isdir else directive.rawtext,
-        }
-
-
-@extra_context('doc')
-class DocExtraContext(ParsingPhaseExtraContext):
-    @override
-    def generate(self, directive: SphinxDirective | SphinxRole) -> Any:
-        from .utils.ctxproxy import proxy
-
-        return proxy(HostWrapper(directive).doctree)
-
-
-@extra_context('section')
-class SectionExtraContext(ParsingPhaseExtraContext):
-    @override
-    def generate(self, directive: SphinxDirective | SphinxRole) -> Any:
-        from .utils.ctxproxy import proxy
-
-        parent = HostWrapper(directive).parent
-        return proxy(find_current_section(parent))
-
-
-@extra_context('sphinx')
-class SphinxAppExtraContext(GlobalExtraContext):
-    @override
-    def generate(self, env: BuildEnvironment) -> Any:
-        from .utils.ctxproxy import proxy
-
-        return proxy(env.app)
-
-
-@extra_context('env')
-class SphinxBuildEnvExtraContext(GlobalExtraContext):
-    @override
-    def generate(self, env: BuildEnvironment) -> Any:
-        from .utils.ctxproxy import proxy
-
-        return proxy(env)
-
-
-def setup(app: Sphinx): ...

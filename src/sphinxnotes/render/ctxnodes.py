@@ -5,7 +5,7 @@ from pprint import pformat
 from docutils import nodes
 from docutils.parsers.rst.states import Inliner
 
-from .render import Template
+from .template import Template
 from .ctx import (
     PendingContextRef,
     PendingContext,
@@ -13,7 +13,7 @@ from .ctx import (
     ResolvedContext,
 )
 from .markup import MarkupRenderer
-from .template import TemplateRenderer
+from .jinja import TemplateRenderer
 from .utils import (
     Report,
     Reporter,

@@ -1,41 +1,25 @@
-from sphinx.application import Sphinx
+# [literalinclude start]
+from os import path
+import json
+
+from sphinx.environment import BuildEnvironment
 from sphinxnotes.render import (
     extra_context,
-    ParsingPhaseExtraContext,
     GlobalExtraContext,
-    BaseContextDirective,
-    Template,
 )
 
 
-@extra_context('custom_parsing')
-class CustomParsingExtraContext(ParsingPhaseExtraContext):
-    def generate(self, directive):
-        return {'custom_value': 'parsing_test'}
+@extra_context('cat')
+class CatExtraContext(GlobalExtraContext):
+    def generate(self, env: BuildEnvironment):
+        with open(path.join(path.dirname(__file__), 'cat.json')) as f:
+            return json.loads(f.read())
 
 
-@extra_context('custom_global')
-class CustomGlobalExtraContext(GlobalExtraContext):
-    def generate(self, env):
-        return {'custom_value': 'global_test'}
+# [literalinclude end]
 
 
-class CustomExtraContextDirective(BaseContextDirective):
-    def current_context(self):
-        return {}
-
-    def current_template(self):
-        return Template(
-            """
-{% set _parsing = load_extra('custom_parsing') %}
-{% set _global = load_extra('custom_global') %}
-Parsing: {{ _parsing.custom_value }}
-Global: {{ _global.custom_value }}
-""",
-            extra=['custom_parsing', 'custom_global'],
-        )
+extensions = ['sphinxnotes.render.ext']
 
 
-def setup(app: Sphinx):
-    app.setup_extension('sphinxnotes.render')
-    app.add_directive('custom-extra', CustomExtraContextDirective)
+def setup(app): ...

@@ -21,20 +21,15 @@ from .data import (
     Field,
     Schema,
 )
-
-from .render import (
-    Phase,
-    Template,
-    Host,
-)
+from .template import Phase, Template
 from .ctx import PendingContext, ResolvedContext
 from .ctxnodes import pending_node
 from .extractx import (
+    extra_context,
     ParsingPhaseExtraContext,
     ParsedPhaseExtraContext,
     ResolvingPhaseExtraContext,
     GlobalExtraContext,
-    extra_context,
 )
 from .pipeline import BaseContextRole, BaseContextDirective
 from .sources import (
@@ -43,6 +38,7 @@ from .sources import (
     BaseDataDefineDirective,
     StrictDataDefineDirective,
 )
+from .jinja import filter
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
@@ -60,7 +56,6 @@ __all__ = [
     'Schema',
     'Phase',
     'Template',
-    'Host',
     'PendingContext',
     'ResolvedContext',
     'ParsingPhaseExtraContext',
@@ -75,6 +70,7 @@ __all__ = [
     'BaseDataDefineRole',
     'BaseDataDefineDirective',
     'StrictDataDefineDirective',
+    'filter',
 ]
 
 
@@ -92,10 +88,9 @@ REGISTRY = Registry()
 def setup(app: Sphinx):
     meta.pre_setup(app)
 
-    from . import pipeline, extractx, template
+    from . import pipeline, jinja
 
     pipeline.setup(app)
-    extractx.setup(app)
-    template.setup(app)
+    jinja.setup(app)
 
     return meta.post_setup(app)

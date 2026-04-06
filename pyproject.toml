@@ -7,7 +7,7 @@
 
 [project]
 name = "sphinxnotes-render"
-description = "A framework to define, constrain, and render data in Sphinx documentation"
+description = "Define, constrain, and render data in Sphinx documentation"
 readme = "README.rst"
 license = "BSD-3-Clause"
 license-files = ["LICENSE"]
@@ -43,6 +43,7 @@ dependencies = [
     "Sphinx >= 7.0",
 
     # CUSTOM DEPENDENCIES START
+    "Jinja2",
     # CUSTOM DEPENDENCIES END
 ]
 
@@ -58,6 +59,7 @@ dev = [
 ]
 test = [
     "pytest",
+    "schema", # python dict schema validation
 ]
 docs = [
     "furo",
@@ -71,18 +73,21 @@ docs = [
     # Dependencies of sphinxnotes projcts.
     "sphinxnotes-project",
     "sphinxnotes-comboroles",
-    "sphinxnotes-data",
 
     # CUSTOM DOCS DEPENDENCIES START
+    "schema", # python dict schema validation
     # CUSTOM DOCS DEPENDENCIES END
+]
+ext = [
+    "schema", # python dict schema validation
 ]
 
 [project.urls]
 homepage = "https://sphinx.silverrainz.me/render"
 documentation = "https://sphinx.silverrainz.me/render"
-repository = "https://github.com/sphinx-notes/data"
+repository = "https://github.com/sphinx-notes/render"
 changelog = "https://sphinx.silverrainz.me/render/changelog.html"
-tracker = "https://github.com/sphinx-notes/data/issues"
+tracker = "https://github.com/sphinx-notes/render/issues"
 
 [build-system]
 requires = ["setuptools>=46.1.0", "setuptools_scm[toml]>=5", "wheel"]
