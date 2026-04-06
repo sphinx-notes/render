@@ -9,7 +9,7 @@
       "full_name": "sphinxnotes-render",
       "author": "Shengyu Zhang",
       "description": "Define, constrain, and render data in Sphinx documentation",
-      "version": "1.0a0",
+      "version": "1.0b4",
       "github_owner": "sphinx-notes",
       "github_repo": "data",
       "pypi_name": "sphinxnotes-render",
