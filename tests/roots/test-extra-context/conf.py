@@ -8,11 +8,14 @@ from sphinxnotes.render import (
     GlobalExtraContext,
 )
 
+
 @extra_context('cat')
 class CatExtraContext(GlobalExtraContext):
     def generate(self, env: BuildEnvironment):
         with open(path.join(path.dirname(__file__), 'cat.json')) as f:
             return json.loads(f.read())
+
+
 # [literalinclude end]
 
 

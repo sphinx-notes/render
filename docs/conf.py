@@ -164,3 +164,4 @@ def setup(app):
     __import__('test-base-context-directive-example.conf').conf.setup(app)
     __import__('test-base-data-define-directive-example.conf').conf.setup(app)
     __import__('test-strict-data-define-directive-example.conf').conf.setup(app)
+    __import__('test-filter-example.conf').conf.setup(app)

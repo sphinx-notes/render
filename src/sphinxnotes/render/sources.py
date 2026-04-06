@@ -70,7 +70,7 @@ class BaseDataDefineDirective(BaseRawDataSource, BaseContextDirective):
     @override
     def current_raw_data(self) -> RawData:
         """
-        Return the :py:class:`~sphinxnotes.render.RawData` generating from 
+        Return the :py:class:`~sphinxnotes.render.RawData` generating from
         from directive's arguments, options, and content, and then it will be
         parsed by :py:class:`~sphinxnotes.render.Schema` returned from
         ``current_schema`` method.
@@ -93,7 +93,7 @@ class BaseDataDefineRole(BaseRawDataSource, BaseContextRole):
     @override
     def current_raw_data(self) -> RawData:
         """
-        Return the :py:class:`~sphinxnotes.render.RawData` generating from 
+        Return the :py:class:`~sphinxnotes.render.RawData` generating from
         from roles's text, and then it will be parsed by
         :py:class:`~sphinxnotes.render.Schema` returned from ``current_schema``
         method.

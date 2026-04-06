@@ -94,13 +94,31 @@ The decorated class must be one of the following classes:
 
 .. _ext-filters:
 
-Extending Filters
+Extending ilters
 =================
 
 Template filters are registered by a
 :py:deco:`sphinxnotes.render.filter` function decorator.
 
-TODO
+The decorated function takes a :py:class:`sphinx.environment.BuildEnvironment`
+as argument and returns a filter function.
+
+.. note::
+
+   The decorator is used to **decorate the filter function factory, NOT
+   the filter function itself**.
+
+.. literalinclude:: ../tests/roots/test-filter-example/conf.py
+   :language: python
+   :start-after: [literalinclude start]
+   :end-before: [literalinclude end]
+
+.. example::
+   :style: grid
+
+   .. data.render::
+
+      {{ "Hello world" | catify }}
 
 .. _ext-directives:
 .. _ext-roles:

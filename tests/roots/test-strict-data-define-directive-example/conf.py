@@ -25,6 +25,7 @@ template = Template(
 
 CatDirective = StrictDataDefineDirective.derive('cat', schema, template)
 
+
 def setup(app: Sphinx):
     app.setup_extension('sphinxnotes.render')
     app.add_directive('cat3', CatDirective)

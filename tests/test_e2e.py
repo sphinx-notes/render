@@ -3,6 +3,15 @@
 import pytest
 
 
+@pytest.mark.sphinx('html', testroot='filter-example')
+def test_custom_filter(app, status, warning):
+    app.build()
+
+    html = (app.outdir / 'index.html').read_text(encoding='utf-8')
+
+    assert 'I love you, meow~' in html
+
+
 @pytest.mark.sphinx('html', testroot='strict-data-define-directive-example')
 def test_strict_data_define_directive(app, status, warning):
     app.build()
@@ -16,6 +25,7 @@ def test_strict_data_define_directive(app, status, warning):
     assert 'I am 5 years old.' in html
     assert 'I like tuna!' in html
 
+
 @pytest.mark.sphinx('html', testroot='base-data-define-directive-example')
 def test_base_data_define_directive(app, status, warning):
     app.build()
@@ -28,7 +38,6 @@ def test_base_data_define_directive(app, status, warning):
     assert 'Hi human! I am a cat named lucy, I have white fur.' in html
     assert 'I am 5 years old.' in html
     assert 'I like tuna!' in html
-
 
 
 @pytest.mark.sphinx('html', testroot='base-context-directive-example')
