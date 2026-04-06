@@ -1,4 +1,7 @@
 Extra Context Test
 ==================
 
-.. custom-extra::
+.. data.render::
+   :extra: cat
+
+   {{ load_extra('cat') }}
