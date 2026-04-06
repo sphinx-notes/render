@@ -62,7 +62,7 @@ class SectionExtraContext(ParsingPhaseExtraContext):
         return proxy(find_current_section(parent))
 
 
-@extra_context('sphinx')
+@extra_context('app')
 class SphinxAppExtraContext(GlobalExtraContext):
     @override
     def generate(self, env: BuildEnvironment) -> Any:

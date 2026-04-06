@@ -182,7 +182,7 @@ Built-in Extra Contexts
 
 The following extra contexts are available:
 
-``sphinx``
+``app``
    :Phase: all
 
    A proxy to the :py:class:`sphinx.application.Sphinx` object.
@@ -191,9 +191,9 @@ The following extra contexts are available:
       :style: grid
 
       .. data.render::
-         :extra: sphinx
+         :extra: app
 
-         {% set app = load_extra('sphinx') %}
+         {% set app = load_extra('app') %}
 
          **{{ app.extensions | length }}**
          extensions are loaded.
@@ -306,7 +306,7 @@ __ https://jinja.palletsprojects.com/en/stable/templates/#builtin-filters
          {% set text = {'name': 'mimi'} %}
 
          :Strify: ``{{ text }}``
-         :JSONify: ``{{ text | jsonify }}``
+         :JSONify: ``{{ text | jsonify | replace('\n', '')}}``
 
 .. seealso:: :ref:`ext-filters`
 
