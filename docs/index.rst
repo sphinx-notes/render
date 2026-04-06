@@ -30,13 +30,13 @@ Introduction
 
 This extension mainly consists of two parts:
 
+:parsed_literal:`:ref:\`sphinxnotes.render <framework>\``
+   A framework to define, constrain, and render data in Sphinx documentation.
+
 :parsed_literal:`:ref:\`sphinxnotes.render.ext <extension>\``
    An extension built on top of this framework, allowing user to
    :rst:dir:`define <data.define>`, :rst:dir:`constrain <data.schema>` and
    :rst:dir:`render <data.template>` data entirely through the markup language.
-
-:parsed_literal:`:ref:\`sphinxnotes.render <framework>\``
-   A framework to define, constrain, and render data in Sphinx documentation.
 
 .. INTRODUCTION END
 
