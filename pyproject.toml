@@ -71,7 +71,6 @@ docs = [
     # Dependencies of sphinxnotes projcts.
     "sphinxnotes-project",
     "sphinxnotes-comboroles",
-    "sphinxnotes-data",
 
     # CUSTOM DOCS DEPENDENCIES START
     # CUSTOM DOCS DEPENDENCIES END
@@ -80,9 +79,9 @@ docs = [
 [project.urls]
 homepage = "https://sphinx.silverrainz.me/render"
 documentation = "https://sphinx.silverrainz.me/render"
-repository = "https://github.com/sphinx-notes/data"
+repository = "https://github.com/sphinx-notes/render"
 changelog = "https://sphinx.silverrainz.me/render/changelog.html"
-tracker = "https://github.com/sphinx-notes/data/issues"
+tracker = "https://github.com/sphinx-notes/render/issues"
 
 [build-system]
 requires = ["setuptools>=46.1.0", "setuptools_scm[toml]>=5", "wheel"]

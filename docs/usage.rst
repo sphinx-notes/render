@@ -140,8 +140,8 @@ configuration option.
 This is useful when you want to create a reusable directive with a fixed schema
 and template across multiple documents.
 
-First, add ``'sphinxnotes.data'`` to your extension list like what we do in
-:doc:`Getting Started </index>`.
+First, add ``'sphinxnotes.render.ext'`` to your extension list like what we do in
+:doc:`Getting Started <index>`.
 
 Then add the following code to your :file:`conf.py`:
 

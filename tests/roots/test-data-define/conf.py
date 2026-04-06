@@ -1,1 +1,1 @@
-extensions = ['sphinxnotes.data']
+extensions = ['sphinxnotes.render.ext']

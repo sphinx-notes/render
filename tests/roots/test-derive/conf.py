@@ -1,6 +1,6 @@
 keep_warnings = True
 
-extensions = ['sphinxnotes.data']
+extensions = ['sphinxnotes.render.ext']
 
 data_define_directives = {
     'custom': {

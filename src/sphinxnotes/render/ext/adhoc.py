@@ -1,6 +1,6 @@
 """
-sphinxnotes.data.adhoc
-~~~~~~~~~~~~~~~~~~~~~~
+sphinxnotes.render.ext.adhoc
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :copyright: Copyright 2025~2026 by the Shengyu Zhang.
 :license: BSD, see LICENSE for details.
@@ -37,8 +37,8 @@ if TYPE_CHECKING:
 
 
 # Keys of env.temp_data.
-TEMPLATE_KEY = 'sphinxnotes.data:template'
-SCHEMA_KEY = 'sphinxnotes.data:schema'
+TEMPLATE_KEY = 'sphinxnotes.render.ext:template'
+SCHEMA_KEY = 'sphinxnotes.render.ext:schema'
 
 
 def phase_option_spec(arg):

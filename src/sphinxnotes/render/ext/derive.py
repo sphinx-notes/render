@@ -1,6 +1,6 @@
 """
-sphinxnotes.data.derive
-~~~~~~~~~~~~~~~~~~~~~~~
+sphinxnotes.render.ext.derive
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :copyright: Copyright 2025~2026 by the Shengyu Zhang.
 :license: BSD, see LICENSE for details.
