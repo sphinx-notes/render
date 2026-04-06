@@ -31,6 +31,7 @@ DATA_DEFINE_DIRECTIVE = DictSchema(
             Optional('on', default='parsing'): Or('parsing', 'parsed', 'resolving'),
             'text': str,
             Optional('debug', default=False): bool,
+            Optional('extra', default=[]): list,
         },
     }
 )
@@ -45,8 +46,12 @@ def _validate_directive_define(d: dict, config: Config) -> tuple[Schema, Templat
     )
 
     tmpldef = validated['template']
-    phase = Phase[tmpldef['on'].title()]
-    template = Template(text=tmpldef['text'], phase=phase, debug=tmpldef['debug'])
+    template = Template(
+        text=tmpldef['text'],
+        phase=Phase[tmpldef['on'].title()],
+        debug=tmpldef['debug'],
+        extra=tmpldef['extra'],
+    )
 
     return schema, template
 

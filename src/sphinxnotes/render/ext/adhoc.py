@@ -56,14 +56,13 @@ class TemplateDefineDirective(SphinxDirective):
 
     @override
     def run(self) -> list[nodes.Node]:
-        extra_str = self.options.get('extra', '')
-        extra_list = extra_str.split() if extra_str else []
+        extra = self.options.get('extra', '')
 
         self.env.temp_data[TEMPLATE_KEY] = Template(
             '\n'.join(self.content),
             phase=self.options.get('on', Phase.default()),
             debug='debug' in self.options,
-            extra=extra_list,
+            extra=extra.split() if extra else [],
         )
 
         return []
