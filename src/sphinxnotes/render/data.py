@@ -14,8 +14,6 @@ import re
 from dataclasses import dataclass, asdict, field as dataclass_field
 from ast import literal_eval
 
-from .utils import Unpicklable
-
 if TYPE_CHECKING:
     from typing import Any, Callable, Generator, Self
 
@@ -287,7 +285,7 @@ class ParsedData:
 
 
 @dataclass
-class Field(Unpicklable):
+class Field:
     #: Type of element.
     etype: type = str
     #: Type of container (if the field holds multiple values).
@@ -374,8 +372,9 @@ class Field(Unpicklable):
             raise ValueError(f"Failed to parse '{rawval}' as {self.etype}: {e}") from e
 
     def __getattr__(self, name: str) -> Value:
-        if name in self.flags:
-            return self.flags[name]
+        flags = self.__dict__.get('flags')
+        if flags is not None and name in flags:
+            return flags[name]
         raise AttributeError(name)
 
 
@@ -491,7 +490,7 @@ class DSLParser:
 
 
 @dataclass(frozen=True)
-class Schema(Unpicklable):
+class Schema:
     name: Field | None
     attrs: dict[str, Field] | Field
     content: Field | None

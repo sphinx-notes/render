@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from types import ModuleType
     from docutils.utils import Reporter
     from sphinx.util.typing import RoleFunction
-    from .. import PendingContext, ResolvedContext
+    from .. import UnresolvedContext, ResolvedContext
 
 
 # Keys of env.temp_data.
@@ -140,7 +140,7 @@ class DataRenderDirective(BaseContextDirective):
     has_content = True
 
     @override
-    def current_context(self) -> PendingContext | ResolvedContext:
+    def current_context(self) -> UnresolvedContext | ResolvedContext:
         return {}
 
     @override
