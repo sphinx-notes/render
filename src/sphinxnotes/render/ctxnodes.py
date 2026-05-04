@@ -1,15 +1,15 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, override
+import pickle
 from pprint import pformat
 
 from docutils import nodes
 from docutils.parsers.rst.states import Inliner
 
-from .template import Template
+from .data import ValueWrapper, ParsedData
+from .template import Template, Phase
 from .ctx import (
-    PendingContextRef,
-    PendingContext,
-    PendingContextStorage,
+    UnresolvedContext,
     ResolvedContext,
 )
 from .markup import MarkupRenderer
@@ -21,7 +21,7 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, ClassVar
+    from typing import Any, Callable
     from .markup import Host
     from .ctx import ResolvedContext
 
@@ -30,7 +30,7 @@ class pending_node(nodes.Element):
     """A docutils node to be rendered."""
 
     # The context to be rendered by Jinja template.
-    ctx: PendingContextRef | ResolvedContext
+    ctx: UnresolvedContext | ResolvedContext
     # The extra context as supplement to ctx.
     extra: dict[str, Any]
     #: Jinja template for rendering the context.
@@ -39,16 +39,12 @@ class pending_node(nodes.Element):
     inline: bool
     #: Whether the rendering pipeline is finished (failed is also finished).
     rendered: bool
-
-    #: Mapping of PendingContextRef -> PendingContext.
-    #:
-    #: NOTE: ``PendingContextStorage`` holds Unpicklable data (``PendingContext``)
-    #: but it is doesn't matters :-), cause pickle doesn't deal with ClassVar.
-    _PENDING_CONTEXTS: ClassVar[PendingContextStorage] = PendingContextStorage()
+    #: Stored pickling error for later-phase unresolved context.
+    _ctx_pickle_error: Exception | None
 
     def __init__(
         self,
-        ctx: PendingContext | ResolvedContext,
+        ctx: UnresolvedContext | ResolvedContext,
         tmpl: Template,
         inline: bool = False,
         rawsource='',
@@ -56,17 +52,20 @@ class pending_node(nodes.Element):
         **attributes,
     ) -> None:
         super().__init__(rawsource, *children, **attributes)
-        if not isinstance(ctx, PendingContext):
-            self.ctx = ctx
-        else:
-            self.ctx = self._PENDING_CONTEXTS.stash(ctx)
+        self._ctx_pickle_error = None
+        if isinstance(ctx, UnresolvedContext) and tmpl.phase != Phase.Parsing:
+            try:
+                pickle.dumps(ctx)
+            except Exception as exc:
+                self._ctx_pickle_error = exc
+        self.ctx = ctx
         self.extra = {}
         self.template = tmpl
         self.inline = inline
         self.rendered = False
 
         # Init hook lists.
-        self._pending_context_hooks = []
+        self._unresolved_context_hooks = []
         self._resolved_data_hooks = []
         self._markup_text_hooks = []
         self._rendered_nodes_hooks = []
@@ -75,7 +74,7 @@ class pending_node(nodes.Element):
         """
         The core function for rendering context and template to docutils nodes.
 
-        1. PendingContextRef -> PendingContext -> ResolvedContext
+        1. UnresolvedContext -> ResolvedContext
         2. TemplateRenderer.render(ResolvedContext) -> Markup Text (``str``)
         3. MarkupRenderer.render(Markup Text) -> doctree Nodes (list[nodes.Node])
         """
@@ -97,29 +96,30 @@ class pending_node(nodes.Element):
                 return report
             return Report('Render Report', 'ERROR', source=self.source, line=self.line)
 
+        if self._ctx_pickle_error is not None:
+            report = err_report()
+            report.text(
+                f'UnresolvedContext used by {self.template.phase} phase templates '
+                'must be picklable:'
+            )
+            report.exception(self._ctx_pickle_error)
+            self += report
+            return None
+
         # 1. Prepare context for Jinja template.
-        if isinstance(self.ctx, PendingContextRef):
-            report.text('Pending context ref:')
-            report.code(pformat(self.ctx), lang='python')
-
-            pdata = self._PENDING_CONTEXTS.retrieve(self.ctx)
-            if pdata is None:
-                report = err_report()
-                report.text(f'Failed to retrieve pending context from ref {self.ctx}')
-                self += report
-                return None
-
-            report.text('Pending context:')
+        if isinstance(self.ctx, UnresolvedContext):
+            pdata = self.ctx
+            report.text('Unresolved context:')
             report.code(pformat(pdata), lang='python')
 
-            for hook in self._pending_context_hooks:
+            for hook in self._unresolved_context_hooks:
                 hook(self, pdata)
 
             try:
                 ctx = self.ctx = pdata.resolve()
             except Exception as e:
                 report = err_report()
-                report.text('Failed to resolve pending context:')
+                report.text('Failed to resolve unresolved context:')
                 report.exception(e)
                 self += report
                 return None
@@ -221,18 +221,18 @@ class pending_node(nodes.Element):
 
     """Hooks for processing render intermediate products."""
 
-    type PendingContextHook = Callable[[pending_node, PendingContext], None]
+    type UnresolvedContextHook = Callable[[pending_node, UnresolvedContext], None]
     type ResolvedContextHook = Callable[[pending_node, ResolvedContext], None]
     type MarkupTextHook = Callable[[pending_node, str], str]
     type RenderedNodesHook = Callable[[pending_node, list[nodes.Node]], None]
 
-    _pending_context_hooks: list[PendingContextHook]
+    _unresolved_context_hooks: list[UnresolvedContextHook]
     _resolved_data_hooks: list[ResolvedContextHook]
     _markup_text_hooks: list[MarkupTextHook]
     _rendered_nodes_hooks: list[RenderedNodesHook]
 
-    def hook_pending_context(self, hook: PendingContextHook) -> None:
-        self._pending_context_hooks.append(hook)
+    def hook_unresolved_context(self, hook: UnresolvedContextHook) -> None:
+        self._unresolved_context_hooks.append(hook)
 
     def hook_resolved_context(self, hook: ResolvedContextHook) -> None:
         self._resolved_data_hooks.append(hook)
@@ -259,3 +259,16 @@ class pending_node(nodes.Element):
     def deepcopy(self) -> Any:
         # NOTE: Same to :meth:`copy`.
         return self.copy()
+
+    @override
+    def astext(self) -> str:
+        ctx = self.ctx
+        if isinstance(ctx, UnresolvedContext):
+            try:
+                ctx = ctx.resolve()
+            except Exception:
+                return ''
+        if isinstance(ctx, ParsedData):
+            return ValueWrapper(ctx.content).as_str() or ''
+        else:
+            return ''

@@ -55,22 +55,22 @@ Context refers to the dynamic content of a Jinja template. It can be:
   Our dedicated data type (:py:class:`sphinxnotes.render.ParsedData`), or any
   Python ``dict``.
 
-:py:class:`~sphinxnotes.render.PendingContext`:
+:py:class:`~sphinxnotes.render.UnresolvedContext`:
    Context that is not yet available. For example, it may contain
    :py:class:`unparsed data <sphinxnotes.render.RawData>`,
    remote data, and more.
 
-   :py:class:`PendingContext` can be resolved to
+   :py:class:`UnresolvedContext` can be resolved to
    :py:class:`~sphinxnotes.render.ResolvedContext` by calling
-   :py:meth:`~sphinxnotes.render.PendingContext.resolve`.
+   :py:meth:`~sphinxnotes.render.UnresolvedContext.resolve`.
 
 .. autotype:: sphinxnotes.render.ResolvedContext
 
-.. autoclass:: sphinxnotes.render.PendingContext
+.. autoclass:: sphinxnotes.render.UnresolvedContext
    :members: resolve
 
-``PendingContext`` Implementations
-----------------------------------
+``UnresolvedContext`` Implementations
+-------------------------------------
 
 .. autoclass:: sphinxnotes.render.UnparsedData
    :show-inheritance:

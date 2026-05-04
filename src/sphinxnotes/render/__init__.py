@@ -22,7 +22,7 @@ from .data import (
     Schema,
 )
 from .template import Phase, Template
-from .ctx import PendingContext, ResolvedContext
+from .ctx import UnresolvedContext, ResolvedContext
 from .ctxnodes import pending_node
 from .extractx import (
     extra_context,
@@ -56,7 +56,7 @@ __all__ = [
     'Schema',
     'Phase',
     'Template',
-    'PendingContext',
+    'UnresolvedContext',
     'ResolvedContext',
     'ParsingPhaseExtraContext',
     'ParsedPhaseExtraContext',

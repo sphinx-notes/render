@@ -11,7 +11,7 @@ from sphinx.transforms import SphinxTransform
 from sphinx.transforms.post_transforms import SphinxPostTransform, ReferencesResolver
 
 from .template import HostWrapper, Phase, Template, Host
-from .ctx import PendingContext, ResolvedContext
+from .ctx import UnresolvedContext, ResolvedContext
 from .ctxnodes import pending_node
 from .extractx import ExtraContextGenerator
 
@@ -83,7 +83,7 @@ class Pipeline(ABC):
 
     @final
     def queue_context(
-        self, ctx: PendingContext | ResolvedContext, tmpl: Template
+        self, ctx: UnresolvedContext | ResolvedContext, tmpl: Template
     ) -> pending_node:
         """A helper method for ``queue_pending_node``."""
         pending = pending_node(ctx, tmpl)
@@ -162,7 +162,7 @@ class BaseContextSource(Pipeline):
     """Methods to be implemented."""
 
     @abstractmethod
-    def current_context(self) -> PendingContext | ResolvedContext:
+    def current_context(self) -> UnresolvedContext | ResolvedContext:
         """Return the context to be rendered."""
         ...
 

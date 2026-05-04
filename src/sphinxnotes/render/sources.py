@@ -16,14 +16,14 @@ from dataclasses import dataclass
 from docutils.parsers.rst import directives
 
 from .data import Field, RawData, Schema
-from .ctx import PendingContext, ResolvedContext
+from .ctx import UnresolvedContext, ResolvedContext
 from .template import Template
 from .pipeline import BaseContextSource, BaseContextDirective, BaseContextRole
 
 
 @dataclass
-class UnparsedData(PendingContext):
-    """A pending context which contains raw data and its schema.
+class UnparsedData(UnresolvedContext):
+    """An unresolved context which contains raw data and its schema.
 
     Raw data will be parsed when calling ``resolve``.
     """
@@ -60,7 +60,7 @@ class BaseRawDataSource(BaseContextSource):
 
     @final
     @override
-    def current_context(self) -> PendingContext | ResolvedContext:
+    def current_context(self) -> UnresolvedContext | ResolvedContext:
         return UnparsedData(self.current_raw_data(), self.current_schema())
 
 
