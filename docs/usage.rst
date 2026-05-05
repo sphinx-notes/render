@@ -57,11 +57,6 @@ Directives
 
       Enable :ref:`debug report <debug>` for template rendering.
 
-   .. rst:directive:option:: extra
-      :type: space separted list
-
-      List of :ref:`extra-context` to be used in the template.
-
    The content of the directive should be Jinja2 Template, please refer to
    ::doc:`tmpl`.
 
@@ -116,7 +111,6 @@ Directives
 
    .. rst:directive:option:: on
    .. rst:directive:option:: debug
-   .. rst:directive:option:: extra
 
       The options of this directive are same to :rst:dir:`data.template`.
 

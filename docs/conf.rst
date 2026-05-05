@@ -25,7 +25,5 @@ The extension provides the following configuration:
      - ``text`` (str): the Jinja2 template text.
      - ``on`` (str, optional): same as :rst:dir:`data.template:on`
      - ``debug`` (bool, optional): same as :rst:dir:`data.template:debug`
-     - ``extra`` (list[str], optional): same as :rst:dir:`data.template:extra`
 
    See :ref:`usage-custom-directive` for example.
-

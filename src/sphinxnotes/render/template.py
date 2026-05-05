@@ -1,5 +1,5 @@
 from __future__ import annotations
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 
 from docutils import nodes
@@ -38,8 +38,6 @@ class Template:
     phase: Phase = Phase.default()
     #: Enable debug output (shown as :py:class:`docutils.nodes.system_message` in document.)
     debug: bool = False
-    #: Names of extra context to be generated and available in the template.
-    extra: list[str] = field(default_factory=list)
 
 
 #: Possible render host of :meth:`pending_node.render`.

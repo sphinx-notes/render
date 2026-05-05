@@ -12,6 +12,7 @@ from .ctx import (
     UnresolvedContext,
     ResolvedContext,
 )
+from .extractx import ExtraContextGenerator
 from .markup import MarkupRenderer
 from .jinja import TemplateRenderer
 from .utils import (
@@ -21,7 +22,7 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
-    from typing import Any, Callable
+    from typing import Callable
     from .markup import Host
     from .ctx import ResolvedContext
 
@@ -31,8 +32,6 @@ class pending_node(nodes.Element):
 
     # The context to be rendered by Jinja template.
     ctx: UnresolvedContext | ResolvedContext
-    # The extra context as supplement to ctx.
-    extra: dict[str, Any]
     #: Jinja template for rendering the context.
     template: Template
     #: Whether rendering to inline nodes.
@@ -59,7 +58,6 @@ class pending_node(nodes.Element):
             except Exception as exc:
                 self._ctx_pickle_error = exc
         self.ctx = ctx
-        self.extra = {}
         self.template = tmpl
         self.inline = inline
         self.rendered = False
@@ -131,14 +129,19 @@ class pending_node(nodes.Element):
 
         report.text(f'Resolved context (type: {type(ctx)}):')
         report.code(pformat(ctx), lang='python')
-        report.text('Extra context (only keys):')
-        report.code(pformat(list(self.extra.keys())), lang='python')
         report.text(f'Template (phase: {self.template.phase}):')
         report.code(self.template.text, lang='jinja')
 
         # 2. Render the template and context to markup text.
         try:
-            markup = TemplateRenderer(self.template.text).render(ctx, extra=self.extra)
+            extras = ExtraContextGenerator(self, host)
+            report.text('Available extra context (just keys):')
+            report.code(pformat(sorted(extras.names())), lang='python')
+            markup = TemplateRenderer(self.template.text).render(
+                ctx,
+                load_extra=extras.load,
+                extra_names=sorted(extras.names()),
+            )
         except Exception as e:
             report = err_report()
             report.text('Failed to render Jinja template:')

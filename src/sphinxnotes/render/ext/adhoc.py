@@ -50,19 +50,15 @@ class TemplateDefineDirective(SphinxDirective):
     option_spec = {
         'on': phase_option_spec,
         'debug': directives.flag,
-        'extra': directives.unchanged,
     }
     has_content = True
 
     @override
     def run(self) -> list[nodes.Node]:
-        extra = self.options.get('extra', '')
-
         self.env.temp_data[TEMPLATE_KEY] = Template(
             '\n'.join(self.content),
             phase=self.options.get('on', Phase.default()),
             debug='debug' in self.options,
-            extra=extra.split() if extra else [],
         )
 
         return []
@@ -135,7 +131,6 @@ class DataRenderDirective(BaseContextDirective):
     option_spec = {
         'on': phase_option_spec,
         'debug': directives.flag,
-        'extra': directives.unchanged,
     }
     has_content = True
 
@@ -145,14 +140,10 @@ class DataRenderDirective(BaseContextDirective):
 
     @override
     def current_template(self) -> Template:
-        extra_str = self.options.get('extra', '')
-        extra_list = extra_str.split() if extra_str else []
-
         return Template(
             '\n'.join(self.content),
             phase=self.options.get('on', Phase.default()),
             debug='debug' in self.options,
-            extra=extra_list,
         )
 
 

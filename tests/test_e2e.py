@@ -59,6 +59,17 @@ def test_extra_context_custom_loader(app, status, warning):
     assert 'mimi' in html
 
 
+@pytest.mark.sphinx('html', testroot='extra-context-rebuild')
+def test_extra_context_rebuild(app, status, warning):
+    app.build()
+    app.build()
+
+    html = (app.outdir / 'index.html').read_text(encoding='utf-8')
+
+    assert 'doc-sections=0' in html
+    assert 'all-docs=1' in html
+
+
 # ===========================
 # Test sphinxnotes.render.ext
 # ===========================

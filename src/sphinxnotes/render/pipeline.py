@@ -13,9 +13,6 @@ from sphinx.transforms.post_transforms import SphinxPostTransform, ReferencesRes
 from .template import HostWrapper, Phase, Template, Host
 from .ctx import UnresolvedContext, ResolvedContext
 from .ctxnodes import pending_node
-from .extractx import ExtraContextGenerator
-
-
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
@@ -123,9 +120,6 @@ class Pipeline(ABC):
 
             host = cast(Host, self)
 
-            # Generate global extra context for later use.
-            ExtraContextGenerator(pending).on_anytime(host.env)
-
             # Perform render.
             pending.render(host)
 
@@ -187,9 +181,6 @@ class BaseContextSource(Pipeline):
         host = cast(SphinxDirective | SphinxRole, self)
         # Set source and line.
         host.set_source_info(n)
-        # Generate and save parsing phase extra context for later use.
-        ExtraContextGenerator(n).on_parsing(host)
-
         return n.template.phase == Phase.Parsing
 
 
@@ -253,7 +244,6 @@ class _ParsedHookTransform(SphinxTransform, Pipeline):
 
     @override
     def process_pending_node(self, n: pending_node) -> bool:
-        ExtraContextGenerator(n).on_parsed(self)
         return n.template.phase == Phase.Parsed
 
     @override
@@ -271,7 +261,6 @@ class _ResolvingHookTransform(SphinxPostTransform, Pipeline):
 
     @override
     def process_pending_node(self, n: pending_node) -> bool:
-        ExtraContextGenerator(n).on_resolving(self)
         return n.template.phase == Phase.Resolving
 
     @override
