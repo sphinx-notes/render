@@ -13,8 +13,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, override, Any
 
 from sphinx.util.docutils import SphinxDirective, SphinxRole
+from sphinx.transforms import SphinxTransform
 
-from .. import meta, extra_context, GlobalExtraContext, ParsingPhaseExtraContext
+from .. import meta, extra_context, ExtraContext
+from ..extractx import ExtraContextRequest
+from ..template import HostWrapper
 
 # FIXME:
 from ..utils import find_current_section
@@ -26,54 +29,59 @@ if TYPE_CHECKING:
 
 
 @extra_context('markup')
-class MarkupExtraContext(ParsingPhaseExtraContext):
+class MarkupExtraContext(ExtraContext):
     @override
-    def generate(self, directive: SphinxDirective | SphinxRole) -> Any:
-        isdir = isinstance(directive, SphinxDirective)
+    def generate(self, request: ExtraContextRequest) -> Any:
+        host = request.host
+        if not isinstance(host, (SphinxDirective, SphinxRole)):
+            raise ValueError(
+                f'Extra context "markup" is not available at phase {request.phase}.'
+            )
+        isdir = isinstance(host, SphinxDirective)
         return {
             'type': 'directive' if isdir else 'role',
-            'name': directive.name,
-            'lineno': directive.lineno,
-            'rawtext': directive.block_text if isdir else directive.rawtext,
+            'name': host.name,
+            'lineno': host.lineno,
+            'rawtext': host.block_text if isdir else host.rawtext,
         }
 
 
 @extra_context('doc')
-class DocExtraContext(ParsingPhaseExtraContext):
+class DocExtraContext(ExtraContext):
     @override
-    def generate(self, directive: SphinxDirective | SphinxRole) -> Any:
-        doctree = (
-            directive.state.document
-            if isinstance(directive, SphinxDirective)
-            else directive.inliner.document
-        )
-        return proxy(doctree)
+    def generate(self, request: ExtraContextRequest) -> Any:
+        return proxy(HostWrapper(request.host).doctree)
 
 
 @extra_context('section')
-class SectionExtraContext(ParsingPhaseExtraContext):
+class SectionExtraContext(ExtraContext):
     @override
-    def generate(self, directive: SphinxDirective | SphinxRole) -> Any:
-        parent = (
-            directive.state.parent
-            if isinstance(directive, SphinxDirective)
-            else directive.inliner.parent
-        )
+    def generate(self, request: ExtraContextRequest) -> Any:
+        if request.node.parent is not None:
+            parent = request.node.parent
+        elif isinstance(request.host, SphinxDirective):
+            parent = request.host.state.parent
+        elif isinstance(request.host, SphinxRole):
+            parent = request.host.inliner.parent
+        elif isinstance(request.host, SphinxTransform):
+            parent = request.host.document
+        else:
+            parent = None
         return proxy(find_current_section(parent))
 
 
 @extra_context('app')
-class SphinxAppExtraContext(GlobalExtraContext):
+class SphinxAppExtraContext(ExtraContext):
     @override
-    def generate(self, env: BuildEnvironment) -> Any:
-        return proxy(env.app)
+    def generate(self, request: ExtraContextRequest) -> Any:
+        return proxy(request.env.app)
 
 
 @extra_context('env')
-class SphinxBuildEnvExtraContext(GlobalExtraContext):
+class SphinxBuildEnvExtraContext(ExtraContext):
     @override
-    def generate(self, env: BuildEnvironment) -> Any:
-        return proxy(env)
+    def generate(self, request: ExtraContextRequest) -> Any:
+        return proxy(request.env)
 
 
 def setup(app: Sphinx):

@@ -2,16 +2,16 @@
 from os import path
 import json
 
-from sphinx.environment import BuildEnvironment
 from sphinxnotes.render import (
     extra_context,
-    GlobalExtraContext,
+    ExtraContext,
+    ExtraContextRequest,
 )
 
 
 @extra_context('cat')
-class CatExtraContext(GlobalExtraContext):
-    def generate(self, env: BuildEnvironment):
+class CatExtraContext(ExtraContext):
+    def generate(self, request: ExtraContextRequest):
         with open(path.join(path.dirname(__file__), 'cat.json')) as f:
             return json.loads(f.read())
 

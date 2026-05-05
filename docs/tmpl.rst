@@ -158,20 +158,13 @@ sources (such as Sphinx application, JSON file, and etc.). Unlike main context
 which comes from the directive/role itself, extra context lets you fetch data
 that was prepared beforehand.
 
-Extra contexts are typically generated on demand at different construction stages,
-so you need to declare them in advance, and load it in the template using the
-``load_extra()`` function:
-
-The way of declaring extra context is vary depending on the extension you use.
-For ``sphinxnotes.render.ext`` extension, :rst:dir:`data.template:extra`,
-:rst:dir:`data.render:extra` and the ``templat.extra`` field of
-:confval:`render_ext_data_define_directives` are for this.
+Extra contexts are generated on demand. Load them in the template using the
+``load_extra()`` function.
 
 .. example::
    :style: grid
 
    .. data.render::
-      :extra: doc
 
       {% set doc = load_extra('doc') %}
 
@@ -191,7 +184,6 @@ The following extra contexts are available:
       :style: grid
 
       .. data.render::
-         :extra: app
 
          {% set app = load_extra('app') %}
 
@@ -207,7 +199,6 @@ The following extra contexts are available:
       :style: grid
 
       .. data.render::
-         :extra: env
 
          {% set env = load_extra('env') %}
 
@@ -224,7 +215,6 @@ The following extra contexts are available:
       :style: grid
 
       .. data.render::
-         :extra: markup
 
          {%
          set m = load_extra('markup')
@@ -247,7 +237,6 @@ The following extra contexts are available:
       :style: grid
 
       .. data.render::
-         :extra: section
 
           Section Title:
          "{{ load_extra('section').title }}"
@@ -261,7 +250,6 @@ The following extra contexts are available:
       :style: grid
 
       .. data.render::
-         :extra: doc
 
          Document title:
          "{{ load_extra('doc').title }}".
@@ -331,7 +319,6 @@ Each template has a render phase that determines when it is processed:
 
          .. data.render::
             :on: parsing
-            :extra: doc env
 
             {% set doc = load_extra('doc') %}
             {% set env = load_extra('env') %}
@@ -354,7 +341,6 @@ Each template has a render phase that determines when it is processed:
 
          .. data.render::
             :on: parsed
-            :extra: doc env
 
             {% set doc = load_extra('doc') %}
             {% set env = load_extra('env') %}
@@ -378,7 +364,6 @@ Each template has a render phase that determines when it is processed:
 
          .. data.render::
             :on: resolving
-            :extra: doc env
 
             {% set doc = load_extra('doc') %}
             {% set env = load_extra('env') %}

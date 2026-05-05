@@ -110,6 +110,10 @@ comboroles_roles = {
 }
 
 extensions.append('sphinxnotes.project')
+
+import sphinxnotes.project.sphinxnotes_render_ext as project_render_ext
+for name in ('autoconfval', 'autoobj'):
+    project_render_ext.DATA_DEFINE_DIRECTIVES[name]['template'].pop('extra', None)
 primary_domain = 'any'
 
 # -- Eat your own dog food --------------------------------------------------

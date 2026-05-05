@@ -26,10 +26,8 @@ from .ctx import UnresolvedContext, ResolvedContext
 from .ctxnodes import pending_node
 from .extractx import (
     extra_context,
-    ParsingPhaseExtraContext,
-    ParsedPhaseExtraContext,
-    ResolvingPhaseExtraContext,
-    GlobalExtraContext,
+    ExtraContext,
+    ExtraContextRequest,
 )
 from .pipeline import BaseContextRole, BaseContextDirective
 from .sources import (
@@ -58,10 +56,8 @@ __all__ = [
     'Template',
     'UnresolvedContext',
     'ResolvedContext',
-    'ParsingPhaseExtraContext',
-    'ParsedPhaseExtraContext',
-    'ResolvingPhaseExtraContext',
-    'GlobalExtraContext',
+    'ExtraContext',
+    'ExtraContextRequest',
     'extra_context',
     'pending_node',
     'BaseContextRole',
