@@ -22,7 +22,7 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
-    from typing import Callable
+    from typing import Callable, Any
     from .markup import Host
     from .ctx import ResolvedContext
 

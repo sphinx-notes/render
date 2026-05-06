@@ -13,6 +13,7 @@ from sphinx.transforms.post_transforms import SphinxPostTransform, ReferencesRes
 from .template import HostWrapper, Phase, Template, Host
 from .ctx import UnresolvedContext, ResolvedContext
 from .ctxnodes import pending_node
+
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
 

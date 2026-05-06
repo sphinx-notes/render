@@ -7,6 +7,7 @@ from sphinx.util.docutils import SphinxDirective, SphinxRole
 from sphinx.transforms import SphinxTransform
 
 from .template import Phase
+
 if TYPE_CHECKING:
     from typing import Any
     from sphinx.environment import BuildEnvironment
@@ -58,6 +59,7 @@ class _ExtraContextRegistry:
 
     def get_names(self) -> set[str]:
         return set(self.ctxs.keys())
+
 
 _REGISTRY = _ExtraContextRegistry()
 
