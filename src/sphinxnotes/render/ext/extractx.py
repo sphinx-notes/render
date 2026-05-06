@@ -25,7 +25,6 @@ from ..utils.ctxproxy import proxy
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
-    from sphinx.environment import BuildEnvironment
 
 
 @extra_context('markup')

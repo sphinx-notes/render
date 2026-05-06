@@ -40,12 +40,11 @@ class Template:
     debug: bool = False
 
 
-#: Possible render host of :meth:`pending_node.render`.
-type Host = ParseHost | ResolveHost
-#: Host of source parse phase (Phase.Parsing, Phase.Parsed).
-type ParseHost = SphinxDirective | SphinxRole
-#: Host of source parse phase (Phase.Parsing, Phase.Parsed).
-type ResolveHost = SphinxTransform
+#: The Sphinx execution object associated with this render:
+#: a :py:class:`~sphinx.util.docutils.SphinxDirective` or
+#: :py:class:`~sphinx.util.docutils.SphinxRole` during :py:data:`Phase.Parsing`,
+#: or a :py:class:`~sphinx.transforms.SphinxTransform` during later phases.
+type Host = SphinxDirective | SphinxRole | SphinxTransform
 
 
 @dataclass

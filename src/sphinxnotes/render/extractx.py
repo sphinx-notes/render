@@ -79,7 +79,7 @@ def extra_context_names() -> set[str]:
     return _REGISTRY.get_names()
 
 
-def build_load_extra(request: ExtraContextRequest):
+def extra_context_loader(request: ExtraContextRequest):
     def load_extra(name: str) -> Any:
         ctx = _REGISTRY.get(name)
         if ctx is None:
