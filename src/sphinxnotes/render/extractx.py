@@ -90,6 +90,9 @@ def extra_context_loader(request: ExtraContextRequest):
                 f'Available: {sorted(extra_context_names())}'
             )
 
-        return ctx.generate(request)
+        try:
+            return ctx.generate(request)
+        except Exception as e:
+            raise ValueError(f'Failed to load extra context "{name}".') from e
 
     return load_extra

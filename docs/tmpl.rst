@@ -206,7 +206,7 @@ The following extra contexts are available:
          documents found.
 
 ``markup``
-   :Phase: parsing and later
+   :Phase: :term:`parsing` and later
 
    Information about the current directive or role invocation, such as its
    type, name, source text, and line number.
@@ -228,10 +228,10 @@ The following extra contexts are available:
             {% endfor %}
  
 ``section``
-   :Phase: parsing and later
+   :Phase: :term:`parsed` and :term:`resolving`
 
    A proxy to the current :py:class:`docutils.nodes.section` node, when one
-   exists.
+   exists. This extra context is not available during the parsing phase.
 
    .. example::
       :style: grid
@@ -242,7 +242,7 @@ The following extra contexts are available:
          "{{ load_extra('section').title }}"
 
 ``doc``
-   :Phase: parsing and later
+   :Phase: :term:`parsing` and later
 
    A proxy to the current :py:class:`docutils.notes.document` node.
 

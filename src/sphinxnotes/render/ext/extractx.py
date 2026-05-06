@@ -17,7 +17,7 @@ from sphinx.transforms import SphinxTransform
 
 from .. import meta, extra_context, ExtraContext
 from ..extractx import ExtraContextRequest
-from ..template import HostWrapper
+from ..template import HostWrapper, Phase
 
 # FIXME:
 from ..utils import find_current_section
@@ -56,16 +56,19 @@ class DocExtraContext(ExtraContext):
 class SectionExtraContext(ExtraContext):
     @override
     def generate(self, req: ExtraContextRequest) -> Any:
+        if req.phase == Phase.Parsing:
+            raise ValueError(
+                'Extra context "section" is not available at '
+                f'phase {req.phase}.'
+            )
         if req.node.parent is not None:
             parent = req.node.parent
         elif isinstance(req.host, SphinxDirective):
             parent = req.host.state.parent
         elif isinstance(req.host, SphinxRole):
             parent = req.host.inliner.parent
-        elif isinstance(req.host, SphinxTransform):
-            parent = req.host.document
         else:
-            parent = None
+            assert False
         return proxy(find_current_section(parent))
 
 
