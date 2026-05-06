@@ -4,7 +4,7 @@ from sphinxnotes.render.extractx import (
     ExtraContext,
     ExtraContextRequest,
     _REGISTRY,
-    build_load_extra,
+    extra_context_loader,
 )
 from sphinxnotes.render.template import Template
 from sphinxnotes.render.ctxnodes import pending_node
@@ -14,7 +14,7 @@ class CountingExtraContext(ExtraContext):
     def __init__(self) -> None:
         self.calls = 0
 
-    def generate(self, request):
+    def generate(self, req):
         self.calls += 1
         return self.calls
 
@@ -27,8 +27,8 @@ def test_extra_context_loader_does_not_cache_values():
     try:
         node = pending_node({}, Template(''))
         host = SimpleNamespace(env=SimpleNamespace())
-        request = ExtraContextRequest(Template('').phase, node, host.env, host)
-        load_extra = build_load_extra(request)
+        req = ExtraContextRequest(Template('').phase, node, host.env, host)
+        load_extra = extra_context_loader(req)
 
         assert load_extra(name) == 1
         assert load_extra(name) == 2

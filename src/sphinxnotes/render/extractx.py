@@ -32,7 +32,7 @@ class ExtraContext(ABC):
     """Base class of extra context."""
 
     @abstractmethod
-    def generate(self, request: ExtraContextRequest) -> Any: ...
+    def generate(self, req: ExtraContextRequest) -> Any: ...
 
 
 # ==========================

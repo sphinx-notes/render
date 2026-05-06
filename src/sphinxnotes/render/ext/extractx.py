@@ -30,11 +30,11 @@ if TYPE_CHECKING:
 @extra_context('markup')
 class MarkupExtraContext(ExtraContext):
     @override
-    def generate(self, request: ExtraContextRequest) -> Any:
-        host = request.host
+    def generate(self, req: ExtraContextRequest) -> Any:
+        host = req.host
         if not isinstance(host, (SphinxDirective, SphinxRole)):
             raise ValueError(
-                f'Extra context "markup" is not available at phase {request.phase}.'
+                f'Extra context "markup" is not available at phase {req.phase}.'
             )
         isdir = isinstance(host, SphinxDirective)
         return {
@@ -48,22 +48,22 @@ class MarkupExtraContext(ExtraContext):
 @extra_context('doc')
 class DocExtraContext(ExtraContext):
     @override
-    def generate(self, request: ExtraContextRequest) -> Any:
-        return proxy(HostWrapper(request.host).doctree)
+    def generate(self, req: ExtraContextRequest) -> Any:
+        return proxy(HostWrapper(req.host).doctree)
 
 
 @extra_context('section')
 class SectionExtraContext(ExtraContext):
     @override
-    def generate(self, request: ExtraContextRequest) -> Any:
-        if request.node.parent is not None:
-            parent = request.node.parent
-        elif isinstance(request.host, SphinxDirective):
-            parent = request.host.state.parent
-        elif isinstance(request.host, SphinxRole):
-            parent = request.host.inliner.parent
-        elif isinstance(request.host, SphinxTransform):
-            parent = request.host.document
+    def generate(self, req: ExtraContextRequest) -> Any:
+        if req.node.parent is not None:
+            parent = req.node.parent
+        elif isinstance(req.host, SphinxDirective):
+            parent = req.host.state.parent
+        elif isinstance(req.host, SphinxRole):
+            parent = req.host.inliner.parent
+        elif isinstance(req.host, SphinxTransform):
+            parent = req.host.document
         else:
             parent = None
         return proxy(find_current_section(parent))
@@ -72,15 +72,15 @@ class SectionExtraContext(ExtraContext):
 @extra_context('app')
 class SphinxAppExtraContext(ExtraContext):
     @override
-    def generate(self, request: ExtraContextRequest) -> Any:
-        return proxy(request.env.app)
+    def generate(self, req: ExtraContextRequest) -> Any:
+        return proxy(req.env.app)
 
 
 @extra_context('env')
 class SphinxBuildEnvExtraContext(ExtraContext):
     @override
-    def generate(self, request: ExtraContextRequest) -> Any:
-        return proxy(request.env)
+    def generate(self, req: ExtraContextRequest) -> Any:
+        return proxy(req.env)
 
 
 def setup(app: Sphinx):

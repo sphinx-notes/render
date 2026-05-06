@@ -11,7 +11,7 @@ from sphinxnotes.render import (
 
 @extra_context('cat')
 class CatExtraContext(ExtraContext):
-    def generate(self, request: ExtraContextRequest):
+    def generate(self, req: ExtraContextRequest):
         with open(path.join(path.dirname(__file__), 'cat.json')) as f:
             return json.loads(f.read())
 
