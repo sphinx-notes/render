@@ -64,7 +64,7 @@ class pending_node(nodes.Element):
 
         # Init hook lists.
         self._unresolved_context_hooks = []
-        self._resolved_data_hooks = []
+        self._resolved_context_hooks = []
         self._markup_text_hooks = []
         self._rendered_nodes_hooks = []
 
@@ -124,7 +124,7 @@ class pending_node(nodes.Element):
         else:
             ctx = self.ctx
 
-        for hook in self._resolved_data_hooks:
+        for hook in self._resolved_context_hooks:
             hook(self, ctx)
 
         report.text(f'Resolved context (type: {type(ctx)}):')
@@ -132,14 +132,16 @@ class pending_node(nodes.Element):
         report.text(f'Template (phase: {self.template.phase}):')
         report.code(self.template.text, lang='jinja')
 
+        extras = ExtraContextLoader(self, host)
+        report.text('Available extra context names:')
+        report.code(pformat(sorted(extras.names())), lang='python')
+
         # 2. Render the template and context to markup text.
         try:
-            extras = ExtraContextLoader(self, host)
-            report.text('Available extra context (just keys):')
-            report.code(pformat(sorted(extras.names())), lang='python')
             markup = TemplateRenderer(self.template.text).render(
                 ctx,
-                globals={'load_extra': extras.load},
+                globals_={'load_extra': extras.load},
+                debug=self.template.debug,
             )
         except Exception as e:
             report = err_report()
@@ -229,7 +231,7 @@ class pending_node(nodes.Element):
     type RenderedNodesHook = Callable[[pending_node, list[nodes.Node]], None]
 
     _unresolved_context_hooks: list[UnresolvedContextHook]
-    _resolved_data_hooks: list[ResolvedContextHook]
+    _resolved_context_hooks: list[ResolvedContextHook]
     _markup_text_hooks: list[MarkupTextHook]
     _rendered_nodes_hooks: list[RenderedNodesHook]
 
@@ -237,7 +239,7 @@ class pending_node(nodes.Element):
         self._unresolved_context_hooks.append(hook)
 
     def hook_resolved_context(self, hook: ResolvedContextHook) -> None:
-        self._resolved_data_hooks.append(hook)
+        self._resolved_context_hooks.append(hook)
 
     def hook_markup_text(self, hook: MarkupTextHook) -> None:
         self._markup_text_hooks.append(hook)

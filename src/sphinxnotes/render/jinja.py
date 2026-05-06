@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from typing import Any
     from sphinx.application import Sphinx
     from sphinx.environment import BuildEnvironment
+    from .ctx import ResolvedContext
 
 
 @dataclass
@@ -31,28 +32,21 @@ class TemplateRenderer:
 
     def render(
         self,
-        data: ParsedData | dict[str, Any],
-        globals: dict[str, Any] | None = None,
-        debug: Report | None = None,
+        data: ResolvedContext,
+        globals_: dict[str, Any] | None = None,
+        debug: bool = False,
     ) -> str:
-        if debug:
-            debug.text('Starting Jinja template rendering...')
-
-            debug.text('Data:')
-            debug.code(pformat(data), lang='python')
-
         # Convert data to context dict.
         if isinstance(data, ParsedData):
             ctx = data.asdict()
         elif isinstance(data, dict):
             ctx = data.copy()
 
-        if globals:
-            ctx.update(globals)
+        # Inject globals.
+        if globals_:
+            ctx.update(globals_)
 
-        text = self._render(ctx, debug=debug is not None)
-
-        return text
+        return self._render(ctx, debug=debug)
 
     def _render(self, ctx: dict[str, Any], debug: bool = False) -> str:
         extensions = [

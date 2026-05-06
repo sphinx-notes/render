@@ -56,14 +56,7 @@ _REGISTRY = _ExtraContextRegistry()
 
 
 def extra_context(name: str):
-    """Decorator to register an extra context.
-
-    Example::
-
-        @extra_context('doc')
-        class DocExtraContext(ExtraContext):
-            def generate(self, request):
-                return proxy(request.host.document)
+    """Decorator to register an :py:class:`ExtraContext`.
 
     :param name: The context name, used in templates via ``load_extra('name')``.
     """
