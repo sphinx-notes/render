@@ -10,7 +10,6 @@ Rendering Jinja2 template to markup text.
 
 from __future__ import annotations
 from dataclasses import dataclass
-from pprint import pformat
 from typing import TYPE_CHECKING, Callable, ClassVar, override
 
 from jinja2.sandbox import SandboxedEnvironment
@@ -23,6 +22,7 @@ if TYPE_CHECKING:
     from typing import Any
     from sphinx.application import Sphinx
     from sphinx.environment import BuildEnvironment
+    from .ctx import ResolvedContext
 
 
 @dataclass
@@ -31,41 +31,21 @@ class TemplateRenderer:
 
     def render(
         self,
-        data: ParsedData | dict[str, Any],
-        extra: dict[str, Any] | None = None,
-        debug: Report | None = None,
+        data: ResolvedContext,
+        globals: dict[str, Any] | None = None,
+        debug: bool = False,
     ) -> str:
-        if extra is None:
-            extra = {}
-        if debug:
-            debug.text('Starting Jinja template rendering...')
-
-            debug.text('Data:')
-            debug.code(pformat(data), lang='python')
-            debug.text('Available extra context (just keys):')
-            debug.code(pformat(list(extra.keys())), lang='python')
-
         # Convert data to context dict.
         if isinstance(data, ParsedData):
             ctx = data.asdict()
         elif isinstance(data, dict):
             ctx = data.copy()
 
-        # Inject load_extra() function for accessing extra context.
-        # TODO: move to extractx.py
-        def load_extra(name: str):
-            if name not in extra:
-                raise ValueError(
-                    f'Extra context "{name}" is not available. '
-                    f'Available: {list(extra.keys())}'
-                )
-            return extra[name]
+        # Inject globals.
+        if globals:
+            ctx.update(globals)
 
-        ctx['load_extra'] = load_extra
-
-        text = self._render(ctx, debug=debug is not None)
-
-        return text
+        return self._render(ctx, debug=debug)
 
     def _render(self, ctx: dict[str, Any], debug: bool = False) -> str:
         extensions = [

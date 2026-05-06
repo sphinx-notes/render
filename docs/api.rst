@@ -92,24 +92,16 @@ Extra Context
 =============
 
 See :doc:`tmpl` for built-in extra-context names such as ``doc`` and
-``sphinx``, plus usage examples.
+``env``, plus usage examples.
 
 .. autodecorator:: sphinxnotes.render.extra_context
 
-.. autoclass:: sphinxnotes.render.ParsingPhaseExtraContext
-   :members: phase, generate
+.. autoclass:: sphinxnotes.render.ExtraContext
+   :members: generate
    :undoc-members:
 
-.. autoclass:: sphinxnotes.render.ParsedPhaseExtraContext
-   :members: phase, generate
-   :undoc-members:
-
-.. autoclass:: sphinxnotes.render.ResolvingPhaseExtraContext
-   :members: phase, generate
-   :undoc-members:
-
-.. autoclass:: sphinxnotes.render.GlobalExtraContext
-   :members: phase, generate
+.. autoclass:: sphinxnotes.render.ExtraContextRequest
+   :members:
    :undoc-members:
 
 Filters

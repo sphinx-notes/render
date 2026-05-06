@@ -12,6 +12,7 @@ from .ctx import (
     UnresolvedContext,
     ResolvedContext,
 )
+from .extractx import ExtraContextRequest, extra_context_loader, extra_context_names
 from .markup import MarkupRenderer
 from .jinja import TemplateRenderer
 from .utils import (
@@ -21,7 +22,7 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
-    from typing import Any, Callable
+    from typing import Callable, Any
     from .markup import Host
     from .ctx import ResolvedContext
 
@@ -31,8 +32,6 @@ class pending_node(nodes.Element):
 
     # The context to be rendered by Jinja template.
     ctx: UnresolvedContext | ResolvedContext
-    # The extra context as supplement to ctx.
-    extra: dict[str, Any]
     #: Jinja template for rendering the context.
     template: Template
     #: Whether rendering to inline nodes.
@@ -59,14 +58,13 @@ class pending_node(nodes.Element):
             except Exception as exc:
                 self._ctx_pickle_error = exc
         self.ctx = ctx
-        self.extra = {}
         self.template = tmpl
         self.inline = inline
         self.rendered = False
 
         # Init hook lists.
         self._unresolved_context_hooks = []
-        self._resolved_data_hooks = []
+        self._resolved_context_hooks = []
         self._markup_text_hooks = []
         self._rendered_nodes_hooks = []
 
@@ -126,19 +124,25 @@ class pending_node(nodes.Element):
         else:
             ctx = self.ctx
 
-        for hook in self._resolved_data_hooks:
+        for hook in self._resolved_context_hooks:
             hook(self, ctx)
 
         report.text(f'Resolved context (type: {type(ctx)}):')
         report.code(pformat(ctx), lang='python')
-        report.text('Extra context (only keys):')
-        report.code(pformat(list(self.extra.keys())), lang='python')
         report.text(f'Template (phase: {self.template.phase}):')
         report.code(self.template.text, lang='jinja')
 
+        extractx_req = ExtraContextRequest(self.template.phase, self, host.env, host)
+        report.text('Available extra context names:')
+        report.code(pformat(sorted(extra_context_names())), lang='python')
+
         # 2. Render the template and context to markup text.
         try:
-            markup = TemplateRenderer(self.template.text).render(ctx, extra=self.extra)
+            markup = TemplateRenderer(self.template.text).render(
+                ctx,
+                globals={'load_extra': extra_context_loader(extractx_req)},
+                debug=self.template.debug,
+            )
         except Exception as e:
             report = err_report()
             report.text('Failed to render Jinja template:')
@@ -227,7 +231,7 @@ class pending_node(nodes.Element):
     type RenderedNodesHook = Callable[[pending_node, list[nodes.Node]], None]
 
     _unresolved_context_hooks: list[UnresolvedContextHook]
-    _resolved_data_hooks: list[ResolvedContextHook]
+    _resolved_context_hooks: list[ResolvedContextHook]
     _markup_text_hooks: list[MarkupTextHook]
     _rendered_nodes_hooks: list[RenderedNodesHook]
 
@@ -235,7 +239,7 @@ class pending_node(nodes.Element):
         self._unresolved_context_hooks.append(hook)
 
     def hook_resolved_context(self, hook: ResolvedContextHook) -> None:
-        self._resolved_data_hooks.append(hook)
+        self._resolved_context_hooks.append(hook)
 
     def hook_markup_text(self, hook: MarkupTextHook) -> None:
         self._markup_text_hooks.append(hook)

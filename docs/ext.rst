@@ -69,11 +69,8 @@ Extending Extra Contexts
 Extra contexts are registered by a
 :py:deco:`sphinxnotes.render.extra_context` class decorator.
 
-The decorated class must be one of the following classes:
-:py:class:`~sphinxnotes.render.ParsingPhaseExtraContext`,
-:py:class:`~sphinxnotes.render.ParsedPhaseExtraContext`,
-:py:class:`~sphinxnotes.render.ResolvingPhaseExtraContext`,
-:py:class:`~sphinxnotes.render.GlobalExtraContext`.
+The decorated class must be a subclass of
+:py:class:`~sphinxnotes.render.ExtraContext`.
 
 .. literalinclude:: ../tests/roots/test-extra-context/conf.py
    :language: python
@@ -88,7 +85,6 @@ The decorated class must be one of the following classes:
    :style: grid
 
    .. data.render::
-      :extra: cat
 
       {{ load_extra('cat').name }}
 
