@@ -33,7 +33,7 @@ class TemplateRenderer:
     def render(
         self,
         data: ResolvedContext,
-        globals_: dict[str, Any] | None = None,
+        globals: dict[str, Any] | None = None,
         debug: bool = False,
     ) -> str:
         # Convert data to context dict.
@@ -43,8 +43,8 @@ class TemplateRenderer:
             ctx = data.copy()
 
         # Inject globals.
-        if globals_:
-            ctx.update(globals_)
+        if globals:
+            ctx.update(globals)
 
         return self._render(ctx, debug=debug)
 

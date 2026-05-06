@@ -15,9 +15,13 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class ExtraContextRequest:
+    #: The render phase of the current template.
     phase: Phase
+    #: The pending node being rendered.
     node: pending_node
+    #: The current Sphinx build environment.
     env: BuildEnvironment
+    #: The current render host.
     host: SphinxDirective | SphinxRole | SphinxTransform
 
 
@@ -68,39 +72,19 @@ def extra_context(name: str):
     return decorator
 
 
-# ========================
-# Extra Context Generation
-# ========================
+def extra_context_names() -> set[str]:
+    return _REGISTRY.get_names()
 
 
-class ExtraContextLoader:
-    node: pending_node
-    request: ExtraContextRequest
-    cache: dict[str, Any]
-
-    def __init__(
-        self,
-        node: pending_node,
-        host: SphinxDirective | SphinxRole | SphinxTransform,
-    ) -> None:
-        self.node = node
-        self.request = ExtraContextRequest(node.template.phase, node, host.env, host)
-        self.cache = {}
-
-    def names(self) -> set[str]:
-        return _REGISTRY.get_names()
-
-    def load(self, name: str) -> Any:
-        if name in self.cache:
-            return self.cache[name]
-
+def build_load_extra(request: ExtraContextRequest):
+    def load_extra(name: str) -> Any:
         ctx = _REGISTRY.get(name)
         if ctx is None:
             raise ValueError(
                 f'Extra context "{name}" is not registered. '
-                f'Available: {sorted(self.names())}'
+                f'Available: {sorted(extra_context_names())}'
             )
 
-        value = ctx.generate(self.request)
-        self.cache[name] = value
-        return value
+        return ctx.generate(request)
+
+    return load_extra

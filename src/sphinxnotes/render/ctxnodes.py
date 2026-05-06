@@ -12,7 +12,7 @@ from .ctx import (
     UnresolvedContext,
     ResolvedContext,
 )
-from .extractx import ExtraContextLoader
+from .extractx import ExtraContextRequest, build_load_extra, extra_context_names
 from .markup import MarkupRenderer
 from .jinja import TemplateRenderer
 from .utils import (
@@ -132,15 +132,15 @@ class pending_node(nodes.Element):
         report.text(f'Template (phase: {self.template.phase}):')
         report.code(self.template.text, lang='jinja')
 
-        extras = ExtraContextLoader(self, host)
+        extra_request = ExtraContextRequest(self.template.phase, self, host.env, host)
         report.text('Available extra context names:')
-        report.code(pformat(sorted(extras.names())), lang='python')
+        report.code(pformat(sorted(extra_context_names())), lang='python')
 
         # 2. Render the template and context to markup text.
         try:
             markup = TemplateRenderer(self.template.text).render(
                 ctx,
-                globals_={'load_extra': extras.load},
+                globals={'load_extra': build_load_extra(extra_request)},
                 debug=self.template.debug,
             )
         except Exception as e:
