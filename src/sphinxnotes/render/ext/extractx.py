@@ -13,7 +13,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, override, Any
 
 from sphinx.util.docutils import SphinxDirective, SphinxRole
-from sphinx.transforms import SphinxTransform
 
 from .. import meta, extra_context, ExtraContext
 from ..extractx import ExtraContextRequest
@@ -58,8 +57,7 @@ class SectionExtraContext(ExtraContext):
     def generate(self, req: ExtraContextRequest) -> Any:
         if req.phase == Phase.Parsing:
             raise ValueError(
-                'Extra context "section" is not available at '
-                f'phase {req.phase}.'
+                f'Extra context "section" is not available at phase {req.phase}.'
             )
         if req.node.parent is not None:
             parent = req.node.parent
