@@ -21,7 +21,10 @@ class ExtraContextRequest:
     node: pending_node
     #: The current Sphinx build environment.
     env: BuildEnvironment
-    #: The current render host.
+    #: The Sphinx execution object associated with this render:
+    #: a :py:class:`~sphinx.util.docutils.SphinxDirective` or
+    #: :py:class:`~sphinx.util.docutils.SphinxRole` during :py:data:`Phase.Parsing`,
+    #: or a :py:class:`~sphinx.transforms.SphinxTransform` during later phases.
     host: SphinxDirective | SphinxRole | SphinxTransform
 
 
