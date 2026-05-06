@@ -32,8 +32,7 @@ class TemplateRenderer:
     def render(
         self,
         data: ParsedData | dict[str, Any],
-        load_extra: Callable[[str], Any] | None = None,
-        extra_names: list[str] | None = None,
+        globals: dict[str, Any] | None = None,
         debug: Report | None = None,
     ) -> str:
         if debug:
@@ -41,8 +40,6 @@ class TemplateRenderer:
 
             debug.text('Data:')
             debug.code(pformat(data), lang='python')
-            debug.text('Available extra context (just keys):')
-            debug.code(pformat(extra_names or []), lang='python')
 
         # Convert data to context dict.
         if isinstance(data, ParsedData):
@@ -50,16 +47,8 @@ class TemplateRenderer:
         elif isinstance(data, dict):
             ctx = data.copy()
 
-        # Inject load_extra() function for accessing extra context.
-        # TODO: move to extractx.py
-        def _load_extra(name: str):
-            if load_extra is None:
-                raise ValueError(
-                    'Extra context loading is not available in this template render.'
-                )
-            return load_extra(name)
-
-        ctx['load_extra'] = _load_extra
+        if globals:
+            ctx.update(globals)
 
         text = self._render(ctx, debug=debug is not None)
 

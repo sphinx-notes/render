@@ -12,7 +12,7 @@ from .ctx import (
     UnresolvedContext,
     ResolvedContext,
 )
-from .extractx import ExtraContextGenerator
+from .extractx import ExtraContextLoader
 from .markup import MarkupRenderer
 from .jinja import TemplateRenderer
 from .utils import (
@@ -134,13 +134,12 @@ class pending_node(nodes.Element):
 
         # 2. Render the template and context to markup text.
         try:
-            extras = ExtraContextGenerator(self, host)
+            extras = ExtraContextLoader(self, host)
             report.text('Available extra context (just keys):')
             report.code(pformat(sorted(extras.names())), lang='python')
             markup = TemplateRenderer(self.template.text).render(
                 ctx,
-                load_extra=extras.load,
-                extra_names=sorted(extras.names()),
+                globals={'load_extra': extras.load},
             )
         except Exception as e:
             report = err_report()

@@ -80,7 +80,7 @@ def extra_context(name: str):
 # ========================
 
 
-class ExtraContextGenerator:
+class ExtraContextLoader:
     node: pending_node
     request: ExtraContextRequest
     cache: dict[str, Any]
