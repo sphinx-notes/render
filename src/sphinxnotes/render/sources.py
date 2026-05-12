@@ -9,7 +9,7 @@ This module provides helpful BaseContextSource subclasses.
 """
 
 from __future__ import annotations
-from typing import final, override
+from typing import TYPE_CHECKING, final, override
 from abc import abstractmethod
 from dataclasses import dataclass
 
@@ -19,6 +19,9 @@ from .data import Field, RawData, Schema
 from .ctx import UnresolvedContext, ResolvedContext
 from .template import Template
 from .pipeline import BaseContextSource, BaseContextDirective, BaseContextRole
+
+if TYPE_CHECKING:
+    from sphinx.environment import BuildEnvironment
 
 
 @dataclass
@@ -32,7 +35,7 @@ class UnparsedData(UnresolvedContext):
     schema: Schema
 
     @override
-    def resolve(self) -> ResolvedContext:
+    def resolve(self, env: BuildEnvironment) -> ResolvedContext:
         return self.schema.parse(self.raw)
 
     @override
