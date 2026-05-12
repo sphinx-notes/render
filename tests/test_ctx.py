@@ -1,4 +1,5 @@
 import pickle
+from unittest.mock import MagicMock
 
 from sphinxnotes.render.data import RawData, Schema
 from sphinxnotes.render.sources import UnparsedData
@@ -17,6 +18,7 @@ def test_schema_and_unparsed_data_are_picklable():
 
     restored = pickle.loads(pickle.dumps(pending))
 
-    assert restored.resolve().name == 'mimi'
-    assert restored.resolve().attrs == {'age': 2, 'tags': ['cat', 'cute']}
-    assert restored.resolve().content == 'hello'
+    mock_env = MagicMock()
+    assert restored.resolve(mock_env).name == 'mimi'
+    assert restored.resolve(mock_env).attrs == {'age': 2, 'tags': ['cat', 'cute']}
+    assert restored.resolve(mock_env).content == 'hello'

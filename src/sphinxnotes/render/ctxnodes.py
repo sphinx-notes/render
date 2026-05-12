@@ -114,7 +114,7 @@ class pending_node(nodes.Element):
                 hook(self, pdata)
 
             try:
-                ctx = self.ctx = pdata.resolve()
+                ctx = self.ctx = pdata.resolve(host.env)
             except Exception as e:
                 report = err_report()
                 report.text('Failed to resolve unresolved context:')
