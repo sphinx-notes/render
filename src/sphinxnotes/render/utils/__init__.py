@@ -1,7 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, TypeVar, cast
-import pickle
 import traceback
 
 from docutils import nodes
@@ -198,14 +197,3 @@ class Reporter:
 
     def clear_empty(self) -> list[Report]:
         return self.clear(lambda x: x.empty())
-
-
-class Unpicklable:
-    """
-    Make objects unpickable to prevent them from being stored in the
-    on-disk doctree.
-    """
-
-    def __reduce_ex__(self, protocol):
-        # Prevent pickling explicitly
-        raise pickle.PicklingError(f'{type(self)} is unpicklable')
