@@ -11,6 +11,10 @@ sphinx-last-updated-by-git
 sphinxnotes-project
 sphinxnotes-comboroles
 
+# NOTE: Not used by docs (docs import extension from ../src),
+# only to resolve its optional dependencies.
+sphinxnotes-render
+
 # CUSTOM DOCS DEPENDENCIES START
 schema # python dict schema validation
 # CUSTOM DOCS DEPENDENCIES END
