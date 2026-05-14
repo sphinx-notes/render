@@ -70,7 +70,10 @@ Extra contexts are registered by a
 :py:deco:`sphinxnotes.render.extra_context` class decorator.
 
 The decorated class must be a subclass of
-:py:class:`~sphinxnotes.render.ExtraContext`.
+:py:class:`~sphinxnotes.render.ExtraContext`. The ``generate()`` method
+accepts the ``ExtraContextRequest`` as the first argument, plus any
+positional and keyword arguments passed by the template via
+``load_extra()``.
 
 .. literalinclude:: ../tests/roots/test-extra-context/conf.py
    :language: python
@@ -87,6 +90,24 @@ The decorated class must be a subclass of
    .. data.render::
 
       {{ load_extra('cat').name }}
+
+To accept custom parameters in your extra context, add ``*args`` and
+``**kwargs`` to the ``generate()`` method signature:
+
+.. literalinclude:: ../tests/roots/test-extra-context-params/conf.py
+   :language: python
+   :start-after: [literalinclude start]
+   :end-before: [literalinclude end]
+
+.. example::
+   :style: grid
+
+   .. data.render::
+
+      {% set docs = load_extra('all_docs', 3) %}
+      {% for doc in docs %}
+      - :doc:`{{ doc }}`
+      {% endfor %}
 
 .. _ext-filters:
 

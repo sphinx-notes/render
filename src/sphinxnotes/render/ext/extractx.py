@@ -32,9 +32,7 @@ class MarkupExtraContext(ExtraContext):
     def generate(self, req: ExtraContextRequest) -> Any:
         host = req.host
         if not isinstance(host, (SphinxDirective, SphinxRole)):
-            raise ValueError(
-                f'Extra context "markup" is not available at phase {req.phase}.'
-            )
+            raise ValueError(f'Not available at phase {req.phase}')
         isdir = isinstance(host, SphinxDirective)
         return {
             'type': 'directive' if isdir else 'role',
@@ -56,9 +54,7 @@ class SectionExtraContext(ExtraContext):
     @override
     def generate(self, req: ExtraContextRequest) -> Any:
         if req.phase == Phase.Parsing:
-            raise ValueError(
-                f'Extra context "section" is not available at phase {req.phase}.'
-            )
+            raise ValueError(f'Not available at phase {req.phase}')
         if req.node.parent is not None:
             parent = req.node.parent
         elif isinstance(req.host, SphinxDirective):

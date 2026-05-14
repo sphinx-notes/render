@@ -33,7 +33,7 @@ class ExtraContext(ABC):
     """Base class of extra context."""
 
     @abstractmethod
-    def generate(self, req: ExtraContextRequest) -> Any: ...
+    def generate(self, req: ExtraContextRequest, *args, **kwargs) -> Any: ...
 
 
 # ==========================
@@ -82,7 +82,7 @@ def extra_context_names() -> set[str]:
 
 
 def extra_context_loader(request: ExtraContextRequest):
-    def load_extra(name: str) -> Any:
+    def load_extra(name: str, *args, **kwargs) -> Any:
         ctx = _REGISTRY.get(name)
         if ctx is None:
             raise ValueError(
@@ -91,7 +91,7 @@ def extra_context_loader(request: ExtraContextRequest):
             )
 
         try:
-            return ctx.generate(request)
+            return ctx.generate(request, *args, **kwargs)
         except Exception as e:
             raise ValueError(f'Failed to load extra context "{name}".') from e
 

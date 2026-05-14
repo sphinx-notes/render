@@ -164,6 +164,7 @@ def setup(app):
 
     sys.path.insert(0, test_roots)
     __import__('test-extra-context.conf').conf.setup(app)
+    __import__('test-extra-context-params.conf').conf.setup(app)
     __import__('test-base-context-directive-example.conf').conf.setup(app)
     __import__('test-base-data-define-directive-example.conf').conf.setup(app)
     __import__('test-strict-data-define-directive-example.conf').conf.setup(app)
