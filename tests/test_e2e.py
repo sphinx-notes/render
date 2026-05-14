@@ -65,7 +65,8 @@ def test_extra_context_params(app, status, warning):
 
     html = (app.outdir / 'index.html').read_text(encoding='utf-8')
 
-    assert '3' in html
+    assert '[&#39;index&#39;]' in html
+
 
 
 @pytest.mark.sphinx('html', testroot='extra-context-rebuild')

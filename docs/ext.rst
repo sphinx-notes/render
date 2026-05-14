@@ -106,7 +106,7 @@ To accept custom parameters in your extra context, add ``*args`` and
 
       {% set docs = load_extra('all_docs', 3) %}
       {% for doc in docs %}
-      - {{ doc }}
+      - :doc:`{{ doc }}`
       {% endfor %}
 
 .. _ext-filters:
