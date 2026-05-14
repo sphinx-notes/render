@@ -153,15 +153,19 @@ extension defines the schema through the :rst:dir:`data.schema` directive or
 Extra Context
 -------------
 
-Extra context provides access to pre-prepared structured data from external
-sources (such as Sphinx application, JSON file, and etc.). Unlike main context
-which comes from the directive/role itself, extra context lets you fetch data
-that was prepared beforehand.
+.. glossary::
 
-Extra contexts are generated on demand. Load them in the template using the
-``load_extra()`` function. You can also pass positional and keyword arguments
-to ``load_extra()``, which are forwarded to the extra context's
-``generate()`` method.
+   Extra Context
+      Extra context provides access to pre-prepared structured data from external
+      sources (such as Sphinx application, JSON file, and etc.). Unlike main context
+      which comes from the directive/role itself, extra context lets you fetch data
+      that was prepared beforehand.
+
+   ``load_extra``
+      Extra contexts are generated on demand. Load them in the template using the
+      ``load_extra()`` function. You can also pass positional and keyword arguments
+      to ``load_extra()``, which are forwarded to the extra context's
+      ``generate()`` method.
 
 .. example::
    :style: grid
@@ -275,35 +279,37 @@ following filters:
 
 __ https://jinja.palletsprojects.com/en/stable/templates/#builtin-filters
 
-``roles``
-   Produces role markup from a sequence of strings.
+.. glossary::
 
-   .. example::
-      :style: grid
+   ``roles``
+      Produces role markup from a sequence of strings.
 
-      .. data.render::
+      .. example::
+         :style: grid
 
-         {%
-         set text = ['index', 'usage']
-                    | roles('doc')
-                    | join(', ')
-         %}
+         .. data.render::
 
-         :Text: ``{{ text }}``
-         :Rendered: {{ text }}
+            {%
+            set text = ['index', 'usage']
+                       | roles('doc')
+                       | join(', ')
+            %}
 
-``jsonify``
-   Convert value to JSON.
+            :Text: ``{{ text }}``
+            :Rendered: {{ text }}
 
-   .. example::
-      :style: grid
+   ``jsonify``
+      Convert value to JSON.
 
-      .. data.render::
+      .. example::
+         :style: grid
 
-         {% set text = {'name': 'mimi'} %}
+         .. data.render::
 
-         :Strify: ``{{ text }}``
-         :JSONify: ``{{ text | jsonify | replace('\n', '')}}``
+            {% set text = {'name': 'mimi'} %}
+
+            :Strify: ``{{ text }}``
+            :JSONify: ``{{ text | jsonify | replace('\n', '')}}``
 
 .. seealso:: :ref:`ext-filters`
 
