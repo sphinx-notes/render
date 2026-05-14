@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 @extra_context('markup')
 class MarkupExtraContext(ExtraContext):
     @override
-    def generate(self, req: ExtraContextRequest) -> Any:
+    def generate(self, req: ExtraContextRequest, *args, **kwargs) -> Any:
         host = req.host
         if not isinstance(host, (SphinxDirective, SphinxRole)):
             raise ValueError(
@@ -47,14 +47,14 @@ class MarkupExtraContext(ExtraContext):
 @extra_context('doc')
 class DocExtraContext(ExtraContext):
     @override
-    def generate(self, req: ExtraContextRequest) -> Any:
+    def generate(self, req: ExtraContextRequest, *args, **kwargs) -> Any:
         return proxy(HostWrapper(req.host).doctree)
 
 
 @extra_context('section')
 class SectionExtraContext(ExtraContext):
     @override
-    def generate(self, req: ExtraContextRequest) -> Any:
+    def generate(self, req: ExtraContextRequest, *args, **kwargs) -> Any:
         if req.phase == Phase.Parsing:
             raise ValueError(
                 f'Extra context "section" is not available at phase {req.phase}.'
@@ -73,14 +73,14 @@ class SectionExtraContext(ExtraContext):
 @extra_context('app')
 class SphinxAppExtraContext(ExtraContext):
     @override
-    def generate(self, req: ExtraContextRequest) -> Any:
+    def generate(self, req: ExtraContextRequest, *args, **kwargs) -> Any:
         return proxy(req.env.app)
 
 
 @extra_context('env')
 class SphinxBuildEnvExtraContext(ExtraContext):
     @override
-    def generate(self, req: ExtraContextRequest) -> Any:
+    def generate(self, req: ExtraContextRequest, *args, **kwargs) -> Any:
         return proxy(req.env)
 
 

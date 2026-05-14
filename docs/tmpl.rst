@@ -159,7 +159,9 @@ which comes from the directive/role itself, extra context lets you fetch data
 that was prepared beforehand.
 
 Extra contexts are generated on demand. Load them in the template using the
-``load_extra()`` function.
+``load_extra()`` function. You can also pass positional and keyword arguments
+to ``load_extra()``, which are forwarded to the extra context's
+``generate()`` method.
 
 .. example::
    :style: grid
@@ -169,6 +171,12 @@ Extra contexts are generated on demand. Load them in the template using the
       {% set doc = load_extra('doc') %}
 
       Document Title: "{{ doc.title }}"
+
+   .. data.render::
+
+      {% set docs = load_extra('all_docs', count=3) %}
+
+      {{ docs | join(', ') }}
 
 Built-in Extra Contexts
 ~~~~~~~~~~~~~~~~~~~~~~~

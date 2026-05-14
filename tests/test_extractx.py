@@ -14,7 +14,7 @@ class CountingExtraContext(ExtraContext):
     def __init__(self) -> None:
         self.calls = 0
 
-    def generate(self, req):
+    def generate(self, req, *args, **kwargs):
         self.calls += 1
         return self.calls
 
@@ -32,5 +32,26 @@ def test_extra_context_loader_does_not_cache_values():
 
         assert load_extra(name) == 1
         assert load_extra(name) == 2
+    finally:
+        _REGISTRY.ctxs.pop(name, None)
+
+
+class ParamExtraContext(ExtraContext):
+    def generate(self, req, *args, **kwargs):
+        return {'args': args, 'kwargs': kwargs}
+
+
+def test_extra_context_loader_passes_parameters():
+    name = 'test_params'
+    _REGISTRY.register(name, ParamExtraContext())
+
+    try:
+        node = pending_node({}, Template(''))
+        host = SimpleNamespace(env=SimpleNamespace())
+        req = ExtraContextRequest(Template('').phase, node, host.env, host)
+        load_extra = extra_context_loader(req)
+
+        result = load_extra(name, 10, limit=20)
+        assert result == {'args': (10,), 'kwargs': {'limit': 20}}
     finally:
         _REGISTRY.ctxs.pop(name, None)

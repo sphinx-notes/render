@@ -1,7 +1,4 @@
 # [literalinclude start]
-from os import path
-import json
-
 from sphinxnotes.render import (
     extra_context,
     ExtraContext,
@@ -9,15 +6,14 @@ from sphinxnotes.render import (
 )
 
 
-@extra_context('cat')
-class CatExtraContext(ExtraContext):
+@extra_context('all_docs')
+class AllDocsExtraContext(ExtraContext):
     def generate(self, req: ExtraContextRequest, *args, **kwargs):
-        with open(path.join(path.dirname(__file__), 'cat.json')) as f:
-            return json.loads(f.read())
+        count = args[0] if args else kwargs.get('count', 5)
+        return sorted(req.env.all_docs.keys())[:count]
 
 
 # [literalinclude end]
-
 
 extensions = ['sphinxnotes.render.ext']
 
