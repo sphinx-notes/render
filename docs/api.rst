@@ -18,22 +18,22 @@ Base Role Classes
 
 .. autoclass:: sphinxnotes.render.BaseContextRole
    :show-inheritance:
-   :members: process_pending_node, queue_pending_node, queue_context, current_context, current_template
+   :members: process_pending_node, queue_pending_node, current_context, current_template
 
 .. autoclass:: sphinxnotes.render.BaseDataDefineRole
    :show-inheritance:
-   :members: process_pending_node, queue_pending_node, queue_context, current_schema, current_template
+   :members: process_pending_node, queue_pending_node, current_schema, current_template
 
 Base Directive Classes
 ----------------------
 
 .. autoclass:: sphinxnotes.render.BaseContextDirective
    :show-inheritance:
-   :members: process_pending_node, queue_pending_node, queue_context, current_raw_data, current_context, current_template
+   :members: process_pending_node, queue_pending_node, current_raw_data, current_context, current_template
 
 .. autoclass:: sphinxnotes.render.BaseDataDefineDirective
    :show-inheritance:
-   :members: process_pending_node, queue_pending_node, queue_context, current_raw_data, current_schema, current_template
+   :members: process_pending_node, queue_pending_node, current_raw_data, current_schema, current_template
 
 .. autoclass:: sphinxnotes.render.StrictDataDefineDirective
    :show-inheritance:

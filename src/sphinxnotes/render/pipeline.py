@@ -80,15 +80,6 @@ class Pipeline(ABC):
         self._q.append(n)
 
     @final
-    def queue_context(
-        self, ctx: UnresolvedContext | ResolvedContext, tmpl: Template
-    ) -> pending_node:
-        """A helper method for ``queue_pending_node``."""
-        pending = pending_node(ctx, tmpl)
-        self.queue_pending_node(pending)
-        return pending
-
-    @final
     def render_queue(self) -> list[pending_node]:
         """
         Try rendering all pending nodes in queue.
@@ -196,7 +187,10 @@ class BaseContextDirective(BaseContextSource, SphinxDirective):
     @final
     @override
     def run(self) -> list[nodes.Node]:
-        self.queue_context(self.current_context(), self.current_template())
+        pending = pending_node(
+            self.current_context(), self.current_template(), rawsource=self.block_text
+        )
+        self.queue_pending_node(pending)
 
         ns = []
         for x in self.render_queue():
@@ -216,16 +210,16 @@ class BaseContextRole(BaseContextSource, SphinxRole):
     to provide the constructor parameters of ``pending_node``.
     """
 
-    @override
-    def process_pending_node(self, n: pending_node) -> bool:
-        n.inline = True
-        return super().process_pending_node(n)
-
     @final
     @override
     def run(self) -> tuple[list[nodes.Node], list[nodes.system_message]]:
-        pending = self.queue_context(self.current_context(), self.current_template())
-        pending.inline = True
+        pending = pending_node(
+            self.current_context(),
+            self.current_template(),
+            rawsource=self.rawtext,
+            inline=True,
+        )
+        self.queue_pending_node(pending)
 
         ns, msgs = [], []
         for n in self.render_queue():
