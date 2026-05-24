@@ -6,7 +6,6 @@ from pprint import pformat
 from docutils import nodes
 from docutils.parsers.rst.states import Inliner
 
-from .data import ValueWrapper, ParsedData
 from .template import Template, Phase
 from .ctx import (
     UnresolvedContext,
