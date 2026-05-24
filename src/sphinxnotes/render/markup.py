@@ -13,10 +13,11 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from docutils import nodes
+from docutils.frontend import Values  # pyright: ignore[reportDeprecated]
 from docutils.parsers.rst.states import Struct
-from docutils.utils import new_document
 from sphinx import version_info
-from sphinx.util.docutils import SphinxDirective, SphinxRole
+from sphinx.util import logging
+from sphinx.util.docutils import SphinxDirective, SphinxRole, new_document
 from sphinx.transforms import SphinxTransform
 from sphinx.environment.collectors.asset import ImageCollector
 
@@ -24,6 +25,9 @@ from .template import Host
 
 if TYPE_CHECKING:
     from docutils.nodes import Node, system_message
+    from sphinx.parsers import Parser as SphinxParser
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -51,8 +55,7 @@ class MarkupRenderer:
                 parser = self.host.app.registry.create_source_parser(
                     self.host.app, 'rst'
                 )
-            settings = self.host.document.settings
-            doc = new_document('<generated text>', settings=settings)
+            doc = new_document(self.host.env.docname, settings=self._get_settings(parser, self.host.document))
             parser.parse(text, doc)
 
             # NOTE: Nodes produced by standalone source parser should be fixed
@@ -74,7 +77,6 @@ class MarkupRenderer:
                 reporter=inliner.reporter,
                 language=inliner.language,
             )
-
             return inliner.parse(text, self.host.lineno, memo, inliner.parent)
         elif isinstance(self.host, SphinxTransform):
             # Fallback to normal non-inline render then extract inline
@@ -120,3 +122,17 @@ class MarkupRenderer:
 
         # Update `node['uri']` to a relative path from srcdir.
         node['uri'], _ = self.host.env.relfn2path(node['uri'])
+
+    def _get_settings(self, parser: SphinxParser, doctree: nodes.document) -> Values:
+        settings = None
+        if version_info[0] >= 9:
+            try:
+                from sphinx.util.docutils import _get_settings
+                settings = _get_settings(parser,
+                    defaults=self.host.env.settings, read_config_files=True
+                )
+            except Exception as e:
+                logger.warning(
+                    f'Failed to get settings from sphinx.util.docutils._get_settings: {e}'
+                )
+        return settings or doctree.settings

@@ -6,7 +6,6 @@ from pprint import pformat
 from docutils import nodes
 from docutils.parsers.rst.states import Inliner
 
-from .data import ValueWrapper, ParsedData
 from .template import Template, Phase
 from .ctx import (
     UnresolvedContext,
@@ -252,27 +251,16 @@ class pending_node(nodes.Element):
     @override
     def copy(self) -> Any:
         # NOTE: pending_node is no supposed to be copy as it does not make sense.
-        #
-        # For example: ablog extension may copy this node.
         if self.inline:
-            return nodes.Text('')
+            return nodes.literal(self.rawsource, self.rawsource)
         else:
-            return nodes.paragraph()
+            return nodes.literal_block(self.rawsource, self.rawsource)
 
     @override
     def deepcopy(self) -> Any:
-        # NOTE: Same to :meth:`copy`.
+        # NOTE: Copy children is not allowed, so simply forward to self.copy.
         return self.copy()
 
     @override
     def astext(self) -> str:
-        ctx = self.ctx
-        if isinstance(ctx, UnresolvedContext):
-            try:
-                ctx = ctx.resolve()
-            except Exception:
-                return ''
-        if isinstance(ctx, ParsedData):
-            return ValueWrapper(ctx.content).as_str() or ''
-        else:
-            return ''
+        return self.rawsource
