@@ -123,11 +123,18 @@ class Report(nodes.system_message):
     def text(self, text: str) -> None:
         self.node(nodes.paragraph(text, text))
 
-    def code(self, code: str, lang: str | None = None) -> None:
+    def code(self, code: str, lang: str | None = None, caption: str | None = None) -> None:
         blk = nodes.literal_block(code, code)
         if lang:
             blk['language'] = lang
-        self.node(blk)
+        if caption:
+            # See also: :meth:`sphinx.directives.code.container_wrapper`.
+            container = nodes.container('', literal_block=True, classes=['literal-block-wrapper'])
+            container += nodes.caption(caption, '', nodes.Text(caption))
+            container += blk
+            self.node(container)
+        else:
+            self.node(blk)
 
     def list(self, lines: Iterable[str]) -> None:
         bullet_list = nodes.bullet_list(bullet='*')
@@ -141,13 +148,13 @@ class Report(nodes.system_message):
 
         self.node(bullet_list)
 
-    def traceback(self) -> None:
+    def traceback(self, caption: str | None = None) -> None:
         # https://pygments.org/docs/lexers/#pygments.lexers.python.PythonTracebackLexer
-        self.code(traceback.format_exc(), lang='pytb')
+        self.code(traceback.format_exc(), lang='pytb', caption=caption)
 
-    def exception(self, e: Exception) -> None:
+    def exception(self, e: Exception, caption: str | None = None) -> None:
         # https://pygments.org/docs/lexers/#pygments.lexers.python.PythonTracebackLexer
-        self.code(str(e), lang='pytb')
+        self.code(str(e), lang='pytb', caption=caption)
 
     def is_error(self) -> bool:
         return self['type'] == 'ERROR'
