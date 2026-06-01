@@ -95,19 +95,17 @@ class pending_node(nodes.Element):
 
         if self._ctx_pickle_error is not None:
             report = err_report()
-            report.text(
+            report.exception(self._ctx_pickle_error, caption=(
                 f'UnresolvedContext used by {self.template.phase} phase templates '
                 'must be picklable:'
-            )
-            report.exception(self._ctx_pickle_error)
+            ))
             self += report
             return None
 
         # 1. Prepare context for Jinja template.
         if isinstance(self.ctx, UnresolvedContext):
             pdata = self.ctx
-            report.text('Unresolved context:')
-            report.code(pformat(pdata), lang='python')
+            report.code(pformat(pdata), lang='python', caption='Unresolved context:')
 
             for hook in self._unresolved_context_hooks:
                 hook(self, pdata)
@@ -116,8 +114,7 @@ class pending_node(nodes.Element):
                 ctx = self.ctx = pdata.resolve(host.env)
             except Exception as e:
                 report = err_report()
-                report.text('Failed to resolve unresolved context:')
-                report.exception(e)
+                report.exception(e, caption='Failed to resolve unresolved context:')
                 self += report
                 return None
         else:
@@ -126,14 +123,11 @@ class pending_node(nodes.Element):
         for hook in self._resolved_context_hooks:
             hook(self, ctx)
 
-        report.text(f'Resolved context (type: {type(ctx)}):')
-        report.code(pformat(ctx), lang='python')
-        report.text(f'Template (phase: {self.template.phase}):')
-        report.code(self.template.text, lang='jinja')
+        report.code(pformat(ctx), lang='python', caption=f'Resolved context (type: {type(ctx)}):')
+        report.code(self.template.text, lang='jinja', caption=f'Template (phase: {self.template.phase}):')
 
         extractx_req = ExtraContextRequest(self.template.phase, self, host.env, host)
-        report.text('Available extra context names:')
-        report.code(pformat(sorted(extra_context_names())), lang='python')
+        report.code(pformat(sorted(extra_context_names())), lang='python', caption='Available extra context names:')
 
         # 2. Render the template and context to markup text.
         try:
@@ -144,32 +138,28 @@ class pending_node(nodes.Element):
             )
         except Exception as e:
             report = err_report()
-            report.text('Failed to render Jinja template:')
-            report.exception(e)
+            report.exception(e, caption='Failed to render Jinja template:')
             self += report
             return
 
         for hook in self._markup_text_hooks:
             markup = hook(self, markup)
 
-        report.text('Rendered markup text:')
-        report.code(markup, lang='rst')
+        report.code(markup, lang='rst', caption='Rendered markup text:')
 
         # 3. Render the markup text to doctree nodes.
         try:
             ns, msgs = MarkupRenderer(host).render(markup, inline=self.inline)
         except Exception as e:
             report = err_report()
-            report.text(
+            report.exception(e, caption=(
                 'Failed to render markup text '
                 f'to {"inline " if self.inline else ""}nodes:'
-            )
-            report.exception(e)
+            ))
             self += report
             return
 
-        report.text(f'Rendered nodes (inline: {self.inline}):')
-        report.code('\n\n'.join([n.pformat() for n in ns]), lang='xml')
+        report.code('\n\n'.join([n.pformat() for n in ns]), lang='xml', caption=f'Rendered nodes (inline: {self.inline}):')
         if msgs:
             report.text('Systemd messages:')
             [report.node(msg) for msg in msgs]

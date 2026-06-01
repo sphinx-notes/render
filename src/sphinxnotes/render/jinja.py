@@ -64,8 +64,7 @@ class TemplateRenderer:
         return env.from_string(self.text).render(ctx)
 
     def _report_self(self, reporter: Report) -> None:
-        reporter.text('Template:')
-        reporter.code(self.text, lang='jinja')
+        reporter.code(self.text, lang='jinja', caption='Template:')
 
 
 class _JinjaEnv(SandboxedEnvironment):
