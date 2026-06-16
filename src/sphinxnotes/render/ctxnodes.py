@@ -95,10 +95,13 @@ class pending_node(nodes.Element):
 
         if self._ctx_pickle_error is not None:
             report = err_report()
-            report.exception(self._ctx_pickle_error, caption=(
-                f'UnresolvedContext used by {self.template.phase} phase templates '
-                'must be picklable:'
-            ))
+            report.exception(
+                self._ctx_pickle_error,
+                caption=(
+                    f'UnresolvedContext used by {self.template.phase} phase templates '
+                    'must be picklable:'
+                ),
+            )
             self += report
             return None
 
@@ -112,9 +115,12 @@ class pending_node(nodes.Element):
 
             try:
                 ctx = self.ctx = pdata.resolve(host.env)
-            except Exception as e:
+            except Exception:
                 report = err_report()
-                report.exception(e, caption='Failed to resolve unresolved context:')
+                report.current_exception(
+                    caption='Failed to resolve unresolved context:',
+                    debug=self.template.debug,
+                )
                 self += report
                 return None
         else:
@@ -123,11 +129,23 @@ class pending_node(nodes.Element):
         for hook in self._resolved_context_hooks:
             hook(self, ctx)
 
-        report.code(pformat(ctx), lang='python', caption=f'Resolved context (type: {type(ctx)}):')
-        report.code(self.template.text, lang='jinja', caption=f'Template (phase: {self.template.phase}):')
+        report.code(
+            pformat(ctx),
+            lang='python',
+            caption=f'Resolved context (type: {type(ctx)}):',
+        )
+        report.code(
+            self.template.text,
+            lang='jinja',
+            caption=f'Template (phase: {self.template.phase}):',
+        )
 
         extractx_req = ExtraContextRequest(self.template.phase, self, host.env, host)
-        report.code(pformat(sorted(extra_context_names())), lang='python', caption='Available extra context names:')
+        report.code(
+            pformat(sorted(extra_context_names())),
+            lang='python',
+            caption='Available extra context names:',
+        )
 
         # 2. Render the template and context to markup text.
         try:
@@ -136,9 +154,11 @@ class pending_node(nodes.Element):
                 globals={'load_extra': extra_context_loader(extractx_req)},
                 debug=self.template.debug,
             )
-        except Exception as e:
+        except Exception:
             report = err_report()
-            report.exception(e, caption='Failed to render Jinja template:')
+            report.current_exception(
+                caption='Failed to render Jinja template:', debug=self.template.debug
+            )
             self += report
             return
 
@@ -150,16 +170,23 @@ class pending_node(nodes.Element):
         # 3. Render the markup text to doctree nodes.
         try:
             ns, msgs = MarkupRenderer(host).render(markup, inline=self.inline)
-        except Exception as e:
+        except Exception:
             report = err_report()
-            report.exception(e, caption=(
-                'Failed to render markup text '
-                f'to {"inline " if self.inline else ""}nodes:'
-            ))
+            report.current_exception(
+                caption=(
+                    'Failed to render markup text '
+                    f'to {"inline " if self.inline else ""}nodes:'
+                ),
+                debug=self.template.debug,
+            )
             self += report
             return
 
-        report.code('\n\n'.join([n.pformat() for n in ns]), lang='xml', caption=f'Rendered nodes (inline: {self.inline}):')
+        report.code(
+            '\n\n'.join([n.pformat() for n in ns]),
+            lang='xml',
+            caption=f'Rendered nodes (inline: {self.inline}):',
+        )
         if msgs:
             report.text('Systemd messages:')
             [report.node(msg) for msg in msgs]

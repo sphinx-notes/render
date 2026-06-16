@@ -1,5 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
+import sys
 from typing import TYPE_CHECKING, TypeVar, cast
 import traceback
 
@@ -123,13 +124,17 @@ class Report(nodes.system_message):
     def text(self, text: str) -> None:
         self.node(nodes.paragraph(text, text))
 
-    def code(self, code: str, lang: str | None = None, caption: str | None = None) -> None:
+    def code(
+        self, code: str, lang: str | None = None, caption: str | None = None
+    ) -> None:
         blk = nodes.literal_block(code, code)
         if lang:
             blk['language'] = lang
         if caption:
             # See also: :meth:`sphinx.directives.code.container_wrapper`.
-            container = nodes.container('', literal_block=True, classes=['literal-block-wrapper'])
+            container = nodes.container(
+                '', literal_block=True, classes=['literal-block-wrapper']
+            )
             container += nodes.caption(caption, '', nodes.Text(caption))
             container += blk
             self.node(container)
@@ -152,9 +157,35 @@ class Report(nodes.system_message):
         # https://pygments.org/docs/lexers/#pygments.lexers.python.PythonTracebackLexer
         self.code(traceback.format_exc(), lang='pytb', caption=caption)
 
-    def exception(self, e: Exception, caption: str | None = None) -> None:
+    def exception(
+        self, e: Exception | BaseException, caption: str | None = None
+    ) -> None:
+        # A simplifed traceback.
+        msg, cause, depth = str(e), e.__cause__, 1
+        logger.warning('frist: %s', e.__cause__)
+        while cause:
+            msg += (
+                '\n\n'
+                + (depth - 1) * 2 * ' '
+                + 'Caused by:\n'
+                + depth * 2 * ' '
+                + str(cause)
+            )
+            cause = cause.__cause__
+            logger.warning('frist: %s', cause)
         # https://pygments.org/docs/lexers/#pygments.lexers.python.PythonTracebackLexer
-        self.code(str(e), lang='pytb', caption=caption)
+        self.code(msg, lang='pytb', caption=caption)
+
+    def current_exception(
+        self, caption: str | None = None, debug: bool = False
+    ) -> None:
+        if debug:
+            self.traceback(caption=caption)
+            return
+        _, e, _ = sys.exc_info()
+        if e is None:
+            return
+        self.exception(e, caption=caption)
 
     def is_error(self) -> bool:
         return self['type'] == 'ERROR'
