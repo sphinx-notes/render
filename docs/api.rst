@@ -29,7 +29,7 @@ Base Directive Classes
 
 .. autoclass:: sphinxnotes.render.BaseContextDirective
    :show-inheritance:
-   :members: process_pending_node, queue_pending_node, current_raw_data, current_context, current_template
+   :members: process_pending_node, queue_pending_node, current_context, current_template
 
 .. autoclass:: sphinxnotes.render.BaseDataDefineDirective
    :show-inheritance:
@@ -104,10 +104,20 @@ See :doc:`tmpl` for built-in extra-context names such as ``doc`` and
    :members:
    :undoc-members:
 
+.. autoclass:: sphinxnotes.render.ExtraContextRegistry
+   :members:
+   :inherited-members:
+   :undoc-members:
+   :class-doc-from: both
+
 Filters
 =======
 
 .. autodecorator:: sphinxnotes.render.filter
+
+.. autoclass:: sphinxnotes.render.JinjaRegistry
+   :members:
+   :undoc-members:
 
 Data, Field and Schema
 ======================
@@ -131,10 +141,8 @@ Data, Field and Schema
    :members: name, attrs, content
    :undoc-members:
 
-.. autoclass:: sphinxnotes.render.data.Registry
+.. autoclass:: sphinxnotes.render.DataRegistry
    :members:
-
-   .. autotype:: sphinxnotes.render.data.ByOptionStore
 
 Registry
 ========
@@ -148,3 +156,7 @@ or add new extra context) by adding new items to
 .. autoclass:: sphinxnotes.render.Registry
 
    .. autoproperty:: data
+
+   .. autoproperty:: extra_context
+
+   .. autoproperty:: jinja

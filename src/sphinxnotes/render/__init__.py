@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 
 from . import meta
 from .data import (
-    Registry as DataRegistry,
+    DataRegistry,
     REGISTRY as DATA_REGISTRY,
     PlainValue,
     Value,
@@ -28,6 +28,8 @@ from .extractx import (
     extra_context,
     ExtraContext,
     ExtraContextRequest,
+    ExtraContextRegistry,
+    REGISTRY as EXTRA_CONTEXT_REGISTRY,
 )
 from .pipeline import BaseContextRole, BaseContextDirective
 from .sources import (
@@ -36,7 +38,7 @@ from .sources import (
     BaseDataDefineDirective,
     StrictDataDefineDirective,
 )
-from .jinja import filter
+from .jinja import filter, JinjaRegistry, REGISTRY as JINJA_REGISTRY
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
@@ -45,6 +47,7 @@ if TYPE_CHECKING:
 """Python API for other Sphinx extensions."""
 __all__ = [
     'Registry',
+    'DataRegistry',
     'PlainValue',
     'Value',
     'ValueWrapper',
@@ -58,6 +61,8 @@ __all__ = [
     'ResolvedContext',
     'ExtraContext',
     'ExtraContextRequest',
+    'ExtraContextRegistry',
+    'EXTRA_CONTEXT_REGISTRY',
     'extra_context',
     'pending_node',
     'BaseContextRole',
@@ -67,6 +72,8 @@ __all__ = [
     'BaseDataDefineDirective',
     'StrictDataDefineDirective',
     'filter',
+    'JinjaRegistry',
+    'JINJA_REGISTRY',
 ]
 
 
@@ -76,6 +83,14 @@ class Registry:
     @property
     def data(self) -> DataRegistry:
         return DATA_REGISTRY
+
+    @property
+    def extra_context(self) -> ExtraContextRegistry:
+        return EXTRA_CONTEXT_REGISTRY
+
+    @property
+    def jinja(self) -> JinjaRegistry:
+        return JINJA_REGISTRY
 
 
 REGISTRY = Registry()
