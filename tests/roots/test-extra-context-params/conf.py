@@ -19,4 +19,5 @@ extensions = ['sphinxnotes.render.ext']
 
 keep_warnings = True
 
+
 def setup(app): ...

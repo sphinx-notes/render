@@ -41,27 +41,34 @@ class ExtraContext(ABC):
 # ==========================
 
 
-class _ExtraContextRegistry:
-    ctxs: dict[str, ExtraContext]
+class ExtraContextRegistry:
+    """Registry for extra contexts."""
+
+    _ctxs: dict[str, ExtraContext]
 
     def __init__(self) -> None:
-        self.ctxs = {}
+        self._ctxs = {}
 
-    def register(self, name: str, ctx: ExtraContext) -> None:
-        if name in self.ctxs:
+    def add(self, name: str, ctx: ExtraContext) -> None:
+        """Register an extra context.
+
+        :param name: The context name, used in templates via ``load_extra('name')``
+        :param ctx: An :py:class:`ExtraContext` instance
+
+        .. note:: Using the :py:deco:`extra_context` decorator is recommended for most cases.
+        """
+        if name in self._ctxs:
             raise ValueError(f'Extra context "{name}" already registered')
-        self.ctxs[name] = ctx
-
-    def get(self, name: str) -> ExtraContext | None:
-        if name not in self.ctxs:
-            return None
-        return self.ctxs[name]
-
-    def get_names(self) -> set[str]:
-        return set(self.ctxs.keys())
+        self._ctxs[name] = ctx
 
 
-_REGISTRY = _ExtraContextRegistry()
+REGISTRY = ExtraContextRegistry()
+"""The global registry for extra contexts.
+
+This is the underlying registry used by the :py:func:`extra_context` decorator.
+Using the decorator is recommended for most cases, but you can also register
+extra contexts directly via this registry.
+"""
 
 
 def extra_context(name: str):
@@ -71,19 +78,19 @@ def extra_context(name: str):
     """
 
     def decorator(cls):
-        _REGISTRY.register(name, cls())
+        REGISTRY.add(name, cls())
         return cls
 
     return decorator
 
 
 def extra_context_names() -> set[str]:
-    return _REGISTRY.get_names()
+    return set(REGISTRY._ctxs.keys())
 
 
 def extra_context_loader(request: ExtraContextRequest):
     def load_extra(name: str, *args, **kwargs) -> Any:
-        ctx = _REGISTRY.get(name)
+        ctx = REGISTRY._ctxs.get(name)
         if ctx is None:
             raise ValueError(
                 f'Extra context "{name}" is not registered. '

@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 class pending_node(nodes.Element):
     """A docutils node to be rendered."""
 
-    # The context to be rendered by Jinja template.
+    #: The context to be rendered by Jinja template.
     ctx: UnresolvedContext | ResolvedContext
     #: Jinja template for rendering the context.
     template: Template
@@ -37,8 +37,21 @@ class pending_node(nodes.Element):
     inline: bool
     #: Whether the rendering pipeline is finished (failed is also finished).
     rendered: bool
-    #: Stored pickling error for later-phase unresolved context.
+
+    # Stored pickling error for later-phase unresolved context.
     _ctx_pickle_error: Exception | None
+
+    # Types for hook functions.
+    type UnresolvedContextHook = Callable[[pending_node, UnresolvedContext], None]
+    type ResolvedContextHook = Callable[[pending_node, ResolvedContext], None]
+    type MarkupTextHook = Callable[[pending_node, str], str]
+    type RenderedNodesHook = Callable[[pending_node, list[nodes.Node]], None]
+
+    # Hooks for processing render intermediate products.
+    _unresolved_context_hooks: list[UnresolvedContextHook]
+    _resolved_context_hooks: list[ResolvedContextHook]
+    _markup_text_hooks: list[MarkupTextHook]
+    _rendered_nodes_hooks: list[RenderedNodesHook]
 
     def __init__(
         self,
@@ -50,16 +63,18 @@ class pending_node(nodes.Element):
         **attributes,
     ) -> None:
         super().__init__(rawsource, *children, **attributes)
+        self.ctx = ctx
+        self.template = tmpl
+        self.inline = inline
+        self.rendered = False
+
+        # Test whehter ctx pickle-able.
         self._ctx_pickle_error = None
         if isinstance(ctx, UnresolvedContext) and tmpl.phase != Phase.Parsing:
             try:
                 pickle.dumps(ctx)
             except Exception as exc:
                 self._ctx_pickle_error = exc
-        self.ctx = ctx
-        self.template = tmpl
-        self.inline = inline
-        self.rendered = False
 
         # Init hook lists.
         self._unresolved_context_hooks = []
@@ -238,18 +253,6 @@ class pending_node(nodes.Element):
 
         # Replace self with inline nodes.
         self.replace_self(ns)
-
-    """Hooks for processing render intermediate products."""
-
-    type UnresolvedContextHook = Callable[[pending_node, UnresolvedContext], None]
-    type ResolvedContextHook = Callable[[pending_node, ResolvedContext], None]
-    type MarkupTextHook = Callable[[pending_node, str], str]
-    type RenderedNodesHook = Callable[[pending_node, list[nodes.Node]], None]
-
-    _unresolved_context_hooks: list[UnresolvedContextHook]
-    _resolved_context_hooks: list[ResolvedContextHook]
-    _markup_text_hooks: list[MarkupTextHook]
-    _rendered_nodes_hooks: list[RenderedNodesHook]
 
     def hook_unresolved_context(self, hook: UnresolvedContextHook) -> None:
         self._unresolved_context_hooks.append(hook)

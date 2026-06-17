@@ -3,7 +3,7 @@ from types import SimpleNamespace
 from sphinxnotes.render.extractx import (
     ExtraContext,
     ExtraContextRequest,
-    _REGISTRY,
+    REGISTRY,
     extra_context_loader,
 )
 from sphinxnotes.render.template import Template
@@ -22,7 +22,7 @@ class CountingExtraContext(ExtraContext):
 def test_extra_context_loader_does_not_cache_values():
     name = 'test_no_cache'
     ctx = CountingExtraContext()
-    _REGISTRY.register(name, ctx)
+    REGISTRY.add(name, ctx)
 
     try:
         node = pending_node({}, Template(''))
@@ -33,7 +33,7 @@ def test_extra_context_loader_does_not_cache_values():
         assert load_extra(name) == 1
         assert load_extra(name) == 2
     finally:
-        _REGISTRY.ctxs.pop(name, None)
+        REGISTRY._ctxs.pop(name, None)
 
 
 class ParamExtraContext(ExtraContext):
@@ -43,7 +43,7 @@ class ParamExtraContext(ExtraContext):
 
 def test_extra_context_loader_passes_parameters():
     name = 'test_params'
-    _REGISTRY.register(name, ParamExtraContext())
+    REGISTRY.add(name, ParamExtraContext())
 
     try:
         node = pending_node({}, Template(''))
@@ -54,4 +54,4 @@ def test_extra_context_loader_passes_parameters():
         result = load_extra(name, 10, limit=20)
         assert result == {'args': (10,), 'kwargs': {'limit': 20}}
     finally:
-        _REGISTRY.ctxs.pop(name, None)
+        REGISTRY._ctxs.pop(name, None)

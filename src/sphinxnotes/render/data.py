@@ -106,7 +106,7 @@ def _str_conv(v: str) -> str:
     return vv if isinstance(vv, str) else v
 
 
-class Registry:
+class DataRegistry:
     """Stores supported element types and element forms (containers)."""
 
     etypes: dict[str, type]
@@ -227,7 +227,7 @@ class Registry:
                      in the DSL
         :param etype: The value type for this option
         :param default: The default value for this option
-        :param store: How to store multiple values
+        :param store: How to store multiple values, can be ``'assign'`` or ``'append'``
         :param aliases: Alternative names for this option
 
         .. seealso:: :ref:`add-custom-by-options`
@@ -239,7 +239,7 @@ class Registry:
             self.byopts[alias] = opt
 
 
-REGISTRY = Registry()
+REGISTRY = DataRegistry()
 
 # ======================
 # Data, Field and Schema

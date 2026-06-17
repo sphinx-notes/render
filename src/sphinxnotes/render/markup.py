@@ -55,7 +55,10 @@ class MarkupRenderer:
                 parser = self.host.app.registry.create_source_parser(
                     self.host.app, 'rst'
                 )
-            doc = new_document(self.host.env.docname, settings=self._get_settings(parser, self.host.document))
+            doc = new_document(
+                self.host.env.docname,
+                settings=self._get_settings(parser, self.host.document),
+            )
             parser.parse(text, doc)
 
             # NOTE: Nodes produced by standalone source parser should be fixed
@@ -128,8 +131,9 @@ class MarkupRenderer:
         if version_info[0] >= 9:
             try:
                 from sphinx.util.docutils import _get_settings
-                settings = _get_settings(parser,
-                    defaults=self.host.env.settings, read_config_files=True
+
+                settings = _get_settings(
+                    parser, defaults=self.host.env.settings, read_config_files=True
                 )
             except Exception as e:
                 logger.warning(
