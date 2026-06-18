@@ -25,6 +25,7 @@ from .. import (
     BaseContextDirective,
     BaseDataDefineDirective,
     BaseDataDefineRole,
+    BaseContextRole,
 )
 from ..utils.freestyle import FreeStyleDirective
 
@@ -200,6 +201,20 @@ class FreeDataDefineRoleDispatcher(CustomReSTDispatcher):
         self.enable()
 
 
+class DataRenderRole(BaseContextRole):
+    @override
+    def current_context(self) -> UnresolvedContext | ResolvedContext:
+        return {}
+
+    @override
+    def current_template(self) -> Template:
+        return Template(
+            self.text,
+            phase=self.options.get('on', Phase.default()),
+            debug='debug' in self.options,
+        )
+
+
 def setup(app: Sphinx) -> None:
     app.add_directive('data.define', FreeDataDefineDirective)
     app.add_directive('data.template', TemplateDefineDirective)
@@ -207,5 +222,6 @@ def setup(app: Sphinx) -> None:
     app.add_directive('data.render', DataRenderDirective)
 
     app.add_role('data.define', FreeDataDefineRole)
+    app.add_role('data.render', DataRenderRole())
 
     app.connect('source-read', FreeDataDefineRoleDispatcher().install)
