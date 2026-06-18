@@ -107,6 +107,17 @@ def test_render_ext_data_define_directives(app, status, warning, phase):
     assert 'RenderedContent' in html
 
 
+@pytest.mark.sphinx('html', testroot='data-render-role')
+def test_render_ext_data_render_role(app, status, warning):
+    """Test that :data:render: role works correctly."""
+    app.build()
+
+    html = (app.outdir / 'index.html').read_text(encoding='utf-8')
+
+    assert '<strong>bold</strong>' in html
+    assert '2' in html
+
+
 @pytest.mark.sphinx('html', testroot='derive')
 def test_derived_render_ext_data_define_directives(app, status, warning):
     """Test that render_ext_data_define_directives generates directives correctly."""

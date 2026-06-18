@@ -117,6 +117,24 @@ Directives
 
          ``1 + 1 = {{ 1 + 1 }}``
 
+.. _ext-usage-roles:
+
+Roles
+=====
+
+.. rst:role:: data.render
+
+   Render a template inline without defining data.
+   This is the inline counterpart of :rst:dir:`data.render` directive.
+
+   The role content is used as the Jinja2 template with an empty context.
+   Refer to :doc:`tmpl` for guide of writing template.
+
+   .. example::
+      :style: grid
+
+      :data.render:`{{ 1 + 1 }}` equals 2.
+
 .. _usage-custom-directive:
 
 Defining Custom Directives

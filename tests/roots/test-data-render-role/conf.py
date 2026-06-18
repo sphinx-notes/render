@@ -1,0 +1,1 @@
+extensions = ['sphinxnotes.render.ext']
