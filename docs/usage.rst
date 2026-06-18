@@ -27,7 +27,6 @@ Directives
    :ref:`context`, which looks like:
 
    .. example::
-      :style: grid
 
       .. data.define:: mimi
          :color: black and brown
@@ -63,7 +62,6 @@ Directives
    Example:
 
    .. example::
-      :style: grid
 
       .. data.template::
 
@@ -94,7 +92,6 @@ Directives
       ``content: <DSL>``
 
    .. example::
-      :style: grid
 
       .. data.schema:: int
 
@@ -115,7 +112,6 @@ Directives
       The options of this directive are same to :rst:dir:`data.template`.
 
    .. example::
-      :style: grid
 
       .. data.render::
 
@@ -148,7 +144,6 @@ This creates a ``.. cat::`` directive that requires a name argument and accepts
 a ``color`` options and a content. Use it in your document:
 
 .. example::
-   :style: grid
 
    .. cat:: mimi
       :color: black and brown

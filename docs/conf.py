@@ -157,6 +157,8 @@ autodoc_default_options = {
 intersphinx_mapping['python'] = ('https://docs.python.org/3', None)
 intersphinx_mapping['sphinx'] = ('https://www.sphinx-doc.org/en/master', None)
 
+project_example_style = 'grid'
+
 test_roots = os.path.abspath('../tests/roots')
 
 def setup(app):

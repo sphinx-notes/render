@@ -103,7 +103,6 @@ it creates and stashes a temporary template for later use:
 Now we can define data, using a :rst:dir:`data.define` directive:
 
 .. example::
-   :style: grid
 
    .. data.define:: mimi
       :color: black and brown
@@ -126,7 +125,6 @@ This creates a ``.. cat::`` directive that requires a name argument and accepts
 a ``color`` option and a content block. Use it in your document:
 
 .. example::
-   :style: grid
 
    .. cat:: mimi
       :color: black and brown

@@ -48,7 +48,6 @@ For example, when you use the ``data.define`` directive, the generated main
 context looks like the Python dict on the right:
 
 .. example::
-   :style: grid
 
    .. data.define:: mimi
       :color: black and brown
@@ -68,7 +67,6 @@ The following `template variables`_ are available:
       For directives, this refers to the directive argument.
 
       .. example::
-         :style: grid
 
          .. data.template::
 
@@ -84,7 +82,6 @@ The following `template variables`_ are available:
       ``{{ attrs['label'] }}`` are equivalent.
 
       .. example::
-         :style: grid
 
          .. data.template::
 
@@ -100,7 +97,6 @@ The following `template variables`_ are available:
       ``{{ attrs.label }}``:
 
       .. example::
-         :style: grid
 
          .. data.template::
 
@@ -113,7 +109,6 @@ The following `template variables`_ are available:
       For directives, this refers to the directive body.
 
       .. example::
-         :style: grid
 
          .. data.template::
 
@@ -126,7 +121,6 @@ The following `template variables`_ are available:
       For roles, this refers to the interpreted text.
 
       .. example::
-         :style: grid
 
          .. data.template::
 
@@ -168,7 +162,6 @@ Extra Context
       ``generate()`` method.
 
 .. example::
-   :style: grid
 
    .. data.render::
 
@@ -193,7 +186,6 @@ The following extra contexts are available:
    A proxy to the :py:class:`sphinx.application.Sphinx` object.
 
    .. example::
-      :style: grid
 
       .. data.render::
 
@@ -208,7 +200,6 @@ The following extra contexts are available:
    A proxy to the :py:class:`sphinx.environment.BuildEnvironment` object.
 
    .. example::
-      :style: grid
 
       .. data.render::
 
@@ -224,7 +215,6 @@ The following extra contexts are available:
    type, name, source text, and line number.
 
    .. example::
-      :style: grid
 
       .. data.render::
 
@@ -246,7 +236,6 @@ The following extra contexts are available:
    exists. This extra context is not available during the parsing phase.
 
    .. example::
-      :style: grid
 
       .. data.render::
          :on: parsed
@@ -260,7 +249,6 @@ The following extra contexts are available:
    A proxy to the current :py:class:`docutils.notes.document` node.
 
    .. example::
-      :style: grid
 
       .. data.render::
 
@@ -285,7 +273,6 @@ __ https://jinja.palletsprojects.com/en/stable/templates/#builtin-filters
       Produces role markup from a sequence of strings.
 
       .. example::
-         :style: grid
 
          .. data.render::
 
@@ -302,7 +289,6 @@ __ https://jinja.palletsprojects.com/en/stable/templates/#builtin-filters
       Convert value to JSON.
 
       .. example::
-         :style: grid
 
          .. data.render::
 
@@ -330,7 +316,6 @@ Each template has a render phase that determines when it is processed:
       rely on the final doctree or cross-document state.
 
       .. example::
-         :style: grid
 
          .. data.render::
             :on: parsing
@@ -352,7 +337,6 @@ Each template has a render phase that determines when it is processed:
       document.
 
       .. example::
-         :style: grid
 
          .. data.render::
             :on: parsed
@@ -375,7 +359,6 @@ Each template has a render phase that determines when it is processed:
       only stable near the end of the pipeline.
 
       .. example::
-         :style: grid
 
          .. data.render::
             :on: resolving
@@ -403,7 +386,6 @@ Debugging
 Enable the debug option to see a detailed report when troubleshooting templates:
 
 .. example::
-   :style: grid
 
    .. data.render::
       :debug:

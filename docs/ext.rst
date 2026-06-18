@@ -85,7 +85,6 @@ positional and keyword arguments passed by the template via
    .. literalinclude:: ../tests/roots/test-extra-context/cat.json
 
 .. example::
-   :style: grid
 
    .. data.render::
 
@@ -100,7 +99,6 @@ To accept custom parameters in your extra context, add ``*args`` and
    :end-before: [literalinclude end]
 
 .. example::
-   :style: grid
 
    .. data.render::
 
@@ -131,7 +129,6 @@ as argument and returns a filter function.
    :end-before: [literalinclude end]
 
 .. example::
-   :style: grid
 
    .. data.render::
 
@@ -193,7 +190,6 @@ This is the smallest useful extension built on top of ``sphinxnotes.render``:
 Now use the directive in your document:
 
 .. example::
-   :style: grid
 
    .. mimi::
  
@@ -231,7 +227,6 @@ Key differences from ``BaseContextDirective``:
 Use the directive in your document:
 
 .. example::
-   :style: grid
 
    .. cat2:: mimi
       :color: black and brown
@@ -260,7 +255,6 @@ method:
 Use the directive in your document:
 
 .. example::
-   :style: grid
 
    .. cat3:: mimi
       :color: black and brown
