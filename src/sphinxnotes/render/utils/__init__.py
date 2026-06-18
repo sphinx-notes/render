@@ -170,7 +170,6 @@ class Report(nodes.system_message):
     ) -> None:
         # A simplifed traceback.
         msg, cause, depth = str(e), e.__cause__, 1
-        logger.warning('frist: %s', e.__cause__)
         while cause:
             msg += (
                 '\n\n'
@@ -180,7 +179,6 @@ class Report(nodes.system_message):
                 + str(cause)
             )
             cause = cause.__cause__
-            logger.warning('frist: %s', cause)
         # https://pygments.org/docs/lexers/#pygments.lexers.python.PythonTracebackLexer
         self.code(msg, lang='pytb', caption=caption)
 
