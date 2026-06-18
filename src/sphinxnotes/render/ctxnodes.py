@@ -100,16 +100,8 @@ class pending_node(nodes.Element):
         # Create debug report.
         report = Report('Render Report', 'DEBUG', source=self.source, line=self.line)
 
-        # Constructor for error report.
-        def err_report() -> Report:
-            if self.template.debug:
-                # Reuse the render report as possible.
-                report['type'] = 'ERROR'
-                return report
-            return Report('Render Report', 'ERROR', source=self.source, line=self.line)
-
         if self._ctx_pickle_error is not None:
-            report = err_report()
+            report.level = 'ERROR'
             report.exception(
                 self._ctx_pickle_error,
                 caption=(
@@ -131,10 +123,10 @@ class pending_node(nodes.Element):
             try:
                 ctx = self.ctx = pdata.resolve(host.env)
             except Exception:
-                report = err_report()
+                report.level = 'ERROR'
                 report.current_exception(
                     caption='Failed to resolve unresolved context:',
-                    debug=self.template.debug,
+                    traceback=self.template.debug,
                 )
                 self += report
                 return None
@@ -170,9 +162,9 @@ class pending_node(nodes.Element):
                 debug=self.template.debug,
             )
         except Exception:
-            report = err_report()
+            report.level = 'ERROR'
             report.current_exception(
-                caption='Failed to render Jinja template:', debug=self.template.debug
+                caption='Failed to render Jinja template:', traceback=self.template.debug
             )
             self += report
             return
@@ -186,13 +178,13 @@ class pending_node(nodes.Element):
         try:
             ns, msgs = MarkupRenderer(host).render(markup, inline=self.inline)
         except Exception:
-            report = err_report()
+            report.level = 'ERROR'
             report.current_exception(
                 caption=(
                     'Failed to render markup text '
                     f'to {"inline " if self.inline else ""}nodes:'
                 ),
-                debug=self.template.debug,
+                traceback=self.template.debug,
             )
             self += report
             return

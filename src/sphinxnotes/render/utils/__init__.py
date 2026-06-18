@@ -97,15 +97,23 @@ def find_nearest_block_element(node: nodes.Node | None) -> nodes.Element | None:
 
 
 class Report(nodes.system_message):
-    type Type = Literal['DEBUG', 'INFO', 'WARNING', 'ERROR']
+    type Level = Literal['DEBUG', 'INFO', 'WARNING', 'ERROR']
 
     title: str
 
     def __init__(
-        self, title: str, typ: Type = 'DEBUG', *children, **attributes
+        self, title: str, level: Level = 'DEBUG', *children, **attributes
     ) -> None:
-        super().__init__(title + ':', type=typ, level=2, *children, **attributes)
+        super().__init__(title + ':', type=level, level=2, *children, **attributes)
         self.title = title
+
+    @property
+    def level(self) -> Level:
+        return self['type']
+
+    @level.setter
+    def level(self, level: Level):
+        self['type'] = level
 
     def empty(self) -> bool:
         # title is the only children
@@ -177,18 +185,15 @@ class Report(nodes.system_message):
         self.code(msg, lang='pytb', caption=caption)
 
     def current_exception(
-        self, caption: str | None = None, debug: bool = False
+        self, caption: str | None = None, traceback: bool = False
     ) -> None:
-        if debug:
+        if traceback:
             self.traceback(caption=caption)
-            return
-        _, e, _ = sys.exc_info()
-        if e is None:
-            return
-        self.exception(e, caption=caption)
+        else:
+            _, e, _ = sys.exc_info()
+            if e is not None:
+                self.exception(e, caption=caption)
 
-    def is_error(self) -> bool:
-        return self['type'] == 'ERROR'
 
     type Inliner = RstInliner | tuple[nodes.document, nodes.Element]
 
