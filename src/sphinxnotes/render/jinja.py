@@ -31,7 +31,7 @@ class JinjaRegistry:
     rendering environment used by this extension.
     """
 
-    _filters: dict[str, Callable[[BuildEnvironment], Callable]]
+    _filters: dict[str, tuple[Callable, bool]]  # (func, pass_build_env)
     _extensions: list[str]
 
     def __init__(self) -> None:
@@ -39,20 +39,22 @@ class JinjaRegistry:
         self._extensions = []
 
     def add_filter(
-        self, name: str, factory: Callable[[BuildEnvironment], Callable]
+        self, name: str, func: Callable, pass_build_env: bool = False
     ) -> None:
-        """Register a filter factory.
+        """Register a filter.
 
         :param name: The filter name, used in Jinja templates as ``{{ value|name }}``
-        :param factory: A callable that takes a :py:class:`~sphinx.environment.BuildEnvironment`
-                        and returns a filter callable
+        :param func: The filter callable
+        :param pass_build_env: If True, filter receives
+                               :py:class:`sphinx.environment.BuildEnvironment`
+                               as first arg
 
         .. note:: Using the :py:deco:`filter` decorator is recommended for most cases.
 
         """
         if name in self._filters:
             raise ValueError(f'Jinja filter "{name}" already registered')
-        self._filters[name] = factory
+        self._filters[name] = (func, pass_build_env)
 
     def add_extension(self, extension: str) -> None:
         """Add a Jinja2 extension.
@@ -111,8 +113,14 @@ class _JinjaEnv(SandboxedEnvironment):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for name, factory in REGISTRY._filters.items():
-            self.filters[name] = factory(self._env)
+        for name, (func, pass_build_env) in REGISTRY._filters.items():
+            if pass_build_env:
+                env = self._env
+                self.filters[name] = lambda value, *args, _func=func, **kwargs: _func(
+                    env, value, *args, **kwargs
+                )
+            else:
+                self.filters[name] = func
 
     @classmethod
     def on_builder_inited(cls, app: Sphinx):
@@ -132,20 +140,22 @@ class _JinjaEnv(SandboxedEnvironment):
         return super().is_safe_attribute(obj, attr, value)
 
 
-def filter(name: str):
+def filter(name: str, pass_build_env: bool = False):
     """Decorator for adding a filter to the Jinja environment.
 
     Usage::
 
         @filter('my_filter')
-        def my_filter(env: BuildEnvironment):
-            def _filter(value):
-                return value.upper()
-            return _filter
+        def my_filter(value):
+            return value.upper()
+
+        @filter('my_filter_with_env', pass_build_env=True)
+        def my_filter_with_env(env: BuildEnvironment, value):
+            return value.upper()
     """
 
     def decorator(ff):
-        REGISTRY.add_filter(name, ff)
+        REGISTRY.add_filter(name, ff, pass_build_env)
         return ff
 
     return decorator

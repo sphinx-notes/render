@@ -17,13 +17,11 @@ from .. import meta, filter
 
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
-    from sphinx.environment import BuildEnvironment
 
 
 @filter('roles')
-def roles(_: BuildEnvironment):
-    """
-    Converting list of string to list of reStructuredText role.
+def roles(value: Iterable[str], role: str) -> Iterable[str]:
+    """Converting list of string to list of reStructuredText role.
 
     For example::
 
@@ -31,21 +29,13 @@ def roles(_: BuildEnvironment):
 
     Produces ``[":doc:`foo`", ":doc:`bar`"]``.
     """
-
-    def _filter(value: Iterable[str], role: str) -> Iterable[str]:
-        return map(lambda x: ':%s:`%s`' % (role, x), value)
-
-    return _filter
+    return map(lambda x, role=role: ':%s:`%s`' % (role, x), value)
 
 
 @filter('jsonify')
-def jsonify(_: BuildEnvironment):
+def jsonify(value: Any, indent: str | None = None) -> Any:
     """Converting value to JSON."""
-
-    def _filter(value: Any) -> Any:
-        return json.dumps(value, indent='  ')
-
-    return _filter
+    return json.dumps(value, indent=indent)
 
 
 def setup(app: Sphinx):
