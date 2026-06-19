@@ -109,30 +109,37 @@ To accept custom parameters in your extra context, add ``*args`` and
 
 .. _ext-filters:
 
-Extending ilters
-=================
+Extending Filters
+==================
 
 Template filters are registered by a
 :py:deco:`sphinxnotes.render.filter` function decorator.
 
-The decorated function takes a :py:class:`sphinx.environment.BuildEnvironment`
-as argument and returns a filter function.
-
-.. note::
-
-   The decorator is used to **decorate the filter function factory, NOT
-   the filter function itself**.
-
 .. literalinclude:: ../tests/roots/test-filter-example/conf.py
    :language: python
-   :start-after: [literalinclude start]
-   :end-before: [literalinclude end]
+   :start-after: [literalinclude catify-start]
+   :end-before: [literalinclude catify-end]
 
 .. example::
 
    .. data.render::
 
       {{ "Hello world" | catify }}
+
+If your filter needs access to the Sphinx build environment
+:py:class:`sphinx.environment.BuildEnvironment`
+(e.g., to access configuration or document metadata), use ``pass_build_env=True``:
+
+.. literalinclude:: ../tests/roots/test-filter-example/conf.py
+   :language: python
+   :start-after: [literalinclude author-start]
+   :end-before: [literalinclude author-end]
+
+.. example::
+
+   .. data.render::
+
+      {{ "author: Hello world" | format_author }}
 
 .. _ext-directives:
 .. _ext-roles:

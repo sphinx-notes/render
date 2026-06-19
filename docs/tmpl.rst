@@ -220,7 +220,7 @@ The following extra contexts are available:
 
          {%
          set m = load_extra('markup')
-                 | jsonify
+                 | jsonify(indent=2)
          %}
 
          .. code::
@@ -295,7 +295,7 @@ __ https://jinja.palletsprojects.com/en/stable/templates/#builtin-filters
             {% set text = {'name': 'mimi'} %}
 
             :Strify: ``{{ text }}``
-            :JSONify: ``{{ text | jsonify | replace('\n', '')}}``
+            :JSONify: ``{{ text | jsonify }}``
 
 .. seealso:: :ref:`ext-filters`
 
