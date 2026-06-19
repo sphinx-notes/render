@@ -6,6 +6,8 @@ from pprint import pformat
 from docutils import nodes
 from docutils.parsers.rst.states import Inliner
 
+from jinja2 import TemplateSyntaxError
+
 from .template import Template, Phase
 from .ctx import (
     UnresolvedContext,
@@ -161,11 +163,12 @@ class pending_node(nodes.Element):
                 globals={'load_extra': extra_context_loader(extractx_req)},
                 debug=self.template.debug,
             )
-        except Exception:
+        except Exception as e:
+            caption = 'Failed to render Jinja template:'
+            if isinstance(e, TemplateSyntaxError):
+                caption += f' at line {e.lineno}'
             report.level = 'ERROR'
-            report.current_exception(
-                caption='Failed to render Jinja template:', traceback=self.template.debug
-            )
+            report.current_exception(caption=caption, traceback=self.template.debug)
             self += report
             return
 
