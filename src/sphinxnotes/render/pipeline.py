@@ -121,9 +121,9 @@ class Pipeline(ABC):
 
             if pending.inline:
                 host_ = HostWrapper(host)
-                pending.unwrap_and_replace_self_inline((host_.doctree, pending.parent))
+                pending.unwrap_inline((host_.doctree, pending.parent), replace_self=True)
             else:
-                pending.unwrap_and_replace_self()
+                pending.unwrap(replace_self=True)
 
         logger.debug(
             f'{type(self)} runs out of its render queue, '

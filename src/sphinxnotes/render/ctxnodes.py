@@ -213,13 +213,15 @@ class pending_node(nodes.Element):
 
         return
 
-    def unwrap(self) -> list[nodes.Node]:
+    def unwrap(self, replace_self: bool = False) -> list[nodes.Node]:
         children = self.children
         self.clear()
+        if replace_self:
+            self.replace_self(children)
         return children
 
     def unwrap_inline(
-        self, inliner: Report.Inliner
+        self, inliner: Report.Inliner, replace_self: bool = False,
     ) -> tuple[list[nodes.Node], list[nodes.system_message]]:
         # Report (nodes.system_message subclass) is not inline node,
         # should be removed before inserting to doctree.
@@ -230,24 +232,15 @@ class pending_node(nodes.Element):
         children = self.children
         self.clear()
 
+        if replace_self:
+            # Insert reports to nearst block elements (usually nodes.paragraph).
+            doctree = inliner.document if isinstance(inliner, Inliner) else inliner[1]
+            blkparent = find_nearest_block_element(self.parent) or doctree
+            blkparent += reports
+            # Replace self with inline nodes.
+            self.replace_self(children)
+
         return children, [x for x in reports]
-
-    def unwrap_and_replace_self(self) -> None:
-        children = self.unwrap()
-        # Replace self with children.
-        self.replace_self(children)
-
-    def unwrap_and_replace_self_inline(self, inliner: Report.Inliner) -> None:
-        # Unwrap inline nodes and system_message noeds from node.
-        ns, msgs = self.unwrap_inline(inliner)
-
-        # Insert reports to nearst block elements (usually nodes.paragraph).
-        doctree = inliner.document if isinstance(inliner, Inliner) else inliner[1]
-        blkparent = find_nearest_block_element(self.parent) or doctree
-        blkparent += msgs
-
-        # Replace self with inline nodes.
-        self.replace_self(ns)
 
     def hook_unresolved_context(self, hook: UnresolvedContextHook) -> None:
         self._unresolved_context_hooks.append(hook)
