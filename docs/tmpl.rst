@@ -395,6 +395,12 @@ Enable the debug option to see a detailed report when troubleshooting templates:
 This is especially useful when a template fails due to an undefined variable,
 unexpected data shape, or invalid generated markup.
 
+.. note::
+
+   Debug output (``nodes.system_message``) is emitted via Sphinx's warning system,
+   so it only appears in the built document when :confval:`keep_warnings` is set
+   to ``True`` in your ``conf.py``.
+
 Some Technical Details
 ======================
 
